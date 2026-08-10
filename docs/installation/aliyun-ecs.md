@@ -2,32 +2,32 @@
 
 本文档说明如何在阿里云 ECS 上通过源码构建并部署 New API。
 
-> 官方部署文档：[安装指南](https://docs.newapi.pro/zh/docs/installation)  
+> 官方部署文档：[安装指南](https://docs.newapi.pro/zh/docs/installation)
 > 官方镜像（可选）：`calciumion/new-api:latest`
 
-***
+---
 
 ## 可行性说明
 
-| 问题 | 结论 |
-| --- | --- |
-| 能否在阿里云 ECS 部署？ | 可以。任意 64 位 Linux ECS（amd64 / arm64）均可。 |
-| 能否源码 Docker 构建？ | 可以。项目根目录自带生产用 `Dockerfile`（多阶段：Bun 构建前端 + Go 编译后端）。 |
-| 与官方镜像的区别 | 功能一致；源码构建是在 ECS 本地/本机构建镜像，而非直接拉取 Docker Hub 镜像。 |
+| 问题                    | 结论                                                                             |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| 能否在阿里云 ECS 部署？ | 可以。任意 64 位 Linux ECS（amd64 / arm64）均可。                                |
+| 能否源码 Docker 构建？  | 可以。项目根目录自带生产用`Dockerfile`（多阶段：Bun 构建前端 + Go 编译后端）。 |
+| 与官方镜像的区别        | 功能一致；源码构建是在 ECS 本地/本机构建镜像，而非直接拉取 Docker Hub 镜像。     |
 
-***
+---
 
 ## 前置要求
 
-| 项目 | 建议 |
-| --- | --- |
-| 系统 | Ubuntu / CentOS / Alibaba Cloud Linux（64 位） |
-| 规格 | 构建建议 **≥ 2 核 4G**；运行最低约 1 核 2G |
-| 磁盘 | 建议 **≥ 40GB**（依赖镜像与构建缓存） |
-| 软件 | Docker、Docker Compose |
-| 安全组 | 开放 `3000`；若前面挂 Nginx / SLB，可只开放 `80` / `443` |
+| 项目   | 建议                                                          |
+| ------ | ------------------------------------------------------------- |
+| 系统   | Ubuntu / CentOS / Alibaba Cloud Linux（64 位）                |
+| 规格   | 构建建议**≥ 2 核 4G**；运行最低约 1 核 2G              |
+| 磁盘   | 建议**≥ 40GB**（依赖镜像与构建缓存）                   |
+| 软件   | Docker、Docker Compose                                        |
+| 安全组 | 开放`3001`；若前面挂 Nginx / SLB，可只开放 `80` / `443` |
 
-***
+---
 
 ## 步骤一：安装 Docker
 
@@ -58,7 +58,7 @@ sudo systemctl daemon-reload
 sudo systemctl restart docker
 ```
 
-***
+---
 
 ## 步骤二：获取源码
 
@@ -69,7 +69,7 @@ cd new-api
 
 也可使用本仓库已有源码目录，无需重新 clone。
 
-***
+---
 
 ## 步骤三：源码构建部署
 
@@ -89,7 +89,6 @@ image: new-api:local
 ```
 
 2. 修改默认数据库 / Redis 密码等敏感配置（生产环境务必修改）。
-
 3. 构建并启动：
 
 ```bash
@@ -103,7 +102,8 @@ docker build -t new-api:local .
 
 # SQLite 简易示例
 docker run -d --name new-api --restart always \
-  -p 3000:3000 \
+  -p 3001:3001 \
+  -e PORT=3001 \
   -e TZ=Asia/Shanghai \
   -v "$(pwd)/data:/data" \
   new-api:local
@@ -111,23 +111,23 @@ docker run -d --name new-api --restart always \
 
 生产环境建议仍使用 Compose，并配合 Postgres/MySQL + Redis。
 
-***
+---
 
 ## 步骤四：验证访问
 
 浏览器访问：
 
 ```text
-http://<ECS公网IP>:3000
+http://<ECS公网IP>:3001
 ```
 
 健康检查接口示例：
 
 ```bash
-curl -s http://127.0.0.1:3000/api/status
+curl -s http://127.0.0.1:3001/api/status
 ```
 
-***
+---
 
 ## 常用运维命令
 
@@ -146,7 +146,7 @@ docker compose up -d --build
 docker compose down
 ```
 
-***
+---
 
 ## 注意事项
 
@@ -157,18 +157,18 @@ docker compose down
 5. **数据持久化**：务必挂载 `./data`（或同等数据卷），避免容器重建丢数据。
 6. **可选架构**：也可在本机/CI 构建镜像后推送到阿里云 ACR，再在 ECS 上拉取运行，减轻 ECS 构建压力。
 
-***
+---
 
 ## 相关文件
 
-| 文件 | 说明 |
-| --- | --- |
-| `Dockerfile` | 生产源码构建（含前端） |
-| `Dockerfile.dev` | 开发用后端构建（前端走本地 dev server） |
-| `docker-compose.yml` | 生产 Compose（默认拉官方镜像，可改为 `build: .`） |
-| `docker-compose.dev.yml` | 开发 Compose |
+| 文件                       | 说明                                               |
+| -------------------------- | -------------------------------------------------- |
+| `Dockerfile`             | 生产源码构建（含前端）                             |
+| `Dockerfile.dev`         | 开发用后端构建（前端走本地 dev server）            |
+| `docker-compose.yml`     | 生产 Compose（默认拉官方镜像，可改为`build: .`） |
+| `docker-compose.dev.yml` | 开发 Compose                                       |
 
-***
+---
 
 ## 参考链接
 
