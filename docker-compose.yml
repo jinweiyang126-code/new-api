@@ -10,9 +10,9 @@
 #   2. Uncomment the postgres service and PostgreSQL SQL_DSN
 #   3. Switch depends_on / volumes accordingly
 #
-# Source build on ECS (optional): replace `image:` with:
-#   build: .
-#   image: new-api:local
+# Source build: uses local Dockerfile (`build: .`) and tags as new-api:local
+# To use the official image instead, remove `build: .` and set:
+#   image: calciumion/new-api:latest
 #
 # ⚠️  IMPORTANT: Change all default passwords before deploying to production!
 
@@ -20,6 +20,7 @@ version: '3.4' # For compatibility with older Docker versions
 
 services:
   new-api:
+    build: .
     image: new-api:local
     container_name: new-api
     restart: always
