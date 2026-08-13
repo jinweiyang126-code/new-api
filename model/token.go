@@ -29,6 +29,8 @@ type Token struct {
 	Group              string         `json:"group" gorm:"default:''"`
 	CrossGroupRetry    bool           `json:"cross_group_retry"` // 跨分组重试，仅auto分组有效
 	AutoGroups         string         `json:"-" gorm:"type:text"`
+	CustomerId         int            `json:"customer_id" gorm:"type:int;default:0;column:customer_id;index"`     // 0 = personal token
+	WorkspaceId        int            `json:"workspace_id" gorm:"type:int;default:0;column:workspace_id;index"` // 0 = personal; non-zero => debit workspace pool
 	DeletedAt          gorm.DeletedAt `gorm:"index"`
 }
 

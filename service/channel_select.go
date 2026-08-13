@@ -81,6 +81,18 @@ func (p *RetryParam) ResetRetryNextTry() {
 //	Retry=3: GroupB, priority1 (startRetryIndex=2, priorityRetry=1)
 //	         分组B, 优先级1
 func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, error) {
+	if param != nil && param.Ctx != nil {
+		customerId := common.GetContextKeyInt(param.Ctx, constant.ContextKeyCustomerId)
+		if customerId > 0 {
+			return selectChannelForCustomer(param, customerId)
+		}
+		setUpstreamSource(param.Ctx, model.UpstreamSourceShared)
+	}
+	return selectGlobalSatisfiedChannel(param)
+}
+
+// selectGlobalSatisfiedChannel is the pre-T15 global shared channel selection.
+func selectGlobalSatisfiedChannel(param *RetryParam) (*model.Channel, string, error) {
 	var channel *model.Channel
 	var err error
 	selectGroup := param.TokenGroup
@@ -156,6 +168,11 @@ func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 		channel, err = model.GetRandomSatisfiedChannel(param.TokenGroup, param.ModelName, param.GetRetry(), param.RequestPath)
 		if err != nil {
 			return nil, param.TokenGroup, err
+		}
+	}
+	if channel != nil && param.Ctx != nil {
+		if _, exists := common.GetContextKey(param.Ctx, constant.ContextKeyUpstreamSource); !exists {
+			setUpstreamSource(param.Ctx, model.UpstreamSourceShared)
 		}
 	}
 	return channel, selectGroup, nil

@@ -6,6 +6,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,7 +45,15 @@ func GetUserLogs(c *gin.Context) {
 	group := c.Query("group")
 	requestId := c.Query("request_id")
 	upstreamRequestId := c.Query("upstream_request_id")
-	logs, total, err := model.GetUserLogs(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), group, requestId, upstreamRequestId)
+	requestedCustomerId, _ := strconv.Atoi(c.Query("customer_id"))
+	requestedWorkspaceId, _ := strconv.Atoi(c.Query("workspace_id"))
+
+	scope, err := service.ResolveSelfLogAccessScope(userId, requestedCustomerId, requestedWorkspaceId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	logs, total, err := model.GetLogsForViewer(scope, logType, startTimestamp, endTimestamp, modelName, tokenName, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), group, requestId, upstreamRequestId)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -123,7 +132,7 @@ func GetLogsStat(c *gin.Context) {
 }
 
 func GetLogsSelfStat(c *gin.Context) {
-	username := c.GetString("username")
+	userId := c.GetInt("id")
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
@@ -131,12 +140,20 @@ func GetLogsSelfStat(c *gin.Context) {
 	modelName := c.Query("model_name")
 	channel, _ := strconv.Atoi(c.Query("channel"))
 	group := c.Query("group")
-	quotaNum, err := model.SumUsedQuota(logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group)
+	requestedCustomerId, _ := strconv.Atoi(c.Query("customer_id"))
+	requestedWorkspaceId, _ := strconv.Atoi(c.Query("workspace_id"))
+
+	scope, err := service.ResolveSelfLogAccessScope(userId, requestedCustomerId, requestedWorkspaceId)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	//tokenNum := model.SumUsedToken(logType, startTimestamp, endTimestamp, modelName, username, tokenName)
+	// Scoped stats must not rely on session username alone (customer admin sees all customer usage).
+	quotaNum, err := model.SumUsedQuotaForViewer(scope, logType, startTimestamp, endTimestamp, modelName, "", tokenName, channel, group)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	c.JSON(200, gin.H{
 		"success": true,
 		"message": "",
@@ -144,7 +161,6 @@ func GetLogsSelfStat(c *gin.Context) {
 			"quota": quotaNum.Quota,
 			"rpm":   quotaNum.Rpm,
 			"tpm":   quotaNum.Tpm,
-			//"token": tokenNum,
 		},
 	})
 	return

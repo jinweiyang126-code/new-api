@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -218,6 +219,9 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 		if strings.Contains(errMsg, "no active subscription") || strings.Contains(errMsg, "subscription quota insufficient") {
 			return types.NewErrorWithStatusCode(fmt.Errorf("订阅额度不足或未配置订阅: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
+		if strings.Contains(errMsg, "workspace quota insufficient") {
+			return types.NewErrorWithStatusCode(fmt.Errorf("工作区额度不足: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		}
 		return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 	}
 
@@ -237,6 +241,12 @@ func (s *BillingSession) reserveFunding(delta int) error {
 		// 保证日志记录的预扣额度与用户余额的实际变动始终对账一致。
 		// DecreaseUserQuota 仅在数据库错误时失败。
 		if err := model.DecreaseUserQuota(funding.userId, delta, false); err != nil {
+			return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
+		}
+		funding.consumed += delta
+		return nil
+	case *WorkspaceFunding:
+		if err := model.DecreaseWorkspaceQuotaForce(funding.workspaceId, delta); err != nil {
 			return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 		}
 		funding.consumed += delta
@@ -262,6 +272,12 @@ func (s *BillingSession) rollbackFundingReserve(delta int) {
 	case *WalletFunding:
 		if err := model.IncreaseUserQuota(funding.userId, delta, false); err != nil {
 			common.SysLog("error rolling back wallet funding reserve: " + err.Error())
+		} else {
+			funding.consumed -= delta
+		}
+	case *WorkspaceFunding:
+		if err := model.IncreaseWorkspaceQuota(funding.workspaceId, delta); err != nil {
+			common.SysLog("error rolling back workspace funding reserve: " + err.Error())
 		} else {
 			funding.consumed -= delta
 		}
@@ -307,6 +323,8 @@ func (s *BillingSession) shouldTrust(c *gin.Context) bool {
 	switch s.funding.Source() {
 	case BillingSourceWallet:
 		return s.relayInfo.UserQuota > trustQuota
+	case BillingSourceWorkspace:
+		return s.relayInfo.WorkspaceQuota > trustQuota
 	case BillingSourceSubscription:
 		// 订阅不能启用信任旁路。原因：
 		// 1. PreConsumeUserSubscription 要求 amount>0 来创建预扣记录并锁定订阅
@@ -343,9 +361,14 @@ func (s *BillingSession) syncRelayInfo() {
 // ---------------------------------------------------------------------------
 
 // NewBillingSession 根据用户计费偏好创建 BillingSession，处理 subscription_first / wallet_first 的回退。
+// 工作区令牌（WorkspaceId > 0）强制走工作区池，不碰钱包/订阅。
 func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preConsumedQuota int) (*BillingSession, *types.NewAPIError) {
 	if relayInfo == nil {
 		return nil, types.NewError(fmt.Errorf("relayInfo is nil"), types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
+	}
+
+	if relayInfo.WorkspaceId > 0 {
+		return tryWorkspaceFunding(c, relayInfo, preConsumedQuota)
 	}
 
 	pref := common.NormalizeBillingPreference(relayInfo.UserSetting.BillingPreference)
@@ -443,4 +466,54 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		}
 		return session, nil
 	}
+}
+
+func tryWorkspaceFunding(c *gin.Context, relayInfo *relaycommon.RelayInfo, preConsumedQuota int) (*BillingSession, *types.NewAPIError) {
+	if err := model.ValidateWorkspaceTokenActive(relayInfo.CustomerId, relayInfo.WorkspaceId); err != nil {
+		msg := err.Error()
+		if errors.Is(err, model.ErrWorkspaceDisabled) {
+			msg = "工作区已停用"
+		} else if errors.Is(err, model.ErrWorkspaceNotFound) {
+			msg = "工作区不存在"
+		} else if errors.Is(err, model.ErrCustomerNotFound) {
+			msg = "客户不存在"
+		} else if strings.Contains(err.Error(), "customer is disabled") {
+			msg = "客户已停用"
+		}
+		return nil, types.NewErrorWithStatusCode(fmt.Errorf("%s", msg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
+			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+	}
+	wsQuota, err := model.GetWorkspaceQuota(relayInfo.WorkspaceId)
+	if err != nil {
+		return nil, types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
+	}
+	if wsQuota <= 0 {
+		return nil, types.NewErrorWithStatusCode(
+			fmt.Errorf("工作区额度不足, 剩余额度: %s", logger.FormatQuota(wsQuota)),
+			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
+			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+	}
+	if wsQuota-preConsumedQuota < 0 {
+		return nil, types.NewErrorWithStatusCode(
+			fmt.Errorf("预扣费额度失败, 工作区剩余额度: %s, 需要预扣费额度: %s", logger.FormatQuota(wsQuota), logger.FormatQuota(preConsumedQuota)),
+			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
+			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+	}
+	relayInfo.WorkspaceQuota = wsQuota
+
+	session := &BillingSession{
+		relayInfo: relayInfo,
+		funding:   &WorkspaceFunding{workspaceId: relayInfo.WorkspaceId},
+	}
+	if apiErr := session.preConsume(c, preConsumedQuota); apiErr != nil {
+		errMsg := apiErr.Error()
+		if strings.Contains(errMsg, "workspace quota insufficient") {
+			return nil, types.NewErrorWithStatusCode(
+				fmt.Errorf("工作区额度不足: %s", errMsg),
+				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
+				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		}
+		return nil, apiErr
+	}
+	return session, nil
 }

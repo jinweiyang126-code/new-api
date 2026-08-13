@@ -19,9 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   Activity,
   Box,
+  Building2,
   CreditCard,
   FileText,
   FlaskConical,
+  FolderKanban,
   Key,
   LayoutDashboard,
   ListTodo,
@@ -33,6 +35,7 @@ import {
   User,
   Users,
   Wallet,
+  Waypoints,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -100,6 +103,32 @@ export function useSidebarData(): SidebarData {
         ],
       },
       {
+        id: 'organization',
+        title: t('Organization'),
+        items: [
+          {
+            title: t('Workspaces'),
+            url: '/workspaces',
+            icon: FolderKanban,
+          },
+          {
+            title: t('Members & Invitations'),
+            url: '/members',
+            icon: Users,
+          },
+          {
+            title: t('Quota'),
+            url: '/quota',
+            icon: Wallet,
+          },
+          {
+            title: t('Upstream / BYOK'),
+            url: '/upstream',
+            icon: Waypoints,
+          },
+        ],
+      },
+      {
         id: 'personal',
         title: t('Personal'),
         items: [
@@ -133,6 +162,12 @@ export function useSidebarData(): SidebarData {
             title: t('Users'),
             url: '/users',
             icon: Users,
+          },
+          {
+            title: t('Customer Management'),
+            url: '/customers',
+            icon: Building2,
+            requiredRole: ROLE.SUPER_ADMIN,
           },
           {
             title: t('Redemption Codes'),

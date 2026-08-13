@@ -158,6 +158,8 @@ func ChargeViolationFeeIfNeeded(ctx *gin.Context, relayInfo *relaycommon.RelayIn
 		IsStream:       relayInfo.IsStream,
 		Group:          relayInfo.UsingGroup,
 		Other:          other,
+		CustomerId:     relayInfo.CustomerId,
+		WorkspaceId:    relayInfo.WorkspaceId,
 	})
 
 	return true

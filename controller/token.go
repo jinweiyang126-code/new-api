@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -119,12 +120,13 @@ func setTokenAutoGroups(c *gin.Context, token *model.Token, groups []string) boo
 func GetAllTokens(c *gin.Context) {
 	userId := c.GetInt("id")
 	pageInfo := common.GetPageQuery(c)
-	tokens, err := model.GetAllUserTokens(userId, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	workspaceFilter, _ := strconv.Atoi(c.Query("workspace_id"))
+	tokens, err := model.GetUserTokensPaged(userId, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), workspaceFilter)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	total, _ := model.CountUserTokens(userId)
+	total, _ := model.CountUserTokensScoped(userId, workspaceFilter)
 	pageInfo.SetTotal(int(total))
 	pageInfo.SetItems(buildMaskedTokenResponses(tokens))
 	common.ApiSuccess(c, pageInfo)
@@ -134,10 +136,11 @@ func SearchTokens(c *gin.Context) {
 	userId := c.GetInt("id")
 	keyword := c.Query("keyword")
 	token := c.Query("token")
+	workspaceFilter, _ := strconv.Atoi(c.Query("workspace_id"))
 
 	pageInfo := common.GetPageQuery(c)
 
-	tokens, total, err := model.SearchUserTokens(userId, keyword, token, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	tokens, total, err := model.SearchUserTokensScoped(userId, keyword, token, pageInfo.GetStartIdx(), pageInfo.GetPageSize(), workspaceFilter)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -154,8 +157,12 @@ func GetToken(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	token, err := model.GetTokenByIds(id, userId)
+	token, err := model.GetTokenForUser(id, userId, c.GetInt("role"))
 	if err != nil {
+		if errors.Is(err, model.ErrTokenAccessDenied) {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "forbidden"})
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}
@@ -181,8 +188,12 @@ func GetTokenKey(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	token, err := model.GetTokenByIds(id, userId)
+	token, err := model.GetTokenForUser(id, userId, c.GetInt("role"))
 	if err != nil {
+		if errors.Is(err, model.ErrTokenAccessDenied) {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "forbidden"})
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}
@@ -313,8 +324,16 @@ func AddToken(c *gin.Context) {
 		common.SysLog("failed to generate token key: " + err.Error())
 		return
 	}
+	userId := c.GetInt("id")
+	customerId, err := model.AssertCanCreateWorkspaceToken(userId, token.WorkspaceId)
+	if err != nil {
+		writeTokenWorkspaceErr(c, err)
+		return
+	}
+	// Personal tokens keep CustomerId/WorkspaceId at 0.
+	// Workspace tokens: debit workspaces.quota in T08 (not users.quota); RemainQuota is secondary cap.
 	cleanToken := model.Token{
-		UserId:             c.GetInt("id"),
+		UserId:             userId,
 		Name:               token.Name,
 		Key:                key,
 		CreatedTime:        common.GetTimestamp(),
@@ -328,6 +347,11 @@ func AddToken(c *gin.Context) {
 		Group:              token.Group,
 		CrossGroupRetry:    token.CrossGroupRetry,
 		AutoGroups:         token.AutoGroups,
+		CustomerId:         customerId,
+		WorkspaceId:        token.WorkspaceId,
+	}
+	if customerId == 0 {
+		cleanToken.WorkspaceId = 0
 	}
 	err = cleanToken.Insert()
 	if err != nil {
@@ -337,13 +361,23 @@ func AddToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
+		"data":    buildMaskedTokenResponse(&cleanToken),
 	})
 }
 
 func DeleteToken(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	userId := c.GetInt("id")
-	err := model.DeleteTokenById(id, userId)
+	token, err := model.GetTokenForUser(id, userId, c.GetInt("role"))
+	if err != nil {
+		if errors.Is(err, model.ErrTokenAccessDenied) {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "forbidden"})
+			return
+		}
+		common.ApiError(c, err)
+		return
+	}
+	err = model.DeleteTokenById(token.Id, token.UserId)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -379,8 +413,12 @@ func UpdateToken(c *gin.Context) {
 			return
 		}
 	}
-	cleanToken, err := model.GetTokenByIds(token.Id, userId)
+	cleanToken, err := model.GetTokenForUser(token.Id, userId, c.GetInt("role"))
 	if err != nil {
+		if errors.Is(err, model.ErrTokenAccessDenied) {
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "forbidden"})
+			return
+		}
 		common.ApiError(c, err)
 		return
 	}
@@ -397,7 +435,7 @@ func UpdateToken(c *gin.Context) {
 	if statusOnly != "" {
 		cleanToken.Status = token.Status
 	} else {
-		// If you add more fields, please also update token.Update()
+		// CustomerId/WorkspaceId are immutable after create (T07).
 		cleanToken.Name = token.Name
 		cleanToken.ExpiredTime = token.ExpiredTime
 		cleanToken.RemainQuota = token.RemainQuota
@@ -472,4 +510,19 @@ func GetTokenKeysBatch(c *gin.Context) {
 		keysMap[t.Id] = t.GetFullKey()
 	}
 	common.ApiSuccess(c, gin.H{"keys": keysMap})
+}
+
+func writeTokenWorkspaceErr(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, model.ErrNotWorkspaceTokenMember):
+		common.ApiErrorMsg(c, "not a member of this workspace")
+	case errors.Is(err, model.ErrWorkspaceNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "workspace not found"})
+	case errors.Is(err, model.ErrWorkspaceDisabled):
+		common.ApiErrorMsg(c, "workspace is disabled")
+	case errors.Is(err, model.ErrCustomerNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "customer not found"})
+	default:
+		common.ApiError(c, err)
+	}
 }

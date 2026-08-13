@@ -87,6 +87,8 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/sessions/revoke-others", middleware.DisableCache(), controller.RevokeOtherLoginSessions)
 				selfRoute.GET("/self/groups", controller.GetUserGroups)
 				selfRoute.GET("/self", controller.GetSelf)
+				selfRoute.GET("/self/customer", controller.GetSelfCustomer)
+				selfRoute.POST("/self/current-workspace", controller.SetCurrentWorkspace)
 				selfRoute.GET("/models", controller.GetUserModels)
 				selfRoute.PUT("/self", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.UpdateSelf)
 				selfRoute.DELETE("/self", controller.DeleteSelf)
@@ -379,6 +381,55 @@ func SetApiRouter(router *gin.Engine) {
 			deploymentsRoute.PUT("/:id/name", controller.UpdateDeploymentName)
 			deploymentsRoute.POST("/:id/extend", controller.ExtendDeployment)
 			deploymentsRoute.DELETE("/:id", controller.DeleteDeployment)
+		}
+
+		// Customer / workspace (M1) — root-only create/topup; membership for reads.
+		customerRoute := apiRouter.Group("/customers")
+		customerRoute.Use(middleware.UserAuth())
+		{
+			customerRoute.GET("/", controller.GetCustomers)
+			customerRoute.GET("/:id", middleware.CustomerMemberAuth(), controller.GetCustomer)
+			customerRoute.PUT("/:id", controller.UpdateCustomer)
+			customerRoute.GET("/:id/workspaces", middleware.CustomerMemberAuth(), controller.GetCustomerWorkspaces)
+			customerRoute.POST("/:id/workspaces", middleware.CustomerAdminAuth(), controller.CreateWorkspace)
+			customerRoute.GET("/:id/members", middleware.CustomerMemberAuth(), controller.GetCustomerMembers)
+			customerRoute.DELETE("/:id/members/:userId", middleware.CustomerAdminAuth(), controller.DeleteCustomerMember)
+			customerRoute.GET("/:id/invitations", middleware.CustomerAdminAuth(), controller.GetCustomerInvitations)
+			customerRoute.POST("/:id/invitations", middleware.CustomerAdminAuth(), controller.CreateCustomerInvitation)
+			customerRoute.GET("/:id/upstream-credentials", middleware.CustomerAdminAuth(), controller.GetCustomerUpstreamCredentials)
+			customerRoute.POST("/:id/upstream-credentials", middleware.CustomerAdminAuth(), controller.CreateCustomerUpstreamCredential)
+			customerRoute.PUT("/:id/upstream-credentials/:cid", middleware.CustomerAdminAuth(), controller.UpdateCustomerUpstreamCredential)
+			customerRoute.DELETE("/:id/upstream-credentials/:cid", middleware.CustomerAdminAuth(), controller.DeleteCustomerUpstreamCredential)
+			customerRoute.POST("/:id/upstream-credentials/:cid/test", middleware.CustomerAdminAuth(), controller.TestCustomerUpstreamCredential)
+		}
+		customerRootRoute := apiRouter.Group("/customers")
+		customerRootRoute.Use(middleware.RootAuth())
+		{
+			customerRootRoute.POST("/", controller.CreateCustomer)
+			customerRootRoute.POST("/:id/topup", controller.TopUpCustomer)
+			customerRootRoute.PUT("/:id/upstream-settings", controller.UpdateCustomerUpstreamSettings)
+			customerRootRoute.GET("/:id/channel-bindings", controller.GetCustomerChannelBindings)
+			customerRootRoute.POST("/:id/channel-bindings", controller.CreateCustomerChannelBinding)
+			customerRootRoute.DELETE("/:id/channel-bindings/:bindingId", controller.DeleteCustomerChannelBinding)
+		}
+
+		workspaceRoute := apiRouter.Group("/workspaces")
+		workspaceRoute.Use(middleware.UserAuth())
+		{
+			workspaceRoute.GET("/:id", middleware.WorkspaceMemberAuth(), controller.GetWorkspace)
+			workspaceRoute.PUT("/:id", middleware.WorkspaceAdminAuth(), controller.UpdateWorkspace)
+			workspaceRoute.POST("/:id/transfer-quota", controller.TransferWorkspaceQuota)
+			workspaceRoute.GET("/:id/members", middleware.WorkspaceMemberAuth(), controller.GetWorkspaceMembers)
+			workspaceRoute.POST("/:id/members", middleware.WorkspaceAdminAuth(), controller.AddWorkspaceMember)
+			workspaceRoute.DELETE("/:id/members/:userId", middleware.WorkspaceAdminAuth(), controller.DeleteWorkspaceMember)
+		}
+
+		invitationRoute := apiRouter.Group("/invitations")
+		invitationRoute.Use(middleware.UserAuth())
+		{
+			// Gin requires the same wildcard name on the same path segment.
+			invitationRoute.POST("/:id/accept", controller.AcceptInvitation)
+			invitationRoute.POST("/:id/revoke", controller.RevokeInvitation)
 		}
 	}
 }

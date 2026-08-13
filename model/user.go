@@ -109,7 +109,9 @@ type User struct {
 	CreatedAt        int64                      `json:"created_at" gorm:"autoCreateTime;column:created_at"`
 	LastLoginAt      int64                      `json:"last_login_at" gorm:"default:0;column:last_login_at"`
 	AuthVersion      int64                      `json:"-" gorm:"type:bigint;not null;default:1;column:auth_version"`
-	AdminPermissions map[string]map[string]bool `json:"admin_permissions,omitempty" gorm:"-:all"`
+	CustomerId          int                        `json:"customer_id" gorm:"type:int;default:0;column:customer_id;index"` // 0 = personal mode
+	CurrentWorkspaceId  int                        `json:"current_workspace_id" gorm:"type:int;default:0;column:current_workspace_id"` // UX only (T12); 0 = personal
+	AdminPermissions    map[string]map[string]bool `json:"admin_permissions,omitempty" gorm:"-:all"`
 }
 
 func (user *User) ToBaseUser() *UserBase {
@@ -146,6 +148,24 @@ func UpdateUserAccessToken(id int, token string) error {
 		return errors.New("id 为空！")
 	}
 	result := DB.Model(&User{}).Where("id = ?", id).Update("access_token", token)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// UpdateUserCurrentWorkspaceId sets UX current workspace (0 = personal). Does not affect billing.
+func UpdateUserCurrentWorkspaceId(userId, workspaceId int) error {
+	if userId == 0 {
+		return errors.New("id 为空！")
+	}
+	if workspaceId < 0 {
+		workspaceId = 0
+	}
+	result := DB.Model(&User{}).Where("id = ?", userId).Update("current_workspace_id", workspaceId)
 	if result.Error != nil {
 		return result.Error
 	}

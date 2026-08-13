@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/types"
 
@@ -78,6 +79,9 @@ type Log struct {
 	RequestId         string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
 	UpstreamRequestId string `json:"upstream_request_id,omitempty" gorm:"type:varchar(128);index:idx_logs_upstream_request_id;default:''"`
 	Other             string `json:"other"`
+	CustomerId        int    `json:"customer_id,omitempty" gorm:"type:int;default:0;column:customer_id;index"`
+	WorkspaceId       int    `json:"workspace_id,omitempty" gorm:"type:int;default:0;column:workspace_id;index"`
+	UpstreamSource    string `json:"upstream_source,omitempty" gorm:"type:varchar(32);default:'';column:upstream_source"` // shared|dedicated|byok
 }
 
 // don't use iota, avoid change log type value
@@ -318,6 +322,8 @@ func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string,
 		RequestId:         requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,
+		CustomerId:        common.GetContextKeyInt(c, constant.ContextKeyCustomerId),
+		WorkspaceId:       common.GetContextKeyInt(c, constant.ContextKeyWorkspaceId),
 	}
 	err := createLog(log)
 	if err != nil {
@@ -338,6 +344,9 @@ type RecordConsumeLogParams struct {
 	IsStream         bool                   `json:"is_stream"`
 	Group            string                 `json:"group"`
 	Other            map[string]interface{} `json:"other"`
+	CustomerId       int                    `json:"customer_id"`
+	WorkspaceId      int                    `json:"workspace_id"`
+	UpstreamSource   string                 `json:"upstream_source"` // shared|dedicated|byok；T15 填，M1 可空
 }
 
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
@@ -355,6 +364,20 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	if settingMap, err := GetUserSetting(userId, false); err == nil {
 		if settingMap.RecordIpLog {
 			needRecordIp = true
+		}
+	}
+	customerId := params.CustomerId
+	workspaceId := params.WorkspaceId
+	upstreamSource := params.UpstreamSource
+	if c != nil {
+		if customerId == 0 {
+			customerId = common.GetContextKeyInt(c, constant.ContextKeyCustomerId)
+		}
+		if workspaceId == 0 {
+			workspaceId = common.GetContextKeyInt(c, constant.ContextKeyWorkspaceId)
+		}
+		if upstreamSource == "" {
+			upstreamSource = common.GetContextKeyString(c, constant.ContextKeyUpstreamSource)
 		}
 	}
 	log := &Log{
@@ -382,6 +405,9 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		RequestId:         requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,
+		CustomerId:        customerId,
+		WorkspaceId:       workspaceId,
+		UpstreamSource:    upstreamSource,
 	}
 	err := createLog(log)
 	if err != nil {
@@ -404,16 +430,19 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 }
 
 type RecordTaskBillingLogParams struct {
-	UserId    int
-	LogType   int
-	Content   string
-	ChannelId int
-	ModelName string
-	Quota     int
-	TokenId   int
-	Group     string
-	Other     map[string]interface{}
-	NodeName  string // 任务发起节点；为空时回退当前节点
+	UserId         int
+	LogType        int
+	Content        string
+	ChannelId      int
+	ModelName      string
+	Quota          int
+	TokenId        int
+	Group          string
+	Other          map[string]interface{}
+	NodeName       string // 任务发起节点；为空时回退当前节点
+	CustomerId     int
+	WorkspaceId    int
+	UpstreamSource string
 }
 
 func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
@@ -422,25 +451,36 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 	}
 	username, _ := GetUsernameById(params.UserId, false)
 	tokenName := ""
+	customerId := params.CustomerId
+	workspaceId := params.WorkspaceId
 	if params.TokenId > 0 {
 		if token, err := GetTokenById(params.TokenId); err == nil {
 			tokenName = token.Name
+			if customerId == 0 {
+				customerId = token.CustomerId
+			}
+			if workspaceId == 0 {
+				workspaceId = token.WorkspaceId
+			}
 		}
 	}
 	createdAt := common.GetTimestamp()
 	log := &Log{
-		UserId:    params.UserId,
-		Username:  username,
-		CreatedAt: createdAt,
-		Type:      params.LogType,
-		Content:   params.Content,
-		TokenName: tokenName,
-		ModelName: params.ModelName,
-		Quota:     params.Quota,
-		ChannelId: params.ChannelId,
-		TokenId:   params.TokenId,
-		Group:     params.Group,
-		Other:     common.MapToJsonStr(params.Other),
+		UserId:         params.UserId,
+		Username:       username,
+		CreatedAt:      createdAt,
+		Type:           params.LogType,
+		Content:        params.Content,
+		TokenName:      tokenName,
+		ModelName:      params.ModelName,
+		Quota:          params.Quota,
+		ChannelId:      params.ChannelId,
+		TokenId:        params.TokenId,
+		Group:          params.Group,
+		Other:          common.MapToJsonStr(params.Other),
+		CustomerId:     customerId,
+		WorkspaceId:    workspaceId,
+		UpstreamSource: params.UpstreamSource,
 	}
 	err := createLog(log)
 	if err != nil {
@@ -562,12 +602,18 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 const logSearchCountLimit = 10000
 
 func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+	return GetLogsForViewer(LogAccessScope{UserId: userId}, logType, startTimestamp, endTimestamp, modelName, tokenName, startIdx, num, group, requestId, upstreamRequestId)
+}
+
+// GetLogsForViewer lists logs under a server-enforced access scope (T09).
+func GetLogsForViewer(scope LogAccessScope, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
-		tx = LOG_DB.Where("logs.user_id = ?", userId)
+		tx = LOG_DB.Model(&Log{})
 	} else {
-		tx = LOG_DB.Where("logs.user_id = ? and logs.type = ?", userId, logType)
+		tx = LOG_DB.Model(&Log{}).Where("logs.type = ?", logType)
 	}
+	tx = applyLogAccessScope(tx, scope, "logs.")
 
 	if tx, err = applyExplicitLogTextFilter(tx, "logs.model_name", modelName); err != nil {
 		return nil, 0, err
@@ -590,7 +636,7 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 	if group != "" {
 		tx = tx.Where("logs."+logGroupCol+" = ?", group)
 	}
-	err = tx.Model(&Log{}).Limit(logSearchCountLimit).Count(&total).Error
+	err = tx.Limit(logSearchCountLimit).Count(&total).Error
 	if err != nil {
 		common.SysError("failed to count user logs: " + err.Error())
 		return nil, 0, errors.New("查询日志失败")
@@ -616,10 +662,19 @@ type Stat struct {
 }
 
 func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
+	return SumUsedQuotaForViewer(LogAccessScope{}, logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group)
+}
+
+// SumUsedQuotaForViewer aggregates consume stats under an optional access scope.
+// When scope is zero-value, behaves like legacy SumUsedQuota (username filter only).
+func SumUsedQuotaForViewer(scope LogAccessScope, logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
 	tx := LOG_DB.Table("logs").Select("COALESCE(sum(quota), 0) quota")
 
 	// 为rpm和tpm创建单独的查询
 	rpmTpmQuery := LOG_DB.Table("logs").Select("count(*) rpm, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tpm")
+
+	tx = applyLogAccessScope(tx, scope, "")
+	rpmTpmQuery = applyLogAccessScope(rpmTpmQuery, scope, "")
 
 	if tx, err = applyExplicitLogTextFilter(tx, "username", username); err != nil {
 		return stat, err
@@ -652,6 +707,7 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 		rpmTpmQuery = rpmTpmQuery.Where(logGroupCol+" = ?", group)
 	}
 
+	_ = logType // retained for API compatibility; consume-only below
 	tx = tx.Where("type = ?", LogTypeConsume)
 	rpmTpmQuery = rpmTpmQuery.Where("type = ?", LogTypeConsume)
 

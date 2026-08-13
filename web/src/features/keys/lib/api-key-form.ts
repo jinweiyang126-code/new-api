@@ -45,6 +45,8 @@ export function getApiKeyFormSchema(t: TFunction, maxAutoGroups = 5) {
       auto_groups: z.array(z.string()),
       cross_group_retry: z.boolean().optional(),
       tokenCount: z.number().min(1).optional(),
+      /** 'personal' or workspace id string — create only */
+      token_scope: z.string().optional(),
     })
     .superRefine((data, ctx) => {
       if (data.group === 'auto') {
@@ -115,10 +117,12 @@ export const API_KEY_FORM_DEFAULT_VALUES: ApiKeyFormValues = {
   auto_groups: [],
   cross_group_retry: true,
   tokenCount: 1,
+  token_scope: 'personal',
 }
 
 export function getApiKeyFormDefaultValues(
-  defaultUseAutoGroup: boolean
+  defaultUseAutoGroup: boolean,
+  preferredWorkspaceId = 0
 ): ApiKeyFormValues {
   return {
     ...API_KEY_FORM_DEFAULT_VALUES,
@@ -126,6 +130,8 @@ export function getApiKeyFormDefaultValues(
     auto_groups_mode: 'inherit',
     auto_groups: [],
     cross_group_retry: defaultUseAutoGroup,
+    token_scope:
+      preferredWorkspaceId > 0 ? String(preferredWorkspaceId) : 'personal',
   }
 }
 
@@ -139,6 +145,10 @@ export function getApiKeyFormDefaultValues(
 export function transformFormDataToPayload(
   data: ApiKeyFormValues
 ): ApiKeyFormData {
+  const scope = data.token_scope || 'personal'
+  const workspaceId =
+    scope === 'personal' || !scope ? 0 : Number(scope) || 0
+
   return {
     name: data.name,
     remain_quota: data.unlimited_quota
@@ -157,6 +167,7 @@ export function transformFormDataToPayload(
         ? data.auto_groups
         : [],
     cross_group_retry: data.group === 'auto' ? !!data.cross_group_retry : false,
+    workspace_id: workspaceId,
   }
 }
 
@@ -194,5 +205,9 @@ export function transformApiKeyToFormDefaults(
     auto_groups: autoGroups,
     cross_group_retry: !!apiKey.cross_group_retry,
     tokenCount: 1,
+    token_scope:
+      apiKey.workspace_id && apiKey.workspace_id > 0
+        ? String(apiKey.workspace_id)
+        : 'personal',
   }
 }

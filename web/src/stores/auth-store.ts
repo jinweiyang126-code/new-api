@@ -7,7 +7,7 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
+    10|but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
 
@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { create } from 'zustand'
 
+import type { SelfCustomerContext } from '@/features/customer-org/types'
 import type { AdminCapabilities } from '@/lib/admin-permissions'
 
 export type UserPermissions = {
@@ -52,6 +53,7 @@ export interface AuthUser {
   setting?: Record<string, unknown> | string
   stripe_customer?: string
   sidebar_modules?: string
+  customer_id?: number
   permissions?: UserPermissions
 }
 
@@ -84,8 +86,11 @@ interface AuthState {
     session: LoginSession | null
     pending2FAFlowToken: string | null
     bootstrapState: AuthBootstrapState
+    /** Hydrated from GET /api/user/self/customer (T12). */
+    customerContext: SelfCustomerContext | null
     setBundle: (bundle: AuthBundle) => void
     setUser: (user: AuthUser | null) => void
+    setCustomerContext: (ctx: SelfCustomerContext | null) => void
     setPending2FAFlowToken: (flowToken: string | null) => void
     setBootstrapState: (bootstrapState: AuthBootstrapState) => void
     reset: (bootstrapState?: AuthBootstrapState) => void
@@ -100,6 +105,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     session: null,
     pending2FAFlowToken: null,
     bootstrapState: 'idle',
+    customerContext: null,
     setBundle: (bundle) =>
       set((state) => ({
         ...state,
@@ -111,12 +117,28 @@ export const useAuthStore = create<AuthState>()((set) => ({
           session: bundle.session,
           pending2FAFlowToken: null,
           bootstrapState: 'complete',
+          // Re-fetch customer context after login via useCustomerContext.
+          customerContext: null,
         },
       })),
     setUser: (user) =>
       set((state) => ({
         ...state,
         auth: { ...state.auth, user },
+      })),
+    setCustomerContext: (customerContext) =>
+      set((state) => ({
+        ...state,
+        auth: {
+          ...state.auth,
+          customerContext,
+          user: state.auth.user
+            ? {
+                ...state.auth.user,
+                customer_id: customerContext?.customer?.id ?? 0,
+              }
+            : state.auth.user,
+        },
       })),
     setPending2FAFlowToken: (pending2FAFlowToken) =>
       set((state) => ({
@@ -138,6 +160,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
           accessExpiresAt: null,
           session: null,
           pending2FAFlowToken: null,
+          customerContext: null,
           bootstrapState,
         },
       })),

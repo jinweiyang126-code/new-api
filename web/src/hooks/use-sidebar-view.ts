@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 
 import { resolveSidebarView } from '@/components/layout/lib/sidebar-view-registry'
 import type { NavGroup, ResolvedSidebarView } from '@/components/layout/types'
+import { useCustomerContext } from '@/features/customer-org/hooks/use-customer-context'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -38,6 +39,7 @@ const ROOT_VIEW_KEY = '__root'
  *   groups) when the URL belongs to a registered drill-in workspace.
  * - Otherwise returns the root navigation, narrowed by:
  *     · admin-only group visibility (role-based);
+ *     · organization group visibility (customer membership);
  *     · `useSidebarConfig` (admin × user `sidebar_modules` overlay).
  *
  * Nested views are intentionally NOT passed through `useSidebarConfig`
@@ -50,19 +52,40 @@ export function useSidebarView(): ResolvedSidebarView {
   const userRole = useAuthStore((s) => s.auth.user?.role)
   const rootSidebarData = useSidebarData()
   const configFilteredRoot = useSidebarConfig(rootSidebarData.navGroups)
+  const { data: customerCtx } = useCustomerContext(Boolean(userRole))
 
   const rootNavGroups = useMemo<NavGroup[]>(() => {
     const role = userRole ?? ROLE.GUEST
     const isAdmin = role >= ROLE.ADMIN
+    const hasCustomer = Boolean(customerCtx?.customer)
+    const isCustomerAdmin = Boolean(customerCtx?.is_admin)
+    const byokEnabled = Boolean(customerCtx?.customer?.byok_enabled)
+
     return configFilteredRoot
-      .filter((group) => (group.id === 'admin' ? isAdmin : true))
+      .filter((group) => {
+        if (group.id === 'admin') return isAdmin
+        if (group.id === 'organization') return hasCustomer
+        return true
+      })
       .map((group) => {
-        const items = group.items.filter(
+        let items = group.items.filter(
           (item) => item.requiredRole === undefined || role >= item.requiredRole
         )
+        if (group.id === 'organization') {
+          items = items.filter((item) => {
+            if (!('url' in item) || !item.url) return true
+            const url = String(item.url)
+            if (url.startsWith('/quota') || url.startsWith('/upstream')) {
+              if (!isCustomerAdmin) return false
+            }
+            if (url.startsWith('/upstream') && !byokEnabled) return false
+            return true
+          })
+        }
         return items.length === group.items.length ? group : { ...group, items }
       })
-  }, [configFilteredRoot, userRole])
+      .filter((group) => group.items.length > 0)
+  }, [configFilteredRoot, userRole, customerCtx])
 
   const view = resolveSidebarView(pathname)
 

@@ -66,6 +66,16 @@ import { useStatus } from '@/hooks/use-status'
 import { getUserModels, getUserGroups } from '@/lib/api'
 import { getCurrencyDisplay, getCurrencyLabel } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { useCustomerContext } from '@/features/customer-org/hooks/use-customer-context'
+import { WORKSPACE_STATUS } from '@/features/customer-org/constants'
+import { useAuthStore } from '@/stores/auth-store'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 import {
   createApiKey,
@@ -111,6 +121,14 @@ export function ApiKeysMutateDrawer({
     null
   )
   const defaultUseAutoGroup = status?.default_use_auto_group === true
+  const user = useAuthStore((s) => s.auth.user)
+  const customerCtx = useAuthStore((s) => s.auth.customerContext)
+  useCustomerContext(Boolean(user))
+  const preferredWorkspaceId = customerCtx?.current_workspace_id ?? 0
+  const workspaces = (customerCtx?.workspaces ?? []).filter(
+    (w) => w.status === WORKSPACE_STATUS.ENABLED
+  )
+  const hasCustomer = Boolean(customerCtx?.customer)
 
   // Fetch models
   const { data: modelsData } = useQuery({
@@ -230,7 +248,10 @@ export function ApiKeysMutateDrawer({
       }
     } else {
       form.reset(
-        getApiKeyFormDefaultValues(defaultUseAutoGroup && backendHasAuto)
+        getApiKeyFormDefaultValues(
+          defaultUseAutoGroup && backendHasAuto,
+          preferredWorkspaceId
+        )
       )
       setInitializedTarget(target)
     }
@@ -252,6 +273,7 @@ export function ApiKeysMutateDrawer({
     availableAutoGroupNames,
     maxAutoGroups,
     initializedTarget,
+    preferredWorkspaceId,
   ])
 
   const formTarget =
@@ -411,6 +433,47 @@ export function ApiKeysMutateDrawer({
                   </FormItem>
                 )}
               />
+
+              {hasCustomer ? (
+                <FormField
+                  control={form.control}
+                  name='token_scope'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Token scope')}</FormLabel>
+                      <Select
+                        value={field.value || 'personal'}
+                        disabled={isUpdate}
+                        onValueChange={(v) => field.onChange(v ?? 'personal')}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value='personal'>
+                            {t('Personal')}
+                          </SelectItem>
+                          {workspaces.map((ws) => (
+                            <SelectItem key={ws.id} value={String(ws.id)}>
+                              {ws.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {isUpdate
+                          ? t('Token scope cannot be changed after creation.')
+                          : t(
+                              'Personal tokens use your user quota. Workspace tokens debit the workspace pool.'
+                            )}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
 
               <FormField
                 control={form.control}

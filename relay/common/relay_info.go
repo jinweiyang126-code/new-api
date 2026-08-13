@@ -113,6 +113,9 @@ type RelayInfo struct {
 	UserSetting            dto.UserSetting
 	UserEmail              string
 	UserQuota              int
+	CustomerId             int // 0 = personal token
+	WorkspaceId            int // 0 = personal; non-zero => debit workspace pool only
+	WorkspaceQuota         int // remaining workspace pool (filled when WorkspaceId > 0)
 	RelayFormat            types.RelayFormat
 	SendResponseCount      int
 	ReceivedResponseCount  int
@@ -472,8 +475,10 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		UserId:     common.GetContextKeyInt(c, constant.ContextKeyUserId),
 		UsingGroup: common.GetContextKeyString(c, constant.ContextKeyUsingGroup),
 		UserGroup:  common.GetContextKeyString(c, constant.ContextKeyUserGroup),
-		UserQuota:  common.GetContextKeyInt(c, constant.ContextKeyUserQuota),
-		UserEmail:  common.GetContextKeyString(c, constant.ContextKeyUserEmail),
+		UserQuota:     common.GetContextKeyInt(c, constant.ContextKeyUserQuota),
+		UserEmail:     common.GetContextKeyString(c, constant.ContextKeyUserEmail),
+		CustomerId:    common.GetContextKeyInt(c, constant.ContextKeyCustomerId),
+		WorkspaceId:   common.GetContextKeyInt(c, constant.ContextKeyWorkspaceId),
 
 		OriginModelName: common.GetContextKeyString(c, constant.ContextKeyOriginalModel),
 

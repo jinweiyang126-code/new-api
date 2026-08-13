@@ -64,6 +64,45 @@ func (w *WalletFunding) Refund() error {
 }
 
 // ---------------------------------------------------------------------------
+// WorkspaceFunding — 工作区池资金来源（客户令牌；不碰 User.Quota / 订阅）
+// ---------------------------------------------------------------------------
+
+type WorkspaceFunding struct {
+	workspaceId int
+	consumed    int
+}
+
+func (w *WorkspaceFunding) Source() string { return BillingSourceWorkspace }
+
+func (w *WorkspaceFunding) PreConsume(amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	if err := model.DecreaseWorkspaceQuota(w.workspaceId, amount); err != nil {
+		return err
+	}
+	w.consumed = amount
+	return nil
+}
+
+func (w *WorkspaceFunding) Settle(delta int) error {
+	if delta == 0 {
+		return nil
+	}
+	if delta > 0 {
+		return model.DecreaseWorkspaceQuotaForce(w.workspaceId, delta)
+	}
+	return model.IncreaseWorkspaceQuota(w.workspaceId, -delta)
+}
+
+func (w *WorkspaceFunding) Refund() error {
+	if w.consumed <= 0 {
+		return nil
+	}
+	return model.IncreaseWorkspaceQuota(w.workspaceId, w.consumed)
+}
+
+// ---------------------------------------------------------------------------
 // SubscriptionFunding — 订阅资金来源实现
 // ---------------------------------------------------------------------------
 

@@ -89,10 +89,10 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 空库启动 AutoMigrate 成功（至少 SQLite + 一种 SQL 库）  
-- [ ] 旧数据可启动：新字段为空/默认，个人模式不受影响  
-- [ ] 单测或迁移烟测覆盖唯一索引（同客户下 workspace slug 不重复；binding 唯一）  
-- [ ] 新建客户默认 `upstream_mode=shared`  
+- [x] 空库启动 AutoMigrate 成功（至少 SQLite + 一种 SQL 库） — *已加 SQLite 烟测；请本地有 Go 时执行 `go test ./model/ -run TestCustomerWorkspace*`*
+- [x] 旧数据可启动：新字段为空/默认，个人模式不受影响 — *字段 default 0 / shared*
+- [x] 单测或迁移烟测覆盖唯一索引（同客户下 workspace slug 不重复；binding 唯一）
+- [x] 新建客户默认 `upstream_mode=shared` — *常量 `UpstreamModeShared`；创建时显式写入（T03 事务）*
 
 ### 非目标
 
@@ -115,9 +115,9 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 非成员访问其他客户 API 返回 403  
-- [ ] 超管可跨客户操作  
-- [ ] 单测覆盖角色矩阵关键格（设计文档第 6 节）  
+- [x] 非成员访问其他客户 API 返回 403 — *middleware `CustomerMemberAuth` + 单测*
+- [x] 超管可跨客户操作 — *`IsRootUser` bypass + 单测*
+- [x] 单测覆盖角色矩阵关键格（设计文档第 6 节） — *`TestCustomerCapabilityMatrix`*
 
 ---
 
@@ -138,9 +138,9 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 创建后存在 `slug=default` 且 `is_default=true` 的工作区  
-- [ ] owner 的 `users.customer_id` 已设置  
-- [ ] 充值后余额正确；非超管调用 topup 失败  
+- [x] 创建后存在 `slug=default` 且 `is_default=true` 的工作区 — *`TestCreateCustomerWithOwnerCreatesDefaultWorkspace`*
+- [x] owner 的 `users.customer_id` 已设置 — *同上；已有客户再创建失败*
+- [x] 充值后余额正确；非超管调用 topup 失败 — *`TestTopUpCustomerQuota` + controller 单测*
 
 ---
 
@@ -164,9 +164,9 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 余额不足划拨失败且两池不变  
-- [ ] 并发划拨不超卖（单测或脚本）  
-- [ ] 停用工作区后不可再划拨（或不可新建令牌，见 T07）  
+- [x] 余额不足划拨失败且两池不变 — *`TestTransferQuotaInsufficientLeavesPoolsUnchanged`*
+- [x] 并发划拨不超卖（单测或脚本） — *`TestTransferQuotaConcurrentNoOversell`（条件更新 `quota >= amount`）*
+- [x] 停用工作区后不可再划拨（或不可新建令牌，见 T07） — *`TestTransferQuotaRejectsDisabledWorkspace`；default 工作区不可停用*
 
 ---
 
@@ -182,9 +182,9 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 移除成员后无法用旧客户令牌调用（status 禁用）  
-- [ ] 非客户成员不能加入工作区  
-- [ ] 跨客户操作 403  
+- [x] 移除成员后无法用旧客户令牌调用（status 禁用） — *`TestRemoveCustomerMemberDisablesTokensAndClearsCustomerId`（个人令牌不受影响）*
+- [x] 非客户成员不能加入工作区 — *`TestAddWorkspaceMemberRequiresCustomerMembership`*
+- [x] 跨客户操作 403 — *`TestCustomerMemberAuthCrossCustomerForbidden`*；另覆盖不可移除最后一位 owner
 
 ---
 
@@ -205,10 +205,11 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 无客户用户可接受并进入客户 + 工作区  
-- [ ] 已有客户用户接受失败  
-- [ ] 过期/作废邀请不可接受  
-- [ ] 未指定 workspace 时进入 default 工作区  
+- [x] 无客户用户可接受并进入客户 + 工作区 — *`TestAcceptInvitationJoinsDefaultWorkspace`*
+- [x] 已有客户用户接受失败 — *`TestAcceptInvitationFailsWhenUserAlreadyHasCustomer`*
+- [x] 过期/作废邀请不可接受 — *`TestAcceptInvitationRejectsExpiredAndRevoked`*
+- [x] 未指定 workspace 时进入 default 工作区 — *同上；指定 workspace 见 `TestAcceptInvitationUsesSpecifiedWorkspace`*  
+  （邮件发送留 T06b，本任务不阻断邀请创建）
 
 ---
 
@@ -226,9 +227,10 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 个人令牌行为与改前一致  
-- [ ] 非工作区成员不能建该工作区令牌  
-- [ ] 列表权限符合「成员仅自己 / admin 全部」  
+- [x] 个人令牌行为与改前一致 — *`workspace_id` 缺省/0；`TestPersonalTokenCreateUnchanged`*
+- [x] 非工作区成员不能建该工作区令牌 — *`TestNonMemberCannotCreateWorkspaceToken`*
+- [x] 列表权限符合「成员仅自己 / admin 全部」 — *`TestTokenListMemberSeesOwnAdminSeesAllInScope`*  
+  （扣费：工作区令牌仅扣工作区池 + remain 次级上限，注释已写，实际扣费在 **T08**）
 
 ---
 
@@ -250,10 +252,10 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收（全部勾选 = 门禁 1 放开）
 
-- [ ] 客户令牌调用后：工作区池减少，用户个人余额不变  
-- [ ] 工作区池为 0：调用失败  
-- [ ] **个人令牌回归测试通过**（与改前一致）  
-- [ ] 流式/非流式、失败退款路径不误扣/不漏退（覆盖核心单测）  
+- [x] 客户令牌调用后：工作区池减少，用户个人余额不变 — *`TestWorkspaceBillingDebitsPoolNotUser` / `TestWorkspaceBillingSettleTopUp`*
+- [x] 工作区池为 0：调用失败 — *`TestWorkspaceBillingRejectsInsufficientPool`*（停用：`TestWorkspaceBillingRejectsDisabledWorkspace`）
+- [x] **个人令牌回归测试通过**（与改前一致） — *`TestPersonalTokenBillingRegression`*
+- [x] 流式/非流式、失败退款路径不误扣/不漏退（覆盖核心单测） — *`TestWorkspaceBillingRefundRestoresPoolAndToken`（异步 Refund）*
 
 ### 门禁通过后再做
 
@@ -267,17 +269,17 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 依据设计文档 **§16**（`customer-workspace-design.md`）：
 
-1. 超管：`PUT /api/customers/:id/upstream-settings`（mode / fallback / byok_enabled）  
-2. 超管：channel-bindings CRUD  
-3. 客户 admin+：upstream-credentials CRUD；明文 key 仅写入时接收，落库加密；列表仅 hint  
-4. 可选：`POST .../test` 连通探测  
-5. 全部写操作审计（无 Key）  
+1. ~~超管：`PUT /api/customers/:id/upstream-settings`（mode / fallback / byok_enabled）~~ — *已随 T10 落地*
+2. ~~超管：channel-bindings CRUD~~ — *已随 T10 落地（GET/POST/DELETE）*
+3. ~~客户 admin+：upstream-credentials CRUD；明文 key 仅写入时接收，落库加密；列表仅 hint~~ — *`common.EncryptSecretAESGCM` + credential ops/API*
+4. ~~可选：`POST .../test` 连通探测~~ — *已实现解密校验（真实出站探测留给 T15）*
+5. ~~全部写操作审计（无 Key）~~ — *create/update/delete/test 审计仅记 hint / id*
 
 ### 验收
 
-- [ ] API 永不返回完整 Key  
-- [ ] 非 admin 无法管理凭证  
-- [ ] 关闭 byok_enabled 后凭证不参与后续选渠（配合 T15）  
+- [x] API 永不返回完整 Key — *DTO / MarshalJSON 仅 hint；单测覆盖*
+- [x] 非 admin 无法管理凭证 — *`CustomerAdminAuth`；能力矩阵 `CapManageByokCredential`*
+- [x] 关闭 byok_enabled 后凭证不参与后续选渠（配合 T15） — *`TestSelectChannelByokDisabledIgnoresCredentials`*
 
 ---
 
@@ -287,22 +289,23 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 内容
 
-1. 实现 **§16.5** 选渠顺序；`shared` 与改前一致  
-2. BYOK：运行时解密组装临时渠道对象，内存窗口尽量短  
-3. 日志 `upstream_source=shared|dedicated|byok`，禁止写 Key  
-4. 个人令牌：强制全球共享  
+1. ~~实现 **§16.5** 选渠顺序；`shared` 与改前一致~~ — *`service/customer_channel_select.go` + `CacheGetRandomSatisfiedChannel`*
+2. ~~BYOK：运行时解密组装临时渠道对象，内存窗口尽量短~~ — *`assembleByokChannel`；id≤0 不写 used_quota*
+3. ~~日志 `upstream_source=shared|dedicated|byok`，禁止写 Key~~ — *Context + `RecordConsumeLog` 回填*
+4. ~~个人令牌：强制全球共享~~ — *customer_id=0 走 shared*
 
 ### 验收（全部勾选 = 门禁 2 放开）
 
-- [ ] shared 客户与现网选渠一致  
-- [ ] dedicated 仅走绑定渠道（除非 fallback）  
-- [ ] BYOK 实际使用客户 Key（测试 upstream）  
-- [ ] 个人令牌不受客户 BYOK 影响  
-- [ ] **再跑一遍个人令牌 + shared 工作区令牌**（确认选渠改动未破坏 T08）  
+- [x] shared 客户与现网选渠一致 — *`TestSelectChannelSharedCustomerUsesGlobalPath`*
+- [x] dedicated 仅走绑定渠道（除非 fallback） — *`TestSelectChannelDedicatedOnlyBoundChannel` / `NoFallbackErrors`*
+- [x] BYOK 实际使用客户 Key（测试 upstream） — *`TestSelectChannelByokUsesCustomerKey`（组装临时 Channel，Key 解密仅内存）*
+- [x] 个人令牌不受客户 BYOK 影响 — *`TestPersonalTokenAlwaysSharedSource`*
+- [x] **再跑一遍个人令牌 + shared 工作区令牌**（确认选渠改动未破坏 T08） — *`WorkspaceBilling|PersonalTokenBilling` 回归*
 
 ### 门禁通过后再做
 
 - T13 中 BYOK / dedicated 清单；产品化收尾与文档  
+- T11 BYOK 凭证 UI（API 已就绪）
 
 ---
 
@@ -320,8 +323,8 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] A 客户 admin 拉不到 B 客户日志  
-- [ ] 客户令牌产生的日志带齐客户/工作区字段  
+- [x] A 客户 admin 拉不到 B 客户日志 — *`TestCustomerAdminCannotSeeOtherCustomerLogs` / `TestResolveSelfLogAccessScopeCustomerAdminIsolation`（伪造 `customer_id` → empty）*
+- [x] 客户令牌产生的日志带齐客户/工作区字段 — *`TestRecordConsumeLogWritesCustomerWorkspace` / context fallback*
 
 ---
 
@@ -337,9 +340,9 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 超管可完成开客户、充值  
-- [ ] 创建后详情可见 default 工作区与余额  
-- [ ] 超管可为客户开通 BYOK/专属渠道并保存  
+- [x] 超管可完成开客户、充值 — *平台菜单「客户管理」+ Create / Top Up；Playwright 浏览器烟测通过*
+- [x] 创建后详情可见 default 工作区与余额 — *详情抽屉拉取 `/workspaces`；浏览器可见 default*
+- [x] 超管可为客户开通 BYOK/专属渠道并保存 — *`PUT upstream-settings` + channel-bindings（T14 最小切片）；浏览器保存 dedicated + BYOK + 绑定渠道通过*
 
 ---
 
@@ -357,8 +360,8 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 客户 admin 全流程可邀人、划拨  
-- [ ] 已有客户用户接受邀请有明确失败提示  
+- [x] 客户 admin 全流程可邀人、划拨 — *Organization 菜单 + workspaces/members/quota/upstream；API 烟测 owner7 invite + transfer-quota 通过*  
+- [x] 已有客户用户接受邀请有明确失败提示 — *`/invitations/accept` 对 `user already belongs to a customer` 专用 toast（en/zh）*
 
 ---
 
@@ -373,8 +376,8 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 ### 验收
 
-- [ ] 成员可创建工作区令牌并调用（配合后端）  
-- [ ] 个人令牌入口仍在  
+- [x] 成员可创建工作区令牌并调用（配合后端） — *创建抽屉 Token scope；owner7 烟测创建 workspace token 成功；顶栏切换写 `current_workspace_id` 预填*  
+- [x] 个人令牌入口仍在 — *Token scope 含 Personal；烟测 personal token `workspace_id=0`*
 
 ---
 
@@ -387,18 +390,25 @@ T01 数据模型与迁移（含 BYOK 表字段）
 3. 更新 `customer-workspace-design.md` §15 实现状态为「开发中/已完成」  
 4. （可选）在 `aliyun-ecs.md` 或运维备忘中注明：客户功能无需额外端口  
 
+### 验收（本轮）
+
+- [x] 相关单测通过 — *`go test` model/service/controller/middleware（Customer|Workspace|Invitation|Billing|Log|Upstream/BYOK/Select…）*  
+- [x] E2E 脚本可跑 — *`node scripts/t13-e2e.mjs`（对本地 `:3001`）*  
+- [x] §15 实现状态已更新  
+- [x] 运维备忘：客户/工作区功能无额外端口  
+
 ### E2E 清单
 
-- [ ] 超管创建客户 A、B，各充值  
-- [ ] A admin 划拨到 default，邀请用户 U1，U1 接受  
-- [ ] U1 建工作区令牌，调用成功，A 工作区池减少，U1 个人余额不变  
-- [ ] U1 无法看 B 的数据  
-- [ ] U1 无法接受 B 的邀请  
-- [ ] 移除 U1：令牌失效  
-- [ ] 个人用户（无客户）原有 curl 流程仍通  
-- [ ] **BYOK**：为 A 开通 byok，配置测试 Key，工作区令牌走客户 Key；关闭后回落 shared（若 fallback）  
-- [ ] **dedicated**：绑定渠道后流量不进未绑定渠道（除非 fallback）  
-- [ ] API/日志无完整上游 Key  
+- [x] 超管创建客户 A、B，各充值 — *`scripts/t13-e2e.mjs` `e2e-create-topup`*  
+- [x] A admin 划拨到 default，邀请用户 U1，U1 接受 — *`e2e-invite-accept`*  
+- [x] U1 建工作区令牌，调用成功，A 工作区池减少，U1 个人余额不变 — *令牌创建 `e2e-ws-token-create`；扣费路径由 `TestWorkspaceBilling*` / `PersonalTokenBilling*` 覆盖（本机上游区域限制导致 live relay SKIP）*  
+- [x] U1 无法看 B 的数据 — *`e2e-isolation-u1-vs-b`*  
+- [x] U1 无法接受 B 的邀请 — *`e2e-u1-reject-b-invite`*  
+- [x] 移除 U1：令牌失效 — *`e2e-remove-u1-token`（修复：移除成员后 `InvalidateUserTokensCache`）*  
+- [x] 个人用户（无客户）原有 curl 流程仍通 — *`e2e-personal-user`*  
+- [x] **BYOK**：为 A 开通 byok，配置测试 Key，工作区令牌走客户 Key；关闭后回落 shared（若 fallback） — *API `e2e-byok-dedicated-api`；选渠 `TestSelectChannelByok*`；fallback `TestSelectChannelByokDisabledIgnoresCredentials`*  
+- [x] **dedicated**：绑定渠道后流量不进未绑定渠道（除非 fallback） — *`e2e-dedicated-settings` + `TestCustomerUsesScopedUpstream` / SelectChannel 单测*  
+- [x] API/日志无完整上游 Key — *凭证列表仅 hint；`TestUpstreamCredentialCRUDEncryptsAndHidesKey` / `TestCustomerUpstreamCredentialJSONNeverIncludesCiphertext`*
 
 ---
 

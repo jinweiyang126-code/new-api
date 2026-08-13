@@ -61,8 +61,16 @@ const DEFAULT_SIDEBAR_MODULES: SidebarModulesAdminConfig = {
     models: true,
     redemption: true,
     user: true,
+    customer: true,
     setting: true,
     subscription: true,
+  },
+  organization: {
+    enabled: true,
+    workspaces: true,
+    members: true,
+    quota: true,
+    upstream: true,
   },
 }
 
@@ -112,6 +120,11 @@ const URL_TO_CONFIG_MAP: Record<string, { section: string; module: string }> = {
   '/models/metadata': { section: 'admin', module: 'models' },
   '/models/deployments': { section: 'admin', module: 'models' },
   '/users': { section: 'admin', module: 'user' },
+  '/customers': { section: 'admin', module: 'customer' },
+  '/workspaces': { section: 'organization', module: 'workspaces' },
+  '/members': { section: 'organization', module: 'members' },
+  '/quota': { section: 'organization', module: 'quota' },
+  '/upstream': { section: 'organization', module: 'upstream' },
   '/redemption-codes': { section: 'admin', module: 'redemption' },
   '/subscriptions': { section: 'admin', module: 'subscription' },
   '/system-settings': { section: 'admin', module: 'setting' },

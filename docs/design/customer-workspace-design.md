@@ -430,12 +430,13 @@ Commit
 | 项 | 状态 |
 | --- | --- |
 | 产品决策基线 | 已确认 |
-| M1 表结构 / 接口 / BYOK（§16） | 已确认（本文 Part A + §16） |
+| M1 表结构 / 接口 / BYOK（§16） | **已完成**（T01–T15；含迁移、API、计费门禁 T08、选渠门禁 T15、前后端） |
 | M2–M5 + 深度项 | 已确认（本文 Part B） |
 | 机构层 | 不做（§B.9.7 仅草案） |
-| M1 实现任务拆分 | [`customer-workspace-m1-implementation-tasks.md`](./customer-workspace-m1-implementation-tasks.md) |
+| M1 实现任务拆分 | [`customer-workspace-m1-implementation-tasks.md`](./customer-workspace-m1-implementation-tasks.md)（T01–T13 验收已勾） |
 | 管理层汇报 | [`customer-workspace-executive-brief.md`](./customer-workspace-executive-brief.md) |
-| 代码实现 | **未开始**（需另行指令「开始开发」或「开始开发 T01」） |
+| 代码实现 | **M1 已完成**（E2E：`scripts/t13-e2e.mjs`；硬门禁单测见 T08/T15） |
+| 已知限制 | 无真实上游 Key / 区域受限时，live Relay 扣费烟测可 SKIP，以 `TestWorkspaceBilling*` 为准 |
 
 ---
 

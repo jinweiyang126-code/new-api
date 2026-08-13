@@ -502,6 +502,26 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 	}
 	common.SetContextKey(c, constant.ContextKeyTokenGroup, token.Group)
 	common.SetContextKey(c, constant.ContextKeyTokenCrossGroupRetry, token.CrossGroupRetry)
+	common.SetContextKey(c, constant.ContextKeyCustomerId, token.CustomerId)
+	common.SetContextKey(c, constant.ContextKeyWorkspaceId, token.WorkspaceId)
+	if token.WorkspaceId > 0 {
+		if err := model.ValidateWorkspaceTokenActive(token.CustomerId, token.WorkspaceId); err != nil {
+			msg := "工作区不可用"
+			if errors.Is(err, model.ErrWorkspaceDisabled) {
+				msg = "工作区已停用"
+			} else if errors.Is(err, model.ErrWorkspaceNotFound) {
+				msg = "工作区不存在"
+			} else if errors.Is(err, model.ErrCustomerNotFound) {
+				msg = "客户不存在"
+			} else if strings.Contains(err.Error(), "customer is disabled") {
+				msg = "客户已停用"
+			} else if strings.Contains(err.Error(), "mismatch") {
+				msg = "令牌客户与工作区不匹配"
+			}
+			abortWithOpenAiMessage(c, http.StatusForbidden, msg)
+			return err
+		}
+	}
 	if token.AutoGroups != "" {
 		autoGroups, err := token.GetAutoGroups()
 		if err != nil {

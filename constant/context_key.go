@@ -73,4 +73,12 @@ const (
 	// fallback in authHelper (finishAdminAudit) skips its record to avoid
 	// duplicate entries.
 	ContextKeyAuditLogged ContextKey = "audit_logged"
+
+	/* customer / workspace related keys */
+	ContextKeyCustomerId     ContextKey = "customer_id"
+	ContextKeyCustomerRole   ContextKey = "customer_role"
+	ContextKeyWorkspaceId    ContextKey = "workspace_id"
+	ContextKeyWorkspaceRole  ContextKey = "workspace_role"
+	// ContextKeyUpstreamSource is shared|dedicated|byok for consume logs (T15).
+	ContextKeyUpstreamSource ContextKey = "upstream_source"
 )

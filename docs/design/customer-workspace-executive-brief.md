@@ -3,7 +3,7 @@
 **汇报用途**：向管理层说明为什么做、做什么、不做什么、怎么分期落地  
 **详细技术设计**：[customer-workspace-design.md](./customer-workspace-design.md)（Part A = M1；§16 = BYOK；Part B = 后期）  
 **实现任务**：[customer-workspace-m1-implementation-tasks.md](./customer-workspace-m1-implementation-tasks.md)（约 29 人天）  
-**文档状态**：产品方案已对齐（命名：**客户 / 工作区**）；代码尚未开工  
+**文档状态**：产品方案已对齐（命名：**客户 / 工作区**）；**M1 代码已完成**（见任务文档 T01–T13 验收）  
 
 ---
 

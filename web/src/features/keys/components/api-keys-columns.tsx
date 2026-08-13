@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
@@ -46,6 +47,7 @@ import {
   UnlimitedQuotaBadge,
 } from './api-keys-cells'
 import { DataTableRowActions } from './data-table-row-actions'
+import { useAuthStore } from '@/stores/auth-store'
 
 function getQuotaProgressColor(percentage: number): string {
   if (percentage <= 10) return '[&_[data-slot=progress-indicator]]:bg-rose-500'
@@ -80,6 +82,14 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
   const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
   const justNowLabel = t('Just now')
   const staleAccessThreshold = dayjs(now).subtract(3, 'month').valueOf()
+  const workspaces = useAuthStore((s) => s.auth.customerContext?.workspaces)
+  const workspaceNameById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const ws of workspaces ?? []) {
+      map.set(ws.id, ws.name)
+    }
+    return map
+  }, [workspaces])
   return [
     {
       id: 'select',
@@ -112,6 +122,26 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
       ),
       size: 180,
       meta: { mobileTitle: true },
+    },
+    {
+      id: 'workspace',
+      accessorKey: 'workspace_id',
+      header: t('Scope'),
+      cell: ({ row }) => {
+        const wsId = row.original.workspace_id ?? 0
+        if (!wsId) {
+          return (
+            <span className='text-muted-foreground text-xs'>{t('Personal')}</span>
+          )
+        }
+        const name = workspaceNameById.get(wsId)
+        return (
+          <span className='text-xs' title={`#${wsId}`}>
+            {name || `${t('Workspace')} #${wsId}`}
+          </span>
+        )
+      },
+      size: 120,
     },
     {
       accessorKey: 'status',

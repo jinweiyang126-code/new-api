@@ -38,6 +38,7 @@ func TestMain(m *testing.M) {
 	common.RedisEnabled = false
 	common.BatchUpdateEnabled = false
 	common.LogConsumeEnabled = true
+	model.InitColumnNames()
 
 	if err := db.AutoMigrate(
 		&model.Task{},
@@ -49,6 +50,8 @@ func TestMain(m *testing.M) {
 		&model.UserSubscription{},
 		&model.SystemTask{},
 		&model.SystemTaskLock{},
+		&model.Customer{},
+		&model.Workspace{},
 	); err != nil {
 		panic("failed to migrate: " + err.Error())
 	}
@@ -72,6 +75,8 @@ func truncate(t *testing.T) {
 		model.DB.Exec("DELETE FROM user_subscriptions")
 		model.DB.Exec("DELETE FROM system_task_locks")
 		model.DB.Exec("DELETE FROM system_tasks")
+		model.DB.Exec("DELETE FROM workspaces")
+		model.DB.Exec("DELETE FROM customers")
 	})
 }
 

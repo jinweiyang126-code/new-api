@@ -50,6 +50,12 @@ func initCol() {
 	}
 }
 
+// InitColumnNames initializes reserved SQL identifier quoting for the current
+// database type. Safe to call from tests that set model.DB without InitDB.
+func InitColumnNames() {
+	initCol()
+}
+
 var DB *gorm.DB
 
 var LOG_DB *gorm.DB
@@ -292,6 +298,13 @@ func migrateDB() error {
 		&SystemTaskLock{},
 		&CasbinRule{},
 		&AuthzRole{},
+		&Customer{},
+		&Workspace{},
+		&CustomerMember{},
+		&WorkspaceMember{},
+		&CustomerInvitation{},
+		&CustomerChannelBinding{},
+		&CustomerUpstreamCredential{},
 	)
 	if err != nil {
 		return err
@@ -353,6 +366,13 @@ func migrateDBFast() error {
 		{&SystemInstance{}, "SystemInstance"},
 		{&SystemTask{}, "SystemTask"},
 		{&SystemTaskLock{}, "SystemTaskLock"},
+		{&Customer{}, "Customer"},
+		{&Workspace{}, "Workspace"},
+		{&CustomerMember{}, "CustomerMember"},
+		{&WorkspaceMember{}, "WorkspaceMember"},
+		{&CustomerInvitation{}, "CustomerInvitation"},
+		{&CustomerChannelBinding{}, "CustomerChannelBinding"},
+		{&CustomerUpstreamCredential{}, "CustomerUpstreamCredential"},
 	}
 	// 动态计算migration数量，确保errChan缓冲区足够大
 	errChan := make(chan error, len(migrations))
@@ -456,7 +476,10 @@ CREATE TABLE IF NOT EXISTS logs (
 	ip String DEFAULT '',
 	request_id String DEFAULT '',
 	upstream_request_id String DEFAULT '',
-	other String DEFAULT ''
+	other String DEFAULT '',
+	customer_id Int32 DEFAULT 0,
+	workspace_id Int32 DEFAULT 0,
+	upstream_source String DEFAULT ''
 )
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(toDateTime(created_at))

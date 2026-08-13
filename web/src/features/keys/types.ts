@@ -46,6 +46,8 @@ export const apiKeySchema = z.object({
   model_limits_enabled: z.boolean(),
   model_limits: z.string().nullish().default(''),
   allow_ips: z.string().nullish().default(''),
+  customer_id: z.number().optional().default(0),
+  workspace_id: z.number().optional().default(0),
 })
 
 export type ApiKey = z.infer<typeof apiKeySchema>
@@ -63,6 +65,7 @@ export interface ApiResponse<T = unknown> {
 export interface GetApiKeysParams {
   p?: number
   size?: number
+  workspace_id?: number
 }
 
 export interface GetApiKeysResponse {
@@ -81,6 +84,7 @@ export interface SearchApiKeysParams {
   token?: string
   p?: number
   size?: number
+  workspace_id?: number
 }
 
 export interface ApiKeyFormData {
@@ -94,6 +98,8 @@ export interface ApiKeyFormData {
   group: string
   auto_groups: string[]
   cross_group_retry: boolean
+  /** 0 / omit = personal token */
+  workspace_id?: number
 }
 
 export interface TokenAutoGroupsConfig {

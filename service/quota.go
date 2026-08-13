@@ -90,10 +90,6 @@ func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usag
 	if relayInfo.UsePrice {
 		return nil
 	}
-	userQuota, err := model.GetUserQuota(relayInfo.UserId, false)
-	if err != nil {
-		return err
-	}
 
 	token, err := model.GetTokenByKey(strings.TrimPrefix(relayInfo.TokenKey, "sk-"), false)
 	if err != nil {
@@ -139,8 +135,22 @@ func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usag
 	quota, clamp := calculateAudioQuota(quotaInfo)
 	noteQuotaClamp(relayInfo, clamp)
 
-	if userQuota < quota {
-		return fmt.Errorf("user quota is not enough, user quota: %s, need quota: %s", logger.FormatQuota(userQuota), logger.FormatQuota(quota))
+	if relayInfo.WorkspaceId > 0 {
+		wsQuota, wsErr := model.GetWorkspaceQuota(relayInfo.WorkspaceId)
+		if wsErr != nil {
+			return wsErr
+		}
+		if wsQuota < quota {
+			return fmt.Errorf("工作区额度不足, 剩余额度: %s, 需要额度: %s", logger.FormatQuota(wsQuota), logger.FormatQuota(quota))
+		}
+	} else {
+		userQuota, uErr := model.GetUserQuota(relayInfo.UserId, false)
+		if uErr != nil {
+			return uErr
+		}
+		if userQuota < quota {
+			return fmt.Errorf("user quota is not enough, user quota: %s, need quota: %s", logger.FormatQuota(userQuota), logger.FormatQuota(quota))
+		}
 	}
 
 	if !token.UnlimitedQuota && token.RemainQuota < quota {
@@ -224,7 +234,7 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, "+
 			"tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, modelName, relayInfo.FinalPreConsumedQuota))
 	} else {
-		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
+		updateRelayUsedQuota(relayInfo, quota)
 		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}
 
@@ -255,6 +265,8 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 		IsStream:         relayInfo.IsStream,
 		Group:            relayInfo.UsingGroup,
 		Other:            other,
+		CustomerId:       relayInfo.CustomerId,
+		WorkspaceId:      relayInfo.WorkspaceId,
 	})
 }
 
@@ -347,7 +359,7 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, "+
 			"tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, relayInfo.OriginModelName, relayInfo.FinalPreConsumedQuota))
 	} else {
-		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
+		updateRelayUsedQuota(relayInfo, quota)
 		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}
 
@@ -378,6 +390,8 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 		IsStream:         relayInfo.IsStream,
 		Group:            relayInfo.UsingGroup,
 		Other:            other,
+		CustomerId:       relayInfo.CustomerId,
+		WorkspaceId:      relayInfo.WorkspaceId,
 	})
 	gopool.Go(func() {
 		perfmetrics.RecordRelaySample(relayInfo, true, int64(usage.CompletionTokens))
@@ -408,9 +422,20 @@ func PreConsumeTokenQuota(relayInfo *relaycommon.RelayInfo, quota int) error {
 	return nil
 }
 
+func updateRelayUsedQuota(relayInfo *relaycommon.RelayInfo, quota int) {
+	if relayInfo == nil || quota == 0 {
+		return
+	}
+	if relayInfo.WorkspaceId > 0 {
+		model.UpdateWorkspaceUsedQuota(relayInfo.WorkspaceId, quota)
+		return
+	}
+	model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
+}
+
 func PostConsumeQuota(relayInfo *relaycommon.RelayInfo, quota int, preConsumedQuota int, sendEmail bool) (err error) {
 
-	// 1) Consume from wallet quota OR subscription item
+	// 1) Consume from wallet / workspace pool / subscription
 	if relayInfo != nil && relayInfo.BillingSource == BillingSourceSubscription {
 		if relayInfo.SubscriptionId == 0 {
 			return errors.New("subscription id is missing")
@@ -421,6 +446,15 @@ func PostConsumeQuota(relayInfo *relaycommon.RelayInfo, quota int, preConsumedQu
 				return err
 			}
 			relayInfo.SubscriptionPostDelta += delta
+		}
+	} else if relayInfo != nil && (relayInfo.BillingSource == BillingSourceWorkspace || relayInfo.WorkspaceId > 0) {
+		if quota > 0 {
+			err = model.DecreaseWorkspaceQuotaForce(relayInfo.WorkspaceId, quota)
+		} else {
+			err = model.IncreaseWorkspaceQuota(relayInfo.WorkspaceId, -quota)
+		}
+		if err != nil {
+			return err
 		}
 	} else {
 		// Wallet
@@ -446,7 +480,7 @@ func PostConsumeQuota(relayInfo *relaycommon.RelayInfo, quota int, preConsumedQu
 	}
 
 	if sendEmail {
-		if (quota + preConsumedQuota) != 0 {
+		if (quota+preConsumedQuota) != 0 && relayInfo.BillingSource != BillingSourceWorkspace && relayInfo.WorkspaceId == 0 {
 			checkAndSendQuotaNotify(relayInfo, quota, preConsumedQuota)
 		}
 	}
