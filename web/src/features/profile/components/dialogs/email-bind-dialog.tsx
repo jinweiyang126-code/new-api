@@ -7,7 +7,7 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
+    10|but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
 
@@ -22,9 +22,11 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { Dialog } from '@/components/dialog'
+import { Turnstile } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { useCountdown } from '@/hooks/use-countdown'
 
 import { sendEmailVerification, bindEmail } from '../../api'
@@ -51,6 +53,14 @@ export function EmailBindDialog({
   const [sendingCode, setSendingCode] = useState(false)
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
+  const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
+  const {
+    isTurnstileEnabled,
+    turnstileSiteKey,
+    turnstileToken,
+    setTurnstileToken,
+    validateTurnstile,
+  } = useTurnstile()
   const {
     secondsLeft,
     isActive,
@@ -60,24 +70,31 @@ export function EmailBindDialog({
     initialSeconds: 60,
   })
 
+  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
+
   const handleSendCode = async () => {
     if (!email || !email.includes('@')) {
       toast.error(t('Please enter a valid email address'))
       return
     }
+    if (!validateTurnstile()) return
 
     try {
       setSendingCode(true)
-      const response = await sendEmailVerification(email)
+      const response = await sendEmailVerification(email, turnstileToken)
 
       if (response.success) {
         toast.success(t('Verification code sent! Please check your email.'))
         startCountdown()
       } else {
         toast.error(response.message || t('Failed to send verification code'))
+        setTurnstileToken('')
+        setTurnstileWidgetKey((k) => k + 1)
       }
     } catch (_error) {
       toast.error(t('Failed to send verification code'))
+      setTurnstileToken('')
+      setTurnstileWidgetKey((k) => k + 1)
     } finally {
       setSendingCode(false)
     }
@@ -97,10 +114,11 @@ export function EmailBindDialog({
         toast.success(t('Email bound successfully!'))
         onOpenChange(false)
         onSuccess()
-        // Reset form
         setEmail('')
         setCode('')
         resetCountdown()
+        setTurnstileToken('')
+        setTurnstileWidgetKey((k) => k + 1)
       } else {
         toast.error(response.message || t('Failed to bind email'))
       }
@@ -111,14 +129,15 @@ export function EmailBindDialog({
     }
   }
 
-  const handleOpenChange = (open: boolean) => {
+  const handleOpenChange = (nextOpen: boolean) => {
     if (!loading) {
-      onOpenChange(open)
-      if (!open) {
-        // Reset form when closing
+      onOpenChange(nextOpen)
+      if (!nextOpen) {
         setEmail('')
         setCode('')
         resetCountdown()
+        setTurnstileToken('')
+        setTurnstileWidgetKey((k) => k + 1)
       }
     }
   }
@@ -172,6 +191,15 @@ export function EmailBindDialog({
           />
         </div>
 
+        {isTurnstileEnabled && turnstileSiteKey ? (
+          <Turnstile
+            key={turnstileWidgetKey}
+            siteKey={turnstileSiteKey}
+            onVerify={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+          />
+        ) : null}
+
         <div className='space-y-2'>
           <Label htmlFor='code'>{t('Verification Code')}</Label>
           <div className='flex gap-2'>
@@ -187,7 +215,7 @@ export function EmailBindDialog({
               type='button'
               variant='outline'
               onClick={handleSendCode}
-              disabled={sendingCode || isActive || !email}
+              disabled={sendingCode || isActive || !email || !turnstileReady}
             >
               {isActive
                 ? `${secondsLeft}s`
