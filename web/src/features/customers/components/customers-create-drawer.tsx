@@ -36,6 +36,7 @@ import { Textarea } from '@/components/ui/textarea'
 
 import { createCustomer } from '../api'
 import { useCustomers } from './customers-provider'
+import { OwnerUserPicker } from './owner-user-picker'
 
 const schema = z.object({
   name: z.string().min(1),
@@ -128,14 +129,12 @@ export function CustomersCreateDrawer({ open, onOpenChange }: Props) {
               name='owner_user_id'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Owner User ID')}</FormLabel>
+                  <FormLabel>{t('Owner')}</FormLabel>
                   <FormControl>
-                    <Input
-                      type='number'
-                      value={field.value || ''}
-                      onChange={(e) =>
-                        field.onChange(Number(e.target.value) || 0)
-                      }
+                    <OwnerUserPicker
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={form.formState.isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
