@@ -5256,6 +5256,7 @@
     "Select owner user": "选择所有者用户",
     "Search username...": "搜索用户名...",
     "No users found": "未找到用户",
+    "Owner": "所有者",
     "Customer created": "客户已创建",
     "Failed to create customer": "创建客户失败",
     "Failed to load customers": "加载客户列表失败",
