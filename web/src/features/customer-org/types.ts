@@ -60,6 +60,8 @@ export type Invitation = {
   expires_at: number
   created_at: number
   updated_at: number
+  email_sent?: boolean
+  email_error?: string
 }
 
 export type UpstreamCredential = {

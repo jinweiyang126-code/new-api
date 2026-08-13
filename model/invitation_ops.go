@@ -91,7 +91,7 @@ func CreateInvitation(in CreateInvitationInput) (*CustomerInvitation, error) {
 		row := &CustomerInvitation{
 			CustomerId:    in.CustomerId,
 			WorkspaceId:   in.WorkspaceId,
-			Email:         strings.TrimSpace(in.Email),
+			Email:         NormalizeEmail(in.Email),
 			Token:         token,
 			Role:          role,
 			WorkspaceRole: wsRole,

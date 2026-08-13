@@ -84,10 +84,18 @@ export function MembersPage() {
       const link = `${window.location.origin}/invitations/accept?token=${encodeURIComponent(inv.token)}`
       try {
         await navigator.clipboard.writeText(link)
-        toast.success(t('Invitation created. Link copied.'))
       } catch {
-        toast.success(t('Invitation created'))
-        toast.message(link)
+        // ignore clipboard failures; toast still covers outcome
+      }
+      if (inv.email_sent) {
+        toast.success(t('Invitation created. Email sent.'))
+      } else if (inv.email?.trim()) {
+        toast.success(t('Invitation created. Email not sent.'))
+        if (inv.email_error) {
+          toast.message(inv.email_error)
+        }
+      } else {
+        toast.success(t('Invitation created. Link copied.'))
       }
       setEmail('')
       void queryClient.invalidateQueries({ queryKey: ['customer-invitations'] })
@@ -179,15 +187,20 @@ export function MembersPage() {
                   <div className='space-y-1'>
                     <Label>{t('Email')}</Label>
                     <Input
+                      type='email'
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder='optional'
+                      placeholder={t('Invitee email (required to send mail)')}
                     />
                   </div>
                   <div className='space-y-1'>
                     <Label>{t('Customer role')}</Label>
                     <Select
                       value={role}
+                      items={[
+                        { value: CUSTOMER_ROLES.ADMIN, label: 'admin' },
+                        { value: CUSTOMER_ROLES.MEMBER, label: 'member' },
+                      ]}
                       onValueChange={(v) => setRole(v ?? CUSTOMER_ROLES.MEMBER)}
                     >
                       <SelectTrigger className='w-36'>
@@ -207,6 +220,13 @@ export function MembersPage() {
                     <Label>{t('Workspace')}</Label>
                     <Select
                       value={workspaceId}
+                      items={[
+                        { value: 'default', label: t('default') },
+                        ...(ctx.workspaces ?? []).map((ws: Workspace) => ({
+                          value: String(ws.id),
+                          label: ws.name,
+                        })),
+                      ]}
                       onValueChange={(v) => setWorkspaceId(v ?? 'default')}
                     >
                       <SelectTrigger className='w-44'>
@@ -228,6 +248,10 @@ export function MembersPage() {
                     <Label>{t('Workspace role')}</Label>
                     <Select
                       value={workspaceRole}
+                      items={[
+                        { value: WORKSPACE_ROLES.ADMIN, label: 'admin' },
+                        { value: WORKSPACE_ROLES.MEMBER, label: 'member' },
+                      ]}
                       onValueChange={(v) =>
                         setWorkspaceRole(v ?? WORKSPACE_ROLES.MEMBER)
                       }

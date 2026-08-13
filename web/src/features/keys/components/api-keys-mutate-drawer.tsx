@@ -444,6 +444,13 @@ export function ApiKeysMutateDrawer({
                       <Select
                         value={field.value || 'personal'}
                         disabled={isUpdate}
+                        items={[
+                          { value: 'personal', label: t('Personal') },
+                          ...workspaces.map((ws) => ({
+                            value: String(ws.id),
+                            label: ws.name,
+                          })),
+                        ]}
                         onValueChange={(v) => field.onChange(v ?? 'personal')}
                       >
                         <FormControl>

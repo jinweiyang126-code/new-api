@@ -49,6 +49,13 @@ export function WorkspaceContextSwitcher() {
       <Select
         value={value}
         disabled={switchMut.isPending}
+        items={[
+          { value: 'personal', label: t('Personal') },
+          ...workspaces.map((ws) => ({
+            value: String(ws.id),
+            label: ws.name,
+          })),
+        ]}
         onValueChange={(v) => {
           const next = !v || v === 'personal' ? 0 : Number(v)
           if (Number.isNaN(next)) return

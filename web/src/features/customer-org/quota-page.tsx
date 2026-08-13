@@ -116,6 +116,10 @@ export function QuotaPage() {
               <Label>{t('Workspace')}</Label>
               <Select
                 value={workspaceId}
+                items={workspaces.map((ws: Workspace) => ({
+                  value: String(ws.id),
+                  label: `${ws.name} (${formatQuota(ws.quota)})`,
+                }))}
                 onValueChange={(v) => setWorkspaceId(v ?? '')}
               >
                 <SelectTrigger>

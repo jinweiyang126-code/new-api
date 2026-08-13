@@ -201,7 +201,7 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 接受逻辑按设计文档第 10 节；已有客户则明确错误码/文案。
 
-**邮件（可选增强，可放入 T06b）：** 若 SMTP 已配置且提供 email，发送邀请链接；失败不阻断邀请记录创建。链接格式建议：`https://{host}/invitations/accept?token=...`（前端路由 T11/T12 配合）。
+**邮件（T06b）：** 若 SMTP 已配置且提供 email，发送邀请链接；失败不阻断邀请记录创建。链接格式：`{ServerAddress}/invitations/accept?token=...`。创建接口返回 `email_sent` / `email_error`。
 
 ### 验收
 
@@ -209,7 +209,7 @@ T01 数据模型与迁移（含 BYOK 表字段）
 - [x] 已有客户用户接受失败 — *`TestAcceptInvitationFailsWhenUserAlreadyHasCustomer`*
 - [x] 过期/作废邀请不可接受 — *`TestAcceptInvitationRejectsExpiredAndRevoked`*
 - [x] 未指定 workspace 时进入 default 工作区 — *同上；指定 workspace 见 `TestAcceptInvitationUsesSpecifiedWorkspace`*  
-  （邮件发送留 T06b，本任务不阻断邀请创建）
+- [x] 有 email + SMTP 时发送邀请邮件；失败不回滚邀请 — *`service.SendCustomerInvitationEmail` + `CreateCustomerInvitation`*
 
 ---
 
