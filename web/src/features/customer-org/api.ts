@@ -94,6 +94,16 @@ export async function removeCustomerMember(
   return res.data
 }
 
+export async function removeWorkspaceMember(
+  workspaceId: number,
+  userId: number
+): Promise<ApiResponse> {
+  const res = await api.delete(
+    `/api/workspaces/${workspaceId}/members/${userId}`
+  )
+  return res.data
+}
+
 export async function getCustomerInvitations(
   customerId: number
 ): Promise<ApiResponse<Invitation[]>> {

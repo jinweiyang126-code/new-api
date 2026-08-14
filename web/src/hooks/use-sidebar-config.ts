@@ -123,6 +123,8 @@ const URL_TO_CONFIG_MAP: Record<string, { section: string; module: string }> = {
   '/customers': { section: 'admin', module: 'customer' },
   '/workspaces': { section: 'organization', module: 'workspaces' },
   '/members': { section: 'organization', module: 'members' },
+  '/members/members': { section: 'organization', module: 'members' },
+  '/members/invitations': { section: 'organization', module: 'members' },
   '/quota': { section: 'organization', module: 'quota' },
   '/upstream': { section: 'organization', module: 'upstream' },
   '/redemption-codes': { section: 'admin', module: 'redemption' },

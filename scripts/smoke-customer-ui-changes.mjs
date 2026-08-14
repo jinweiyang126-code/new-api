@@ -41,6 +41,21 @@ const keys = [
   'Workspace updated',
   'Actions',
   'Edit',
+  'Members',
+  'Invitations',
+  'Invite member',
+  'No members',
+  'No invitations',
+  'Remove member',
+  'Revoke invitation',
+  'Failed to load members',
+  'Failed to load invitations',
+  'Send an invitation email and copy the accept link.',
+  'Create an invitation to add collaborators.',
+  'Filter by username or role...',
+  'Filter by email, role, or status...',
+  'Expires At',
+  'Add Credential',
 ]
 
 const missingEn = keys.filter((k) => !(k in en))
@@ -51,6 +66,19 @@ const mustExist = [
   'web/src/features/customers/components/customers-edit-drawer.tsx',
   'web/src/features/customers/components/data-table-bulk-actions.tsx',
   'web/src/features/customer-org/components/workspaces-bulk-actions.tsx',
+  'web/src/features/customer-org/section-registry.ts',
+  'web/src/routes/_authenticated/members/$section.tsx',
+  'web/src/features/customer-org/components/members-table.tsx',
+  'web/src/features/customer-org/components/members-columns.tsx',
+  'web/src/features/customer-org/components/members-row-actions.tsx',
+  'web/src/features/customer-org/components/members-invite-drawer.tsx',
+  'web/src/features/customer-org/components/invitations-table.tsx',
+  'web/src/features/customer-org/components/invitations-columns.tsx',
+  'web/src/features/customer-org/components/invitations-row-actions.tsx',
+  'web/src/features/customer-org/components/upstream-table.tsx',
+  'web/src/features/customer-org/components/upstream-columns.tsx',
+  'web/src/features/customer-org/components/upstream-mutate-drawer.tsx',
+  'docs/design/admin-list-page-standard.md',
 ]
 
 const files = {
@@ -74,7 +102,43 @@ const files = {
   wsActions: read(
     'web/src/features/customer-org/components/workspaces-row-actions.tsx'
   ),
-  members: read('web/src/features/customer-org/members-page.tsx'),
+  membersPage: read('web/src/features/customer-org/members-page.tsx'),
+  membersRegistry: read('web/src/features/customer-org/section-registry.ts'),
+  membersRoute: read('web/src/routes/_authenticated/members/$section.tsx'),
+  membersIndex: read('web/src/routes/_authenticated/members/index.tsx'),
+  membersTable: read(
+    'web/src/features/customer-org/components/members-table.tsx'
+  ),
+  membersCols: read(
+    'web/src/features/customer-org/components/members-columns.tsx'
+  ),
+  membersActions: read(
+    'web/src/features/customer-org/components/members-row-actions.tsx'
+  ),
+  membersInvite: read(
+    'web/src/features/customer-org/components/members-invite-drawer.tsx'
+  ),
+  invitationsTable: read(
+    'web/src/features/customer-org/components/invitations-table.tsx'
+  ),
+  invitationsCols: read(
+    'web/src/features/customer-org/components/invitations-columns.tsx'
+  ),
+  invitationsActions: read(
+    'web/src/features/customer-org/components/invitations-row-actions.tsx'
+  ),
+  upstreamPage: read('web/src/features/customer-org/upstream-page.tsx'),
+  upstreamTable: read(
+    'web/src/features/customer-org/components/upstream-table.tsx'
+  ),
+  upstreamCols: read(
+    'web/src/features/customer-org/components/upstream-columns.tsx'
+  ),
+  upstreamActions: read(
+    'web/src/features/customer-org/components/upstream-row-actions.tsx'
+  ),
+  sidebarData: read('web/src/hooks/use-sidebar-data.ts'),
+  listStandard: read('docs/design/admin-list-page-standard.md'),
   customerGo: read('model/customer.go'),
   bindingGo: read('model/customer_channel_binding.go'),
   upstreamGo: read('model/customer_upstream_ops.go'),
@@ -117,11 +181,85 @@ const checks = [
     files.wsTable.includes('manualSorting') &&
       files.wsTable.includes('sorting'),
   ],
+  // Members: Models-style tabs (not stacked dual tables)
   [
-    'invite button aligned',
-    files.members.includes('items-end') &&
-      files.members.includes("t('Create Invitation')") &&
-      !files.members.includes('invisible'),
+    'members tabs shell',
+    files.membersPage.includes('Tabs') &&
+      files.membersPage.includes('TabsTrigger') &&
+      files.membersPage.includes("'/members/$section'"),
+  ],
+  [
+    'members sections registry',
+    files.membersRegistry.includes("id: 'members'") &&
+      files.membersRegistry.includes("id: 'invitations'") &&
+      files.membersRegistry.includes("urlStyle: 'path'"),
+  ],
+  [
+    'members index redirects',
+    files.membersIndex.includes("to: '/members/$section'") &&
+      files.membersIndex.includes('MEMBERS_DEFAULT_SECTION'),
+  ],
+  [
+    'members route search prefixes',
+    files.membersRoute.includes('mFilter') &&
+      files.membersRoute.includes('iFilter'),
+  ],
+  [
+    'members table users-standard',
+    files.membersTable.includes('manualSorting') &&
+      files.membersTable.includes('enableRowSelection: true') &&
+      files.membersCols.includes("id: 'select'") &&
+      files.membersCols.includes("t('Actions')"),
+  ],
+  [
+    'members no edit pencil',
+    !files.membersActions.includes('Pencil') &&
+      files.membersActions.includes("t('Remove')"),
+  ],
+  [
+    'invite via drawer',
+    files.membersInvite.includes('SheetTitle') &&
+      files.membersInvite.includes("t('Create Invitation')") &&
+      files.membersPage.includes('MembersInviteDrawer'),
+  ],
+  [
+    'invitations table users-standard',
+    files.invitationsTable.includes('manualSorting') &&
+      files.invitationsTable.includes('enableRowSelection: true') &&
+      files.invitationsCols.includes("id: 'select'") &&
+      files.invitationsCols.includes("t('Actions')"),
+  ],
+  [
+    'invitations no edit pencil',
+    !files.invitationsActions.includes('Pencil') &&
+      files.invitationsActions.includes("t('Copy link')") &&
+      files.invitationsActions.includes("t('Revoke')"),
+  ],
+  [
+    'sidebar members tab urls',
+    files.sidebarData.includes("url: '/members/members'") &&
+      files.sidebarData.includes("'/members/invitations'"),
+  ],
+  [
+    'members tab not stacked',
+    files.membersPage.includes('activeSection ===') &&
+      files.membersPage.includes('Tabs') &&
+      files.listStandard.includes('Tab') &&
+      !files.listStandard.includes('上下双表'),
+  ],
+  // Upstream: Users-like DataTable
+  [
+    'upstream table users-standard',
+    files.upstreamPage.includes('UpstreamTable') &&
+      files.upstreamTable.includes('manualSorting') &&
+      files.upstreamTable.includes('enableRowSelection: true') &&
+      files.upstreamCols.includes("id: 'select'") &&
+      files.upstreamCols.includes("t('Actions')"),
+  ],
+  [
+    'upstream pencil->update',
+    files.upstreamActions.includes('Pencil') &&
+      files.upstreamActions.includes("'update'"),
   ],
   ['backend customerListOrder', files.customerGo.includes('customerListOrder')],
   ['binding ChannelName', files.bindingGo.includes('ChannelName')],

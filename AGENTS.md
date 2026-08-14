@@ -137,6 +137,7 @@ Do NOT directly import or call `encoding/json` in business code. `json.RawMessag
 - Frontend UI text must support i18n with `i18next`/`react-i18next`. Use flat JSON locale files in `web/src/i18n/locales/{lang}.json`, with English source strings as keys.
 - In React components, use `useTranslation()` and call `t('English key')` for user-facing text.
 - Follow `web/AGENTS.md` for detailed frontend conventions, including TypeScript, component structure, styling, accessibility, testing, and build checks.
+- Admin/org **resource list pages** must follow the Users-page DataTable standard: `docs/design/admin-list-page-standard.md` (Cursor rule: `.cursor/rules/admin-list-page-standard.mdc`).
 
 ### Project Governance
 
