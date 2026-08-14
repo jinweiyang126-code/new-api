@@ -47,7 +47,7 @@ import {
   normalizeModelName,
   parseModelsString,
 } from '../../lib'
-import { useChannels } from '../channels-provider'
+import { useChannelsOptional } from '../channels-provider'
 
 function normalizeModelNameList(models: readonly string[]): string[] {
   return [...new Set(models.map((m) => normalizeModelName(m)).filter(Boolean))]
@@ -75,8 +75,8 @@ export function FetchModelsDialog({
   channelName,
 }: FetchModelsDialogProps) {
   const { t } = useTranslation()
-  const { currentRow } = useChannels()
-  const activeChannel = customFetcher ? null : currentRow
+  const channels = useChannelsOptional()
+  const activeChannel = customFetcher ? null : (channels?.currentRow ?? null)
   const queryClient = useQueryClient()
   const [isFetching, setIsFetching] = useState(false)
   const [isSaving, setIsSaving] = useState(false)

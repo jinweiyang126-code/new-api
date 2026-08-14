@@ -160,6 +160,46 @@ func DeleteCustomerChannelBinding(c *gin.Context) {
 	common.ApiSuccess(c, gin.H{"id": bindingId})
 }
 
+type reorderChannelBindingsRequest struct {
+	OrderedIds []int `json:"ordered_ids"`
+}
+
+// ReorderCustomerChannelBindings sets binding priority by list order (first = highest).
+func ReorderCustomerChannelBindings(c *gin.Context) {
+	customerId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	var req reorderChannelBindingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	rows, err := model.ReorderCustomerChannelBindings(customerId, req.OrderedIds)
+	if err != nil {
+		writeUpstreamErr(c, err)
+		return
+	}
+	operatorId := c.GetInt("id")
+	model.RecordOperationAuditLog(operatorId,
+		fmt.Sprintf("reorder channel bindings customer=%d count=%d", customerId, len(req.OrderedIds)),
+		c.ClientIP(),
+		"customer.channel_binding.reorder",
+		map[string]interface{}{
+			"customer_id": customerId,
+			"ordered_ids": req.OrderedIds,
+		},
+		map[string]interface{}{
+			"operator_id": operatorId,
+			"node_name":   common.NodeName,
+		},
+		nil,
+	)
+	common.SetContextKey(c, constant.ContextKeyAuditLogged, true)
+	common.ApiSuccess(c, rows)
+}
+
 func writeUpstreamErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, model.ErrCustomerNotFound):

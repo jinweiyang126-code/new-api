@@ -397,6 +397,8 @@ func SetApiRouter(router *gin.Engine) {
 			customerRoute.GET("/:id/invitations", middleware.CustomerAdminAuth(), controller.GetCustomerInvitations)
 			customerRoute.POST("/:id/invitations", middleware.CustomerAdminAuth(), controller.CreateCustomerInvitation)
 			customerRoute.GET("/:id/upstream-credentials", middleware.CustomerAdminAuth(), controller.GetCustomerUpstreamCredentials)
+			customerRoute.POST("/:id/upstream-credentials/fetch-models", middleware.CustomerAdminAuth(), controller.FetchCustomerUpstreamModels)
+			customerRoute.PUT("/:id/upstream-credentials/reorder", middleware.CustomerAdminAuth(), controller.ReorderCustomerUpstreamCredentials)
 			customerRoute.POST("/:id/upstream-credentials", middleware.CustomerAdminAuth(), controller.CreateCustomerUpstreamCredential)
 			customerRoute.PUT("/:id/upstream-credentials/:cid", middleware.CustomerAdminAuth(), controller.UpdateCustomerUpstreamCredential)
 			customerRoute.DELETE("/:id/upstream-credentials/:cid", middleware.CustomerAdminAuth(), controller.DeleteCustomerUpstreamCredential)
@@ -410,6 +412,7 @@ func SetApiRouter(router *gin.Engine) {
 			customerRootRoute.PUT("/:id/upstream-settings", controller.UpdateCustomerUpstreamSettings)
 			customerRootRoute.GET("/:id/channel-bindings", controller.GetCustomerChannelBindings)
 			customerRootRoute.POST("/:id/channel-bindings", controller.CreateCustomerChannelBinding)
+			customerRootRoute.PUT("/:id/channel-bindings/reorder", controller.ReorderCustomerChannelBindings)
 			customerRootRoute.DELETE("/:id/channel-bindings/:bindingId", controller.DeleteCustomerChannelBinding)
 		}
 

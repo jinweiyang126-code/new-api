@@ -3,7 +3,6 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -18,6 +17,7 @@ import {
   sideDrawerFormClassName,
   sideDrawerHeaderClassName,
 } from '@/components/drawer-layout'
+import { PriorityOrderList } from '@/components/priority-order-list'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -53,6 +53,7 @@ import {
   deleteChannelBinding,
   getChannelBindings,
   getCustomer,
+  reorderChannelBindings,
   updateCustomer,
   updateUpstreamSettings,
 } from '../api'
@@ -115,11 +116,21 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
   const [allowFallback, setAllowFallback] = useState(true)
   const [byokEnabled, setByokEnabled] = useState(false)
   const [selectedChannelId, setSelectedChannelId] = useState(0)
-  const [priority, setPriority] = useState('0')
 
   const boundChannelIds = useMemo(
     () => bindings.map((b) => b.channel_id),
     [bindings]
+  )
+
+  const bindingOrderItems = useMemo(
+    () =>
+      bindings.map((b) => ({
+        id: b.id,
+        label:
+          b.channel_name?.trim() || `${t('Channel')} #${b.channel_id}`,
+        description: `ID ${b.channel_id}`,
+      })),
+    [bindings, t]
   )
 
   useEffect(() => {
@@ -173,11 +184,17 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
   const addBinding = useMutation({
     mutationFn: async () => {
       if (!selectedChannelId) throw new Error(t('Please select a channel'))
+      const previousIds = bindings.map((b) => b.id)
       const res = await createChannelBinding(customerId, {
         channel_id: selectedChannelId,
-        priority: Number.parseInt(priority, 10) || 0,
+        priority: 0,
       })
-      if (!res.success) throw new Error(res.message || 'failed')
+      if (!res.success || !res.data) throw new Error(res.message || 'failed')
+      const orderedIds = [...previousIds, res.data.id]
+      const reorderRes = await reorderChannelBindings(customerId, orderedIds)
+      if (!reorderRes.success) {
+        throw new Error(reorderRes.message || 'failed')
+      }
       return res.data
     },
     onSuccess: () => {
@@ -187,6 +204,7 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
     },
     onError: (err: Error) => {
       toast.error(err.message || t('Failed to add channel binding'))
+      void refetchBindings()
     },
   })
 
@@ -194,6 +212,15 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
     mutationFn: async (bindingId: number) => {
       const res = await deleteChannelBinding(customerId, bindingId)
       if (!res.success) throw new Error(res.message || 'failed')
+      const remaining = bindings
+        .filter((b) => b.id !== bindingId)
+        .map((b) => b.id)
+      if (remaining.length > 0) {
+        const reorderRes = await reorderChannelBindings(customerId, remaining)
+        if (!reorderRes.success) {
+          throw new Error(reorderRes.message || 'failed')
+        }
+      }
     },
     onSuccess: () => {
       toast.success(t('Channel binding removed'))
@@ -201,6 +228,22 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
     },
     onError: (err: Error) => {
       toast.error(err.message || t('Failed to remove channel binding'))
+      void refetchBindings()
+    },
+  })
+
+  const reorderBindings = useMutation({
+    mutationFn: async (orderedIds: number[]) => {
+      const res = await reorderChannelBindings(customerId, orderedIds)
+      if (!res.success) throw new Error(res.message || 'failed')
+      return res.data
+    },
+    onSuccess: () => {
+      void refetchBindings()
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || t('Failed to reorder channel bindings'))
+      void refetchBindings()
     },
   })
 
@@ -334,29 +377,20 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
           <SideDrawerSection>
             <SideDrawerSectionHeader title={t('Channel Bindings')} />
             <div className='mt-3 space-y-3'>
-              {bindings.map((b) => (
-                <div
-                  key={b.id}
-                  className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'
-                >
-                  <div className='min-w-0'>
-                    <div className='truncate font-medium'>
-                      {b.channel_name?.trim() ||
-                        `${t('Channel')} #${b.channel_id}`}
-                    </div>
-                    <div className='text-muted-foreground text-xs'>
-                      ID {b.channel_id} · priority {b.priority}
-                    </div>
-                  </div>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => removeBinding.mutate(b.id)}
-                  >
-                    <Trash2 className='h-4 w-4' />
-                  </Button>
-                </div>
-              ))}
+              <p className='text-muted-foreground text-xs'>
+                {t(
+                  'Drag to set preference order. Higher items are tried first.'
+                )}
+              </p>
+              <PriorityOrderList
+                items={bindingOrderItems}
+                emptyText={t('No channel bindings')}
+                disabled={
+                  removeBinding.isPending || reorderBindings.isPending
+                }
+                onReorder={(orderedIds) => reorderBindings.mutate(orderedIds)}
+                onRemove={(id) => removeBinding.mutate(id)}
+              />
               <div className='flex flex-wrap items-end gap-2'>
                 <div className='min-w-56 flex-1 space-y-1'>
                   <Label>{t('Channel')}</Label>
@@ -365,15 +399,6 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
                     excludeIds={boundChannelIds}
                     onValueChange={(id) => setSelectedChannelId(id)}
                     disabled={addBinding.isPending}
-                  />
-                </div>
-                <div className='space-y-1'>
-                  <Label>{t('Priority')}</Label>
-                  <Input
-                    type='number'
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    className='w-24'
                   />
                 </div>
                 <Button

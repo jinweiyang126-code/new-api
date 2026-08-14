@@ -164,6 +164,17 @@ export async function createUpstreamCredential(
   return res.data
 }
 
+export async function reorderUpstreamCredentials(
+  customerId: number,
+  orderedIds: number[]
+): Promise<ApiResponse<UpstreamCredential[]>> {
+  const res = await api.put(
+    `/api/customers/${customerId}/upstream-credentials/reorder`,
+    { ordered_ids: orderedIds }
+  )
+  return res.data
+}
+
 export async function updateUpstreamCredential(
   customerId: number,
   credentialId: number,
@@ -200,6 +211,22 @@ export async function testUpstreamCredential(
 ): Promise<ApiResponse<{ ok: boolean; message: string }>> {
   const res = await api.post(
     `/api/customers/${customerId}/upstream-credentials/${credentialId}/test`
+  )
+  return res.data
+}
+
+export async function fetchUpstreamCredentialModels(
+  customerId: number,
+  data: {
+    type: string
+    key?: string
+    base_url?: string
+    credential_id?: number
+  }
+): Promise<ApiResponse<string[]>> {
+  const res = await api.post(
+    `/api/customers/${customerId}/upstream-credentials/fetch-models`,
+    data
   )
   return res.data
 }

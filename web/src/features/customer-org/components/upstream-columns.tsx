@@ -7,11 +7,28 @@ import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
 import { Checkbox } from '@/components/ui/checkbox'
+import { CHANNEL_TYPES } from '@/features/channels/constants'
+import { getChannelTypeLabel } from '@/features/channels/lib'
 import { formatTimestamp } from '@/lib/format'
 
 import { CREDENTIAL_STATUS } from '../constants'
 import type { UpstreamCredential } from '../types'
 import { UpstreamRowActions } from './upstream-row-actions'
+
+function formatCredentialType(type: string, t: (key: string) => string): string {
+  const raw = (type || '').trim()
+  if (!raw) return '—'
+  const asNum = Number.parseInt(raw, 10)
+  if (!Number.isNaN(asNum) && asNum > 0) {
+    const label = getChannelTypeLabel(asNum)
+    return label === 'Unknown' ? raw : t(label)
+  }
+  const byName = Object.entries(CHANNEL_TYPES).find(
+    ([, label]) => label.toLowerCase() === raw.toLowerCase()
+  )
+  if (byName) return t(byName[1])
+  return raw
+}
 
 export function useUpstreamColumns(): ColumnDef<UpstreamCredential>[] {
   const { t } = useTranslation()
@@ -65,7 +82,7 @@ export function useUpstreamColumns(): ColumnDef<UpstreamCredential>[] {
       accessorKey: 'type',
       header: t('Type'),
       size: 100,
-      cell: ({ row }) => row.original.type || '—',
+      cell: ({ row }) => formatCredentialType(row.original.type, t),
       meta: { mobileOrder: 4, mobileHidden: true },
     },
     {
@@ -81,9 +98,13 @@ export function useUpstreamColumns(): ColumnDef<UpstreamCredential>[] {
     },
     {
       accessorKey: 'priority',
-      header: t('Priority'),
+      header: t('Order'),
       size: 88,
-      cell: ({ row }) => row.original.priority,
+      cell: ({ row }) => (
+        <span className='text-muted-foreground text-sm tabular-nums'>
+          {row.original.priority}
+        </span>
+      ),
       meta: { mobileOrder: 6, mobileHidden: true },
     },
     {

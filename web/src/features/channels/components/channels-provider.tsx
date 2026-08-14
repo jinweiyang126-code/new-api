@@ -149,3 +149,8 @@ export function useChannels() {
   }
   return context
 }
+
+/** Safe outside ChannelsProvider (e.g. BYOK form with customFetcher). */
+export function useChannelsOptional() {
+  return useContext(ChannelsContext)
+}

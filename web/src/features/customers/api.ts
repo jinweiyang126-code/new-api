@@ -95,6 +95,16 @@ export async function createChannelBinding(
   return res.data
 }
 
+export async function reorderChannelBindings(
+  customerId: number,
+  orderedIds: number[]
+): Promise<ApiResponse<ChannelBinding[]>> {
+  const res = await api.put(`/api/customers/${customerId}/channel-bindings/reorder`, {
+    ordered_ids: orderedIds,
+  })
+  return res.data
+}
+
 export async function deleteChannelBinding(
   customerId: number,
   bindingId: number

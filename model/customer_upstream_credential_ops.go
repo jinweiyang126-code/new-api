@@ -280,6 +280,58 @@ func ListEnabledUpstreamCredentialsForRelay(customerId int) ([]*CustomerUpstream
 	return rows, err
 }
 
+// ReorderCustomerUpstreamCredentials assigns priorities from orderedIds (index 0 = highest).
+func ReorderCustomerUpstreamCredentials(customerId int, orderedIds []int) ([]*UpstreamCredentialDTO, error) {
+	if _, err := requireCustomerByokEnabled(customerId); err != nil {
+		return nil, err
+	}
+	existing, err := ListCustomerUpstreamCredentials(customerId)
+	if err != nil {
+		return nil, err
+	}
+	if len(orderedIds) == 0 {
+		return existing, nil
+	}
+	byID := make(map[int]*UpstreamCredentialDTO, len(existing))
+	for _, row := range existing {
+		byID[row.Id] = row
+	}
+	if len(orderedIds) != len(existing) {
+		return nil, ErrUpstreamCredentialNotFound
+	}
+	seen := make(map[int]struct{}, len(orderedIds))
+	for _, id := range orderedIds {
+		if _, ok := byID[id]; !ok {
+			return nil, ErrUpstreamCredentialNotFound
+		}
+		if _, dup := seen[id]; dup {
+			return nil, ErrUpstreamCredentialNotFound
+		}
+		seen[id] = struct{}{}
+	}
+
+	now := common.GetTimestamp()
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		n := len(orderedIds)
+		for i, id := range orderedIds {
+			priority := n - i
+			if err := tx.Model(&CustomerUpstreamCredential{}).
+				Where("id = ? AND customer_id = ?", id, customerId).
+				Updates(map[string]interface{}{
+					"priority":   priority,
+					"updated_at": now,
+				}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ListCustomerUpstreamCredentials(customerId)
+}
+
 // TestCustomerUpstreamCredential verifies the stored key can be decrypted.
 // Live upstream connectivity probing is deferred to T15 / optional ops.
 func TestCustomerUpstreamCredential(customerId, credentialId int) error {

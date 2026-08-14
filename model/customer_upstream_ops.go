@@ -154,3 +154,58 @@ func DeleteCustomerChannelBinding(customerId, bindingId int) error {
 	}
 	return nil
 }
+
+// ReorderCustomerChannelBindings assigns priorities from orderedIds (index 0 = highest).
+func ReorderCustomerChannelBindings(customerId int, orderedIds []int) ([]*CustomerChannelBinding, error) {
+	if customerId <= 0 {
+		return nil, ErrCustomerNotFound
+	}
+	if _, err := GetCustomerById(customerId); err != nil {
+		return nil, err
+	}
+	existing, err := ListCustomerChannelBindings(customerId)
+	if err != nil {
+		return nil, err
+	}
+	if len(orderedIds) == 0 {
+		return existing, nil
+	}
+	byID := make(map[int]*CustomerChannelBinding, len(existing))
+	for _, row := range existing {
+		byID[row.Id] = row
+	}
+	if len(orderedIds) != len(existing) {
+		return nil, ErrChannelBindingNotFound
+	}
+	seen := make(map[int]struct{}, len(orderedIds))
+	for _, id := range orderedIds {
+		if _, ok := byID[id]; !ok {
+			return nil, ErrChannelBindingNotFound
+		}
+		if _, dup := seen[id]; dup {
+			return nil, ErrChannelBindingNotFound
+		}
+		seen[id] = struct{}{}
+	}
+
+	now := common.GetTimestamp()
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		n := len(orderedIds)
+		for i, id := range orderedIds {
+			priority := n - i
+			if err := tx.Model(&CustomerChannelBinding{}).
+				Where("id = ? AND customer_id = ?", id, customerId).
+				Updates(map[string]interface{}{
+					"priority":   priority,
+					"updated_at": now,
+				}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ListCustomerChannelBindings(customerId)
+}

@@ -199,7 +199,7 @@ func assembleByokChannel(cred *model.CustomerUpstreamCredential) (*model.Channel
 	if plain == "" {
 		return nil, errors.New("empty byok key")
 	}
-	channelType := resolveByokChannelType(cred.Type)
+	channelType := ResolveByokChannelType(cred.Type)
 	baseURL := strings.TrimSpace(cred.BaseURL)
 	name := cred.Name
 	if name == "" {
@@ -219,7 +219,8 @@ func assembleByokChannel(cred *model.CustomerUpstreamCredential) (*model.Channel
 	return ch, nil
 }
 
-func resolveByokChannelType(typeStr string) int {
+// ResolveByokChannelType maps a BYOK credential type string to a channel type id.
+func ResolveByokChannelType(typeStr string) int {
 	typeStr = strings.TrimSpace(typeStr)
 	if typeStr == "" {
 		return constant.ChannelTypeOpenAI

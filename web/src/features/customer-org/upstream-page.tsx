@@ -9,6 +9,7 @@ import { WorkspaceContextBanner } from './components/workspace-context-banner'
 import { UpstreamDeleteDialog } from './components/upstream-delete-dialog'
 import { UpstreamMutateDrawer } from './components/upstream-mutate-drawer'
 import { UpstreamPrimaryButtons } from './components/upstream-primary-buttons'
+import { UpstreamPriorityOrder } from './components/upstream-priority-order'
 import {
   UpstreamProvider,
   useUpstream,
@@ -79,6 +80,7 @@ function UpstreamContent() {
         <SectionPageLayout.Content>
           <div className='flex min-h-0 flex-1 flex-col gap-3'>
             <WorkspaceContextBanner ctx={ctx} />
+            <UpstreamPriorityOrder />
             <div className='min-h-0 flex-1'>
               <UpstreamTable />
             </div>

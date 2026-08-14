@@ -13,6 +13,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -228,6 +229,135 @@ func TestCustomerUpstreamCredential(c *gin.Context) {
 		"ok":      true,
 		"message": "credential decryptable",
 	})
+}
+
+type fetchCustomerUpstreamModelsRequest struct {
+	Type         string `json:"type"`
+	Key          string `json:"key"`
+	BaseURL      string `json:"base_url"`
+	CredentialID int    `json:"credential_id"`
+}
+
+// FetchCustomerUpstreamModels lists upstream model IDs for a BYOK credential preview
+// (form key) or a saved credential (stored key). Customer-admin scoped; does not use
+// channel admin APIs.
+func FetchCustomerUpstreamModels(c *gin.Context) {
+	customerId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	customer, err := model.GetCustomerById(customerId)
+	if err != nil {
+		writeCredentialErr(c, err)
+		return
+	}
+	if !customer.ByokEnabled {
+		writeCredentialErr(c, model.ErrByokNotEnabled)
+		return
+	}
+
+	var req fetchCustomerUpstreamModelsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	key := strings.TrimSpace(req.Key)
+	typeStr := strings.TrimSpace(req.Type)
+	baseURL := strings.TrimSpace(req.BaseURL)
+
+	if req.CredentialID > 0 {
+		row, err := model.GetCustomerUpstreamCredential(customerId, req.CredentialID)
+		if err != nil {
+			writeCredentialErr(c, err)
+			return
+		}
+		if typeStr == "" {
+			typeStr = row.Type
+		}
+		if baseURL == "" {
+			baseURL = row.BaseURL
+		}
+		if key == "" {
+			plain, err := model.DecryptCustomerUpstreamCredentialKey(customerId, req.CredentialID)
+			if err != nil {
+				writeCredentialErr(c, err)
+				return
+			}
+			key = strings.TrimSpace(plain)
+		}
+	}
+
+	if key == "" {
+		common.ApiErrorMsg(c, "upstream key is required")
+		return
+	}
+
+	channelType := service.ResolveByokChannelType(typeStr)
+	if baseURL == "" && channelType >= 0 && channelType < len(constant.ChannelBaseURLs) {
+		baseURL = constant.ChannelBaseURLs[channelType]
+	}
+	key = strings.Split(key, "\n")[0]
+
+	channel := &model.Channel{
+		Type:    channelType,
+		Key:     key,
+		BaseURL: &baseURL,
+	}
+	ids, err := fetchChannelUpstreamModelIDs(channel)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("获取模型列表失败: %s", err.Error()),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    ids,
+	})
+}
+
+type reorderUpstreamCredentialsRequest struct {
+	OrderedIds []int `json:"ordered_ids"`
+}
+
+// ReorderCustomerUpstreamCredentials sets credential priority by list order (first = highest).
+func ReorderCustomerUpstreamCredentials(c *gin.Context) {
+	customerId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	var req reorderUpstreamCredentialsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	rows, err := model.ReorderCustomerUpstreamCredentials(customerId, req.OrderedIds)
+	if err != nil {
+		writeCredentialErr(c, err)
+		return
+	}
+	operatorId := c.GetInt("id")
+	model.RecordOperationAuditLog(operatorId,
+		fmt.Sprintf("reorder upstream credentials customer=%d count=%d", customerId, len(req.OrderedIds)),
+		c.ClientIP(),
+		"customer.upstream_credential.reorder",
+		map[string]interface{}{
+			"customer_id": customerId,
+			"ordered_ids": req.OrderedIds,
+		},
+		map[string]interface{}{
+			"operator_id": operatorId,
+			"node_name":   common.NodeName,
+		},
+		nil,
+	)
+	common.SetContextKey(c, constant.ContextKeyAuditLogged, true)
+	common.ApiSuccess(c, rows)
 }
 
 func writeCredentialErr(c *gin.Context, err error) {

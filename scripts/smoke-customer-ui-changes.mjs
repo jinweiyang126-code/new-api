@@ -56,6 +56,13 @@ const keys = [
   'Filter by email, role, or status...',
   'Expires At',
   'Add Credential',
+  'Preference order',
+  'Drag to set preference order. Higher items are tried first.',
+  'Failed to reorder channel bindings',
+  'Failed to reorder credentials',
+  'Select type',
+  'Fill Type and API Key, then fetch models from upstream.',
+  'Fetch from Upstream',
 ]
 
 const missingEn = keys.filter((k) => !(k in en))
@@ -78,6 +85,8 @@ const mustExist = [
   'web/src/features/customer-org/components/upstream-table.tsx',
   'web/src/features/customer-org/components/upstream-columns.tsx',
   'web/src/features/customer-org/components/upstream-mutate-drawer.tsx',
+  'web/src/features/customer-org/components/upstream-priority-order.tsx',
+  'web/src/components/priority-order-list.tsx',
   'docs/design/admin-list-page-standard.md',
 ]
 
@@ -137,6 +146,21 @@ const files = {
   upstreamActions: read(
     'web/src/features/customer-org/components/upstream-row-actions.tsx'
   ),
+  upstreamMutate: read(
+    'web/src/features/customer-org/components/upstream-mutate-drawer.tsx'
+  ),
+  upstreamOrder: read(
+    'web/src/features/customer-org/components/upstream-priority-order.tsx'
+  ),
+  priorityList: read('web/src/components/priority-order-list.tsx'),
+  customersEdit: read(
+    'web/src/features/customers/components/customers-edit-drawer.tsx'
+  ),
+  customersApi: read('web/src/features/customers/api.ts'),
+  orgApi: read('web/src/features/customer-org/api.ts'),
+  apiRouter: read('router/api-router.go'),
+  bindingOps: read('model/customer_upstream_ops.go'),
+  credOps: read('model/customer_upstream_credential_ops.go'),
   sidebarData: read('web/src/hooks/use-sidebar-data.ts'),
   listStandard: read('docs/design/admin-list-page-standard.md'),
   customerGo: read('model/customer.go'),
@@ -260,6 +284,40 @@ const checks = [
     'upstream pencil->update',
     files.upstreamActions.includes('Pencil') &&
       files.upstreamActions.includes("'update'"),
+  ],
+  [
+    'upstream fetch-models wired',
+    files.upstreamMutate.includes('FetchModelsDialog') &&
+      files.upstreamMutate.includes('fetchUpstreamCredentialModels') &&
+      files.orgApi.includes('upstream-credentials/fetch-models') &&
+      files.apiRouter.includes('upstream-credentials/fetch-models'),
+  ],
+  [
+    'upstream no manual priority field',
+    !files.upstreamMutate.includes("name='priority'") &&
+      files.upstreamPage.includes('UpstreamPriorityOrder'),
+  ],
+  [
+    'priority drag list component',
+    files.priorityList.includes('Reorder.Group') &&
+      files.priorityList.includes('onDragEnd'),
+  ],
+  [
+    'bindings drag reorder UX',
+    files.customersEdit.includes('PriorityOrderList') &&
+      files.customersEdit.includes('reorderChannelBindings') &&
+      !files.customersEdit.includes("Label>{t('Priority')}") &&
+      files.customersApi.includes('channel-bindings/reorder') &&
+      files.apiRouter.includes('channel-bindings/reorder') &&
+      files.bindingOps.includes('ReorderCustomerChannelBindings'),
+  ],
+  [
+    'credentials drag reorder UX',
+    files.upstreamOrder.includes('PriorityOrderList') &&
+      files.upstreamOrder.includes('reorderUpstreamCredentials') &&
+      files.orgApi.includes('upstream-credentials/reorder') &&
+      files.apiRouter.includes('upstream-credentials/reorder') &&
+      files.credOps.includes('ReorderCustomerUpstreamCredentials'),
   ],
   ['backend customerListOrder', files.customerGo.includes('customerListOrder')],
   ['binding ChannelName', files.bindingGo.includes('ChannelName')],

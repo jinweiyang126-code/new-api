@@ -69,7 +69,9 @@ export function UpstreamTable() {
   const columns = useUpstreamColumns()
   const { customerId, refreshTrigger } = useUpstream()
   const isMobile = useMediaQuery('(max-width: 640px)')
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'priority', desc: true },
+  ])
 
   const {
     globalFilter,

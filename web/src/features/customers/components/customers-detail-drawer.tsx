@@ -203,7 +203,7 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
                   {t('No channel bindings')}
                 </p>
               ) : (
-                bindings.map((b) => (
+                bindings.map((b, index) => (
                   <div
                     key={b.id}
                     className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'
@@ -217,8 +217,8 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
                         ID {b.channel_id}
                       </div>
                     </div>
-                    <span className='text-muted-foreground shrink-0'>
-                      priority {b.priority}
+                    <span className='text-muted-foreground shrink-0 text-xs tabular-nums'>
+                      #{index + 1}
                     </span>
                   </div>
                 ))
