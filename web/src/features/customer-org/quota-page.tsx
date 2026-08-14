@@ -2,7 +2,7 @@
 Copyright (C) 2023-2026 QuantumNous
 */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -20,9 +20,11 @@ import {
 import { formatQuota, parseQuotaFromDollars } from '@/lib/format'
 import { getCurrencyLabel } from '@/lib/currency'
 
-import { getCustomer, transferQuota } from './api'
+import { getCustomer, getWorkspace, transferQuota } from './api'
+import { WorkspaceContextBanner } from './components/workspace-context-banner'
 import { WORKSPACE_STATUS } from './constants'
 import { useCustomerContext } from './hooks/use-customer-context'
+import { resolveCurrentWorkspace } from './lib/resolve-current-workspace'
 import type { Workspace } from './types'
 
 export function QuotaPage() {
@@ -30,6 +32,11 @@ export function QuotaPage() {
   const queryClient = useQueryClient()
   const { data: ctx, isLoading: ctxLoading } = useCustomerContext()
   const customerId = ctx?.customer?.id ?? 0
+  const {
+    currentWorkspaceId,
+    currentWorkspace,
+    isPersonal,
+  } = resolveCurrentWorkspace(ctx)
   const workspaces = useMemo(
     () =>
       (ctx?.workspaces ?? []).filter(
@@ -48,11 +55,30 @@ export function QuotaPage() {
     },
   })
 
+  const { data: focusedWorkspace } = useQuery({
+    queryKey: ['workspace', currentWorkspaceId],
+    enabled: !isPersonal && currentWorkspaceId > 0,
+    queryFn: async () => {
+      const res = await getWorkspace(currentWorkspaceId)
+      if (!res.success || !res.data) throw new Error(res.message)
+      return res.data
+    },
+  })
+
   const [workspaceId, setWorkspaceId] = useState('')
   const [amount, setAmount] = useState('')
   const dollars = parseFloat(amount) || 0
   const quotaValue = parseQuotaFromDollars(Math.abs(dollars))
   const currencyLabel = getCurrencyLabel()
+
+  useEffect(() => {
+    if (isPersonal) {
+      setWorkspaceId('')
+      return
+    }
+    const exists = workspaces.some((w) => w.id === currentWorkspaceId)
+    setWorkspaceId(exists ? String(currentWorkspaceId) : '')
+  }, [currentWorkspaceId, isPersonal, workspaces])
 
   const transferMut = useMutation({
     mutationFn: async () => {
@@ -67,6 +93,9 @@ export function QuotaPage() {
       void queryClient.invalidateQueries({ queryKey: ['self-customer'] })
       void queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
       void queryClient.invalidateQueries({ queryKey: ['customer-workspaces'] })
+      void queryClient.invalidateQueries({
+        queryKey: ['workspace', currentWorkspaceId],
+      })
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -99,11 +128,18 @@ export function QuotaPage() {
     )
   }
 
+  const displayWs =
+    focusedWorkspace ??
+    currentWorkspace ??
+    workspaces.find((w) => w.id === Number(workspaceId))
+
   return (
     <SectionPageLayout>
       <SectionPageLayout.Title>{t('Quota')}</SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <div className='max-w-lg space-y-6'>
+          <WorkspaceContextBanner ctx={ctx} />
+
           <div className='rounded-md border px-4 py-3 text-sm'>
             <div className='text-muted-foreground'>{t('Customer balance')}</div>
             <div className='text-lg font-medium'>
@@ -111,29 +147,69 @@ export function QuotaPage() {
             </div>
           </div>
 
-          <div className='space-y-3'>
-            <div className='space-y-1'>
-              <Label>{t('Workspace')}</Label>
-              <Select
-                value={workspaceId}
-                items={workspaces.map((ws: Workspace) => ({
-                  value: String(ws.id),
-                  label: `${ws.name} (${formatQuota(ws.quota)})`,
-                }))}
-                onValueChange={(v) => setWorkspaceId(v ?? '')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('Select workspace')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {workspaces.map((ws: Workspace) => (
-                    <SelectItem key={ws.id} value={String(ws.id)}>
-                      {ws.name} ({formatQuota(ws.quota)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {!isPersonal && displayWs ? (
+            <div className='border-primary/30 bg-primary/5 rounded-md border px-4 py-3 text-sm'>
+              <div className='text-muted-foreground'>
+                {t('Workspace balance')} — {displayWs.name}
+              </div>
+              <div className='text-lg font-medium'>
+                {formatQuota(displayWs.quota)}
+              </div>
+              <div className='text-muted-foreground mt-1 text-xs'>
+                {t('Used')}: {formatQuota(displayWs.used_quota)}
+              </div>
             </div>
+          ) : (
+            <div className='space-y-2'>
+              <p className='text-muted-foreground text-sm'>
+                {t('Switch to a workspace in the top bar to focus its balance.')}
+              </p>
+              <div className='space-y-2'>
+                {workspaces.map((ws) => (
+                  <div
+                    key={ws.id}
+                    className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'
+                  >
+                    <span>{ws.name}</span>
+                    <span className='font-medium'>{formatQuota(ws.quota)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className='space-y-3'>
+            {isPersonal ? (
+              <div className='space-y-1'>
+                <Label>{t('Workspace')}</Label>
+                <Select
+                  value={workspaceId}
+                  items={workspaces.map((ws: Workspace) => ({
+                    value: String(ws.id),
+                    label: `${ws.name} (${formatQuota(ws.quota)})`,
+                  }))}
+                  onValueChange={(v) => setWorkspaceId(v ?? '')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('Select workspace')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workspaces.map((ws: Workspace) => (
+                      <SelectItem key={ws.id} value={String(ws.id)}>
+                        {ws.name} ({formatQuota(ws.quota)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <p className='text-muted-foreground text-sm'>
+                {t('Transfer target')}:{' '}
+                <span className='text-foreground font-medium'>
+                  {displayWs?.name ?? `#${currentWorkspaceId}`}
+                </span>
+              </p>
+            )}
             <div className='space-y-1'>
               <Label>
                 {t('Amount')} ({currencyLabel})

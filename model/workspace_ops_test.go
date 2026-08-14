@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -154,4 +155,21 @@ func TestCreateWorkspaceAndCannotDisableDefault(t *testing.T) {
 	disabled := CustomerStatusDisabled
 	_, err = UpdateWorkspaceFields(defaultID, nil, &disabled)
 	require.ErrorIs(t, err, ErrCannotDisableDefaultWorkspace)
+}
+
+func TestCreateWorkspaceAutoSlugWhenEmpty(t *testing.T) {
+	db := setupWorkspaceOpsTestDB(t)
+	customerID, _, ownerID := seedCustomerWithQuota(t, db, 0)
+
+	ws, err := CreateWorkspace(customerID, "Visa Loyalty", "", ownerID)
+	require.NoError(t, err)
+	require.Equal(t, "visa-loyalty", ws.Slug)
+
+	ws2, err := CreateWorkspace(customerID, "Visa Loyalty", "", ownerID)
+	require.NoError(t, err)
+	require.True(t, strings.HasPrefix(ws2.Slug, "visa-loyalty-"))
+	require.NotEqual(t, ws.Slug, ws2.Slug)
+
+	_, err = CreateWorkspace(customerID, "", "", ownerID)
+	require.ErrorIs(t, err, ErrWorkspaceNameRequired)
 }

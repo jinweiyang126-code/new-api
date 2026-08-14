@@ -47,6 +47,17 @@ export type CustomerMember = {
   updated_at: number
 }
 
+export type WorkspaceMember = {
+  id: number
+  workspace_id: number
+  user_id: number
+  role: string
+  status: number
+  username?: string
+  created_at: number
+  updated_at: number
+}
+
 export type Invitation = {
   id: number
   customer_id: number

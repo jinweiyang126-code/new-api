@@ -187,6 +187,8 @@ func writeWorkspaceErr(c *gin.Context, err error) {
 		common.ApiErrorMsg(c, "transfer amount must be positive")
 	case errors.Is(err, model.ErrCannotDisableDefaultWorkspace):
 		common.ApiErrorMsg(c, "cannot disable the default workspace")
+	case errors.Is(err, model.ErrWorkspaceNameRequired):
+		common.ApiErrorMsg(c, "workspace name is required")
 	case errors.Is(err, service.ErrCustomerForbidden):
 		c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "forbidden"})
 	default:

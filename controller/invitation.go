@@ -31,7 +31,7 @@ type createInvitationResponse struct {
 }
 
 // CreateCustomerInvitation creates an invite (customer admin+).
-// When email is provided and SMTP is configured, sends the accept link (failure does not roll back the invite).
+// Email is required. When SMTP is configured, sends the accept link (failure does not roll back the invite).
 func CreateCustomerInvitation(c *gin.Context) {
 	customerId := common.GetContextKeyInt(c, constant.ContextKeyCustomerId)
 	if customerId <= 0 {
@@ -48,11 +48,13 @@ func CreateCustomerInvitation(c *gin.Context) {
 		return
 	}
 	email := model.NormalizeEmail(req.Email)
-	if email != "" {
-		if err := common.Validate.Var(email, "email"); err != nil {
-			common.ApiErrorMsg(c, "invalid invitation email")
-			return
-		}
+	if email == "" {
+		common.ApiErrorMsg(c, "invitation email is required")
+		return
+	}
+	if err := common.Validate.Var(email, "email"); err != nil {
+		common.ApiErrorMsg(c, "invalid invitation email")
+		return
 	}
 	inv, err := model.CreateInvitation(model.CreateInvitationInput{
 		CustomerId:    customerId,

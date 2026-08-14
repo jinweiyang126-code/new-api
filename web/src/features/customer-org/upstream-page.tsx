@@ -18,6 +18,7 @@ import {
   testUpstreamCredential,
   updateUpstreamCredential,
 } from './api'
+import { WorkspaceContextBanner } from './components/workspace-context-banner'
 import { useCustomerContext } from './hooks/use-customer-context'
 import type { UpstreamCredential } from './types'
 
@@ -162,6 +163,7 @@ export function UpstreamPage() {
       <SectionPageLayout.Title>{t('Upstream / BYOK')}</SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <div className='space-y-8'>
+          <WorkspaceContextBanner ctx={ctx} />
           <section className='max-w-xl space-y-3'>
             <h3 className='text-sm font-semibold'>{t('Add credential')}</h3>
             <div className='grid gap-3 sm:grid-cols-2'>

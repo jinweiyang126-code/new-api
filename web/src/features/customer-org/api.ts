@@ -11,6 +11,7 @@ import type {
   SelfCustomerContext,
   UpstreamCredential,
   Workspace,
+  WorkspaceMember,
 } from './types'
 
 export async function getSelfCustomer(): Promise<
@@ -33,6 +34,20 @@ export async function getCustomerWorkspaces(
   customerId: number
 ): Promise<ApiResponse<Workspace[]>> {
   const res = await api.get(`/api/customers/${customerId}/workspaces`)
+  return res.data
+}
+
+export async function getWorkspace(
+  workspaceId: number
+): Promise<ApiResponse<Workspace>> {
+  const res = await api.get(`/api/workspaces/${workspaceId}`)
+  return res.data
+}
+
+export async function getWorkspaceMembers(
+  workspaceId: number
+): Promise<ApiResponse<WorkspaceMember[]>> {
+  const res = await api.get(`/api/workspaces/${workspaceId}/members`)
   return res.data
 }
 
@@ -89,7 +104,7 @@ export async function getCustomerInvitations(
 export async function createCustomerInvitation(
   customerId: number,
   data: {
-    email?: string
+    email: string
     workspace_id?: number
     role?: string
     workspace_role?: string

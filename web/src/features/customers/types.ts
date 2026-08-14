@@ -15,6 +15,7 @@ export type Customer = {
   quota: number
   used_quota: number
   owner_user_id: number
+  owner_username?: string
   remark?: string
   upstream_mode: UpstreamMode | string
   allow_global_fallback: boolean

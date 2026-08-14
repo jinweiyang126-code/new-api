@@ -17,11 +17,15 @@ import type {
 export async function getCustomers(params: {
   p?: number
   page_size?: number
+  keyword?: string
+  status?: string
 }): Promise<GetCustomersResponse> {
   const res = await api.get('/api/customers/', {
     params: {
       p: params.p ?? 1,
       page_size: params.page_size ?? 20,
+      keyword: params.keyword || undefined,
+      status: params.status || undefined,
     },
   })
   return res.data

@@ -8,12 +8,15 @@ import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
 import { formatQuota, formatTimestamp } from '@/lib/format'
 
-import { CUSTOMER_STATUS } from '../constants'
-import type { Customer } from '../types'
-import { DataTableRowActions } from './data-table-row-actions'
+import { WORKSPACE_STATUS } from '../constants'
+import type { Workspace } from '../types'
+import { WorkspacesRowActions } from './workspaces-row-actions'
+import { useWorkspaces } from './workspaces-provider'
 
-export function useCustomersColumns(): ColumnDef<Customer>[] {
+export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
   const { t } = useTranslation()
+  const { currentWorkspaceId } = useWorkspaces()
+
   return [
     {
       accessorKey: 'id',
@@ -26,14 +29,29 @@ export function useCustomersColumns(): ColumnDef<Customer>[] {
       accessorKey: 'name',
       header: t('Name'),
       size: 180,
-      cell: ({ row }) => (
-        <div className='flex min-w-0 flex-col gap-0.5'>
-          <span className='truncate font-medium'>{row.original.name}</span>
-          <span className='text-muted-foreground truncate text-xs'>
-            {row.original.slug}
-          </span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const ws = row.original
+        return (
+          <div className='flex min-w-0 flex-col gap-0.5'>
+            <span className='truncate font-medium'>
+              {ws.name}
+              {ws.is_default ? (
+                <span className='text-muted-foreground ml-2 text-xs font-normal'>
+                  ({t('default')})
+                </span>
+              ) : null}
+              {ws.id === currentWorkspaceId ? (
+                <span className='text-primary ml-2 text-xs font-medium'>
+                  ({t('Current')})
+                </span>
+              ) : null}
+            </span>
+            <span className='text-muted-foreground truncate text-xs'>
+              {ws.slug}
+            </span>
+          </div>
+        )
+      },
       meta: { mobileOrder: 2 },
     },
     {
@@ -51,24 +69,11 @@ export function useCustomersColumns(): ColumnDef<Customer>[] {
       meta: { mobileOrder: 4 },
     },
     {
-      accessorKey: 'upstream_mode',
-      header: t('Upstream Mode'),
-      size: 120,
-      cell: ({ row }) => (
-        <StatusBadge
-          label={row.original.upstream_mode || 'shared'}
-          variant='neutral'
-          copyable={false}
-        />
-      ),
-      meta: { mobileOrder: 5, mobileHidden: true },
-    },
-    {
       accessorKey: 'status',
       header: t('Status'),
       size: 100,
       cell: ({ row }) =>
-        row.original.status === CUSTOMER_STATUS.ENABLED ? (
+        row.original.status === WORKSPACE_STATUS.ENABLED ? (
           <StatusBadge label={t('Enabled')} variant='success' copyable={false} />
         ) : (
           <StatusBadge
@@ -80,29 +85,18 @@ export function useCustomersColumns(): ColumnDef<Customer>[] {
       meta: { mobileOrder: 3, mobileBadge: true },
     },
     {
-      accessorKey: 'owner_username',
-      header: t('Owner'),
-      size: 120,
-      cell: ({ row }) =>
-        row.original.owner_username ||
-        (row.original.owner_user_id
-          ? `#${row.original.owner_user_id}`
-          : '—'),
-      meta: { mobileOrder: 6, mobileHidden: true },
-    },
-    {
       accessorKey: 'created_at',
       header: t('Created At'),
       size: 160,
       cell: ({ row }) => formatTimestamp(row.original.created_at),
-      meta: { mobileOrder: 7, mobileHidden: true },
+      meta: { mobileOrder: 5, mobileHidden: true },
     },
     {
       id: 'actions',
       size: 56,
       enableSorting: false,
       enableHiding: false,
-      cell: ({ row }) => <DataTableRowActions row={row} />,
+      cell: ({ row }) => <WorkspacesRowActions row={row} />,
       meta: { pinned: 'right', mobileOrder: 99 },
     },
   ]

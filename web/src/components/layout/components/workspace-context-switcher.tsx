@@ -60,7 +60,7 @@ export function WorkspaceContextSwitcher() {
           const next = !v || v === 'personal' ? 0 : Number(v)
           if (Number.isNaN(next)) return
           switchMut.mutate(next, {
-            onSuccess: () => toast.success(t('Workspace switched')),
+            onSuccess: () => toast.success(t('Workspace context switched')),
             onError: (e: Error) =>
               toast.error(e.message || t('Failed to switch workspace')),
           })

@@ -60,6 +60,12 @@ type Customer struct {
 	UpdatedAt           int64  `json:"updated_at" gorm:"bigint"`
 }
 
+// CustomerView is a list/detail row with owner username for display.
+type CustomerView struct {
+	Customer
+	OwnerUsername string `json:"owner_username"`
+}
+
 func (Customer) TableName() string {
 	return "customers"
 }
@@ -89,13 +95,73 @@ func GetCustomerById(id int) (*Customer, error) {
 }
 
 // GetAllCustomers returns a paginated customer list (platform root).
-func GetAllCustomers(startIdx, pageSize int) (customers []*Customer, total int64, err error) {
-	err = DB.Model(&Customer{}).Count(&total).Error
+// keyword matches name/slug/remark (case-insensitive). status < 0 means all.
+func GetAllCustomers(startIdx, pageSize int, keyword string, status int) (customers []*CustomerView, total int64, err error) {
+	tx := DB.Model(&Customer{})
+	keyword = strings.TrimSpace(keyword)
+	if keyword != "" {
+		like := "%" + keyword + "%"
+		tx = tx.Where("name LIKE ? OR slug LIKE ? OR remark LIKE ?", like, like, like)
+	}
+	if status == CustomerStatusEnabled || status == CustomerStatusDisabled {
+		tx = tx.Where("status = ?", status)
+	}
+	err = tx.Count(&total).Error
 	if err != nil {
 		return nil, 0, err
 	}
-	err = DB.Order("id desc").Limit(pageSize).Offset(startIdx).Find(&customers).Error
-	return customers, total, err
+	var rows []*Customer
+	err = tx.Order("id desc").Limit(pageSize).Offset(startIdx).Find(&rows).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	views, err := AttachCustomerOwnerUsernames(rows)
+	return views, total, err
+}
+
+// AttachCustomerOwnerUsernames fills owner_username for display.
+func AttachCustomerOwnerUsernames(customers []*Customer) ([]*CustomerView, error) {
+	out := make([]*CustomerView, 0, len(customers))
+	if len(customers) == 0 {
+		return out, nil
+	}
+	ids := make([]int, 0, len(customers))
+	for _, c := range customers {
+		if c == nil {
+			continue
+		}
+		ids = append(ids, c.OwnerUserId)
+	}
+	nameByID, err := usernamesByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range customers {
+		if c == nil {
+			continue
+		}
+		out = append(out, &CustomerView{
+			Customer:      *c,
+			OwnerUsername: nameByID[c.OwnerUserId],
+		})
+	}
+	return out, nil
+}
+
+// GetCustomerViewById loads a customer with owner username.
+func GetCustomerViewById(id int) (*CustomerView, error) {
+	customer, err := GetCustomerById(id)
+	if err != nil {
+		return nil, err
+	}
+	views, err := AttachCustomerOwnerUsernames([]*Customer{customer})
+	if err != nil {
+		return nil, err
+	}
+	if len(views) == 0 {
+		return nil, ErrCustomerNotFound
+	}
+	return views[0], nil
 }
 
 // GetWorkspacesByCustomerId lists workspaces under a customer.

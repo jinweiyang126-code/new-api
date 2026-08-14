@@ -79,6 +79,26 @@ func TestCreateCustomerFailsWhenOwnerAlreadyHasCustomer(t *testing.T) {
 	require.ErrorIs(t, err, ErrOwnerAlreadyHasCustomer)
 }
 
+func TestGetAllCustomersIncludesOwnerUsername(t *testing.T) {
+	db := setupCustomerAPITestDB(t)
+
+	owner := &User{
+		Username: "owner-list", Password: "password123", Role: common.RoleCommonUser,
+		Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1, AffCode: "owner-list-aff",
+	}
+	require.NoError(t, db.Create(owner).Error)
+	customer := &Customer{Name: "List Co"}
+	_, err := CreateCustomerWithOwner(customer, owner.Id)
+	require.NoError(t, err)
+
+	list, total, err := GetAllCustomers(0, 20, "", -1)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Len(t, list, 1)
+	require.Equal(t, "owner-list", list[0].OwnerUsername)
+	require.Equal(t, owner.Id, list[0].OwnerUserId)
+}
+
 func TestTopUpCustomerQuota(t *testing.T) {
 	db := setupCustomerAPITestDB(t)
 

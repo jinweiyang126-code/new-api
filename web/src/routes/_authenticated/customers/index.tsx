@@ -11,6 +11,8 @@ import { useAuthStore } from '@/stores/auth-store'
 const customersSearchSchema = z.object({
   page: z.number().optional().catch(1),
   pageSize: z.number().optional().catch(undefined),
+  filter: z.string().optional().catch(''),
+  status: z.array(z.string()).optional().catch([]),
 })
 
 export const Route = createFileRoute('/_authenticated/customers/')({

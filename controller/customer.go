@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -40,7 +41,14 @@ func GetCustomers(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
 
 	if service.IsRootUser(systemRole) {
-		customers, total, err := model.GetAllCustomers(pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+		keyword := strings.TrimSpace(c.Query("keyword"))
+		status := -1
+		if raw := strings.TrimSpace(c.Query("status")); raw != "" {
+			if parsed, err := strconv.Atoi(raw); err == nil {
+				status = parsed
+			}
+		}
+		customers, total, err := model.GetAllCustomers(pageInfo.GetStartIdx(), pageInfo.GetPageSize(), keyword, status)
 		if err != nil {
 			common.ApiError(c, err)
 			return
@@ -58,17 +66,17 @@ func GetCustomers(c *gin.Context) {
 	}
 	if customerId <= 0 {
 		pageInfo.SetTotal(0)
-		pageInfo.SetItems([]*model.Customer{})
+		pageInfo.SetItems([]*model.CustomerView{})
 		common.ApiSuccess(c, pageInfo)
 		return
 	}
-	customer, err := model.GetCustomerById(customerId)
+	customer, err := model.GetCustomerViewById(customerId)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
 	pageInfo.SetTotal(1)
-	pageInfo.SetItems([]*model.Customer{customer})
+	pageInfo.SetItems([]*model.CustomerView{customer})
 	common.ApiSuccess(c, pageInfo)
 }
 
@@ -125,7 +133,7 @@ func GetCustomer(c *gin.Context) {
 		}
 		customerId = id
 	}
-	customer, err := model.GetCustomerById(customerId)
+	customer, err := model.GetCustomerViewById(customerId)
 	if err != nil {
 		writeCustomerErr(c, err)
 		return

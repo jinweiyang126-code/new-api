@@ -2,7 +2,7 @@
 Copyright (C) 2023-2026 QuantumNous
 */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -22,12 +22,20 @@ import {
   createCustomerInvitation,
   getCustomerInvitations,
   getCustomerMembers,
+  getWorkspaceMembers,
   removeCustomerMember,
   revokeInvitation,
 } from './api'
+import { WorkspaceContextBanner } from './components/workspace-context-banner'
 import { CUSTOMER_ROLES, WORKSPACE_ROLES } from './constants'
 import { useCustomerContext } from './hooks/use-customer-context'
-import type { CustomerMember, Invitation, Workspace } from './types'
+import { resolveCurrentWorkspace } from './lib/resolve-current-workspace'
+import type {
+  CustomerMember,
+  Invitation,
+  Workspace,
+  WorkspaceMember,
+} from './types'
 
 export function MembersPage() {
   const { t } = useTranslation()
@@ -35,17 +43,43 @@ export function MembersPage() {
   const { data: ctx, isLoading: ctxLoading } = useCustomerContext()
   const customerId = ctx?.customer?.id ?? 0
   const isAdmin = Boolean(ctx?.is_admin)
+  const {
+    currentWorkspaceId,
+    currentWorkspace,
+    isPersonal,
+  } = resolveCurrentWorkspace(ctx)
 
   const [email, setEmail] = useState('')
   const [role, setRole] = useState(CUSTOMER_ROLES.MEMBER)
   const [workspaceRole, setWorkspaceRole] = useState(WORKSPACE_ROLES.MEMBER)
   const [workspaceId, setWorkspaceId] = useState('default')
 
-  const { data: members = [] } = useQuery({
+  useEffect(() => {
+    if (isPersonal) {
+      setWorkspaceId('default')
+      return
+    }
+    const exists = (ctx?.workspaces ?? []).some(
+      (w: Workspace) => w.id === currentWorkspaceId
+    )
+    setWorkspaceId(exists ? String(currentWorkspaceId) : 'default')
+  }, [currentWorkspaceId, isPersonal, ctx?.workspaces])
+
+  const { data: customerMembers = [] } = useQuery({
     queryKey: ['customer-members', customerId],
-    enabled: customerId > 0,
+    enabled: customerId > 0 && isPersonal,
     queryFn: async () => {
       const res = await getCustomerMembers(customerId)
+      if (!res.success) throw new Error(res.message)
+      return res.data ?? []
+    },
+  })
+
+  const { data: workspaceMembers = [] } = useQuery({
+    queryKey: ['workspace-members', currentWorkspaceId],
+    enabled: !isPersonal && currentWorkspaceId > 0,
+    queryFn: async () => {
+      const res = await getWorkspaceMembers(currentWorkspaceId)
       if (!res.success) throw new Error(res.message)
       return res.data ?? []
     },
@@ -61,19 +95,35 @@ export function MembersPage() {
     },
   })
 
+  const filteredInvitations = useMemo(() => {
+    if (isPersonal) return invitations
+    return invitations.filter((inv: Invitation) => {
+      if (inv.workspace_id == null || inv.workspace_id === 0) {
+        return Boolean(currentWorkspace?.is_default)
+      }
+      return inv.workspace_id === currentWorkspaceId
+    })
+  }, [invitations, isPersonal, currentWorkspaceId, currentWorkspace?.is_default])
+
   const inviteMut = useMutation({
     mutationFn: async () => {
+      const trimmedEmail = email.trim()
+      if (!trimmedEmail) {
+        throw new Error(t('Invitee email is required'))
+      }
       const payload: {
-        email?: string
+        email: string
         role: string
         workspace_role: string
         workspace_id?: number
       } = {
-        email: email.trim() || undefined,
+        email: trimmedEmail,
         role,
         workspace_role: workspaceRole,
       }
-      if (workspaceId !== 'default') {
+      if (!isPersonal && currentWorkspaceId > 0) {
+        payload.workspace_id = currentWorkspaceId
+      } else if (workspaceId !== 'default') {
         payload.workspace_id = Number(workspaceId)
       }
       const res = await createCustomerInvitation(customerId, payload)
@@ -85,17 +135,15 @@ export function MembersPage() {
       try {
         await navigator.clipboard.writeText(link)
       } catch {
-        // ignore clipboard failures; toast still covers outcome
+        // ignore clipboard failures
       }
       if (inv.email_sent) {
         toast.success(t('Invitation created. Email sent.'))
-      } else if (inv.email?.trim()) {
+      } else {
         toast.success(t('Invitation created. Email not sent.'))
         if (inv.email_error) {
           toast.message(inv.email_error)
         }
-      } else {
-        toast.success(t('Invitation created. Link copied.'))
       }
       setEmail('')
       void queryClient.invalidateQueries({ queryKey: ['customer-invitations'] })
@@ -111,6 +159,7 @@ export function MembersPage() {
     onSuccess: () => {
       toast.success(t('Member removed'))
       void queryClient.invalidateQueries({ queryKey: ['customer-members'] })
+      void queryClient.invalidateQueries({ queryKey: ['workspace-members'] })
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -152,32 +201,69 @@ export function MembersPage() {
       </SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <div className='space-y-8'>
-          <section className='space-y-3'>
-            <h3 className='text-sm font-semibold'>{t('Members')}</h3>
-            {members.map((m: CustomerMember) => (
-              <div
-                key={m.id}
-                className='flex items-center justify-between rounded-md border px-4 py-3 text-sm'
-              >
-                <div>
-                  <div className='font-medium'>
-                    {m.username || `User #${m.user_id}`}
+          <WorkspaceContextBanner ctx={ctx} />
+
+          {isPersonal ? (
+            <section className='space-y-3'>
+              <h3 className='text-sm font-semibold'>
+                {t('Customer members')}
+              </h3>
+              <p className='text-muted-foreground text-xs'>
+                {t('Switch to a workspace to see its members.')}
+              </p>
+              {customerMembers.map((m: CustomerMember) => (
+                <div
+                  key={m.id}
+                  className='flex items-center justify-between rounded-md border px-4 py-3 text-sm'
+                >
+                  <div>
+                    <div className='font-medium'>
+                      {m.username || `User #${m.user_id}`}
+                    </div>
+                    <div className='text-muted-foreground text-xs'>{m.role}</div>
                   </div>
-                  <div className='text-muted-foreground text-xs'>{m.role}</div>
+                  {isAdmin && m.role !== CUSTOMER_ROLES.OWNER ? (
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      disabled={removeMut.isPending}
+                      onClick={() => removeMut.mutate(m.user_id)}
+                    >
+                      {t('Remove')}
+                    </Button>
+                  ) : null}
                 </div>
-                {isAdmin && m.role !== CUSTOMER_ROLES.OWNER ? (
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    disabled={removeMut.isPending}
-                    onClick={() => removeMut.mutate(m.user_id)}
+              ))}
+            </section>
+          ) : (
+            <section className='space-y-3'>
+              <h3 className='text-sm font-semibold'>
+                {t('Workspace members')} —{' '}
+                {currentWorkspace?.name ?? `#${currentWorkspaceId}`}
+              </h3>
+              {workspaceMembers.length === 0 ? (
+                <p className='text-muted-foreground text-sm'>
+                  {t('No workspace members')}
+                </p>
+              ) : (
+                workspaceMembers.map((m: WorkspaceMember) => (
+                  <div
+                    key={m.id}
+                    className='flex items-center justify-between rounded-md border px-4 py-3 text-sm'
                   >
-                    {t('Remove')}
-                  </Button>
-                ) : null}
-              </div>
-            ))}
-          </section>
+                    <div>
+                      <div className='font-medium'>
+                        {m.username || `User #${m.user_id}`}
+                      </div>
+                      <div className='text-muted-foreground text-xs'>
+                        {m.role}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </section>
+          )}
 
           {isAdmin ? (
             <>
@@ -188,9 +274,11 @@ export function MembersPage() {
                     <Label>{t('Email')}</Label>
                     <Input
                       type='email'
+                      required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={t('Invitee email (required to send mail)')}
+                      placeholder={t('Invitee email')}
+                      className='w-56'
                     />
                   </div>
                   <div className='space-y-1'>
@@ -216,34 +304,43 @@ export function MembersPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className='space-y-1'>
-                    <Label>{t('Workspace')}</Label>
-                    <Select
-                      value={workspaceId}
-                      items={[
-                        { value: 'default', label: t('default') },
-                        ...(ctx.workspaces ?? []).map((ws: Workspace) => ({
-                          value: String(ws.id),
-                          label: ws.name,
-                        })),
-                      ]}
-                      onValueChange={(v) => setWorkspaceId(v ?? 'default')}
-                    >
-                      <SelectTrigger className='w-44'>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='default'>
-                          {t('default')}
-                        </SelectItem>
-                        {(ctx.workspaces ?? []).map((ws: Workspace) => (
-                          <SelectItem key={ws.id} value={String(ws.id)}>
-                            {ws.name}
+                  {isPersonal ? (
+                    <div className='space-y-1'>
+                      <Label>{t('Workspace')}</Label>
+                      <Select
+                        value={workspaceId}
+                        items={[
+                          { value: 'default', label: t('default') },
+                          ...(ctx.workspaces ?? []).map((ws: Workspace) => ({
+                            value: String(ws.id),
+                            label: ws.name,
+                          })),
+                        ]}
+                        onValueChange={(v) => setWorkspaceId(v ?? 'default')}
+                      >
+                        <SelectTrigger className='w-44'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='default'>
+                            {t('default')}
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                          {(ctx.workspaces ?? []).map((ws: Workspace) => (
+                            <SelectItem key={ws.id} value={String(ws.id)}>
+                              {ws.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className='space-y-1'>
+                      <Label>{t('Workspace')}</Label>
+                      <div className='border-input bg-muted/40 flex h-9 w-44 items-center rounded-md border px-3 text-sm font-medium'>
+                        {currentWorkspace?.name ?? `#${currentWorkspaceId}`}
+                      </div>
+                    </div>
+                  )}
                   <div className='space-y-1'>
                     <Label>{t('Workspace role')}</Label>
                     <Select
@@ -269,23 +366,32 @@ export function MembersPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button
-                    disabled={inviteMut.isPending}
-                    onClick={() => inviteMut.mutate()}
-                  >
-                    {t('Create Invitation')}
-                  </Button>
+                  <div className='space-y-1'>
+                    <Label className='invisible select-none' aria-hidden>
+                      {t('Create Invitation')}
+                    </Label>
+                    <Button
+                      disabled={inviteMut.isPending}
+                      onClick={() => inviteMut.mutate()}
+                    >
+                      {t('Create Invitation')}
+                    </Button>
+                  </div>
                 </div>
               </section>
 
               <section className='space-y-3'>
-                <h3 className='text-sm font-semibold'>{t('Invitations')}</h3>
-                {invitations.length === 0 ? (
+                <h3 className='text-sm font-semibold'>
+                  {isPersonal
+                    ? t('Invitations')
+                    : `${t('Invitations')} — ${currentWorkspace?.name ?? `#${currentWorkspaceId}`}`}
+                </h3>
+                {filteredInvitations.length === 0 ? (
                   <p className='text-muted-foreground text-sm'>
                     {t('No invitations')}
                   </p>
                 ) : (
-                  invitations.map((inv: Invitation) => (
+                  filteredInvitations.map((inv: Invitation) => (
                     <div
                       key={inv.id}
                       className='flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 text-sm'

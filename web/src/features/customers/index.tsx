@@ -13,6 +13,7 @@ import {
   CustomersProvider,
   useCustomers,
 } from './components/customers-provider'
+import { CustomersStatusDialog } from './components/customers-status-dialog'
 import { CustomersTable } from './components/customers-table'
 
 function CustomersContent() {
@@ -42,6 +43,7 @@ function CustomersContent() {
         onOpenChange={(isOpen) => !isOpen && setOpen(null)}
         customer={currentRow}
       />
+      <CustomersStatusDialog />
       {currentRow ? (
         <CustomerTopupDialog
           open={open === 'topup'}

@@ -2,7 +2,10 @@ package model
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/QuantumNous/new-api/common"
 
@@ -10,15 +13,69 @@ import (
 )
 
 var (
-	ErrWorkspaceNotFound           = errors.New("workspace not found")
-	ErrWorkspaceSlugDuplicated     = errors.New("workspace slug already exists in this customer")
-	ErrWorkspaceDisabled           = errors.New("workspace is disabled")
-	ErrInsufficientCustomerQuota   = errors.New("insufficient customer quota")
-	ErrInvalidTransferQuotaAmount  = errors.New("transfer amount must be positive")
+	ErrWorkspaceNotFound             = errors.New("workspace not found")
+	ErrWorkspaceSlugDuplicated       = errors.New("workspace slug already exists in this customer")
+	ErrWorkspaceDisabled             = errors.New("workspace is disabled")
+	ErrInsufficientCustomerQuota     = errors.New("insufficient customer quota")
+	ErrInvalidTransferQuotaAmount    = errors.New("transfer amount must be positive")
 	ErrCannotDisableDefaultWorkspace = errors.New("cannot disable the default workspace")
+	ErrWorkspaceNameRequired         = errors.New("workspace name is required")
 )
 
+var nonSlugChars = regexp.MustCompile(`[^a-z0-9]+`)
+
+// NormalizeWorkspaceSlug turns a display name / raw slug into a safe workspace slug.
+// Empty input yields empty string (caller may auto-generate).
+func NormalizeWorkspaceSlug(raw string) string {
+	s := strings.TrimSpace(strings.ToLower(raw))
+	if s == "" {
+		return ""
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(unicode.ToLower(r))
+		} else if r == '-' || r == '_' || unicode.IsSpace(r) {
+			b.WriteByte('-')
+		}
+	}
+	s = nonSlugChars.ReplaceAllString(b.String(), "-")
+	s = strings.Trim(s, "-")
+	if len(s) > 48 {
+		s = strings.Trim(s[:48], "-")
+	}
+	return s
+}
+
+func allocateWorkspaceSlug(tx *gorm.DB, customerId int, preferred string) (string, error) {
+	base := NormalizeWorkspaceSlug(preferred)
+	if base == "" || base == WorkspaceSlugDefault {
+		base = "ws-" + common.GetRandomString(8)
+	}
+	candidates := []string{base}
+	for i := 0; i < 5; i++ {
+		candidates = append(candidates, fmt.Sprintf("%s-%s", base, common.GetRandomString(4)))
+	}
+	for _, slug := range candidates {
+		if slug == WorkspaceSlugDefault {
+			continue
+		}
+		var count int64
+		if err := tx.Model(&Workspace{}).
+			Where("customer_id = ? AND slug = ?", customerId, slug).
+			Count(&count).Error; err != nil {
+			return "", err
+		}
+		if count == 0 {
+			return slug, nil
+		}
+	}
+	return "", ErrWorkspaceSlugDuplicated
+}
+
 // CreateWorkspace creates a workspace under customerId and optionally adds creator as workspace admin.
+// Empty slug is auto-generated from name (same pattern as optional customer slug).
 func CreateWorkspace(customerId int, name, slug string, creatorUserId int) (*Workspace, error) {
 	if customerId <= 0 {
 		return nil, ErrCustomerNotFound
@@ -26,12 +83,9 @@ func CreateWorkspace(customerId int, name, slug string, creatorUserId int) (*Wor
 	name = strings.TrimSpace(name)
 	slug = strings.TrimSpace(slug)
 	if name == "" {
-		return nil, errors.New("workspace name is required")
+		return nil, ErrWorkspaceNameRequired
 	}
-	if slug == "" {
-		return nil, errors.New("workspace slug is required")
-	}
-	if slug == WorkspaceSlugDefault {
+	if NormalizeWorkspaceSlug(slug) == WorkspaceSlugDefault {
 		return nil, errors.New("slug 'default' is reserved")
 	}
 
@@ -48,21 +102,20 @@ func CreateWorkspace(customerId int, name, slug string, creatorUserId int) (*Wor
 			return errors.New("customer is disabled")
 		}
 
-		var count int64
-		if err := tx.Model(&Workspace{}).
-			Where("customer_id = ? AND slug = ?", customerId, slug).
-			Count(&count).Error; err != nil {
-			return err
+		preferred := slug
+		if preferred == "" {
+			preferred = name
 		}
-		if count > 0 {
-			return ErrWorkspaceSlugDuplicated
+		finalSlug, err := allocateWorkspaceSlug(tx, customerId, preferred)
+		if err != nil {
+			return err
 		}
 
 		now := common.GetTimestamp()
 		ws := &Workspace{
 			CustomerId: customerId,
 			Name:       name,
-			Slug:       slug,
+			Slug:       finalSlug,
 			Status:     CustomerStatusEnabled,
 			Quota:      0,
 			UsedQuota:  0,
