@@ -18,6 +18,7 @@ import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
 import { getCustomerWorkspaces } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { WORKSPACE_STATUS } from '../constants'
 import { useCustomerContext } from '../hooks/use-customer-context'
 import type { Workspace } from '../types'
@@ -107,7 +108,7 @@ export function WorkspacesTable() {
     queryFn: async () => {
       const res = await getCustomerWorkspaces(customerId)
       if (!res.success) {
-        toast.error(res.message || t('Failed to load workspaces'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to load workspaces'))
         return []
       }
       return res.data ?? []

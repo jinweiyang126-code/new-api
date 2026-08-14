@@ -14,6 +14,7 @@ import {
   getUpstreamCredentials,
   reorderUpstreamCredentials,
 } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { useUpstream } from './upstream-provider'
 
 function formatTypeLabel(type: string, t: (key: string) => string): string {
@@ -41,7 +42,7 @@ export function UpstreamPriorityOrder() {
     queryFn: async () => {
       const res = await getUpstreamCredentials(customerId)
       if (!res.success) {
-        toast.error(res.message || t('Failed to load credentials'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to load credentials'))
         return []
       }
       return res.data ?? []
@@ -61,7 +62,7 @@ export function UpstreamPriorityOrder() {
   const reorder = useMutation({
     mutationFn: async (orderedIds: number[]) => {
       const res = await reorderUpstreamCredentials(customerId, orderedIds)
-      if (!res.success) throw new Error(res.message || 'failed')
+      if (!res.success) throw new Error(apiErrorMessage(t, res.message, 'Failed to reorder credentials'))
       return res.data
     },
     onSuccess: () => {
@@ -69,7 +70,7 @@ export function UpstreamPriorityOrder() {
       triggerRefresh()
     },
     onError: (err: Error) => {
-      toast.error(err.message || t('Failed to reorder credentials'))
+      toast.error(apiErrorMessage(t, err.message, 'Failed to reorder credentials'))
       void refetch()
     },
   })

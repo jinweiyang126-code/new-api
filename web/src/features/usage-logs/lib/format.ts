@@ -167,6 +167,39 @@ export function parseLogOther(other: string): LogOtherData | null {
   }
 }
 
+/** Relay upstream source written on consume logs (T15). */
+export type UpstreamSource = 'shared' | 'dedicated' | 'byok'
+
+export function normalizeUpstreamSource(
+  source: string | null | undefined
+): UpstreamSource | '' {
+  const value = (source || '').trim().toLowerCase()
+  if (value === 'shared' || value === 'dedicated' || value === 'byok') {
+    return value
+  }
+  return ''
+}
+
+export function getUpstreamSourceLabel(
+  source: string | null | undefined,
+  t: (key: string) => string
+): string {
+  const normalized = normalizeUpstreamSource(source)
+  if (!normalized) return ''
+  if (normalized === 'shared') return t('Shared')
+  if (normalized === 'dedicated') return t('Dedicated')
+  return t('BYOK')
+}
+
+export function getUpstreamSourceVariant(
+  source: string | null | undefined
+): 'neutral' | 'info' | 'success' {
+  const normalized = normalizeUpstreamSource(source)
+  if (normalized === 'byok') return 'success'
+  if (normalized === 'dedicated') return 'info'
+  return 'neutral'
+}
+
 /**
  * Get time color based on duration (in seconds)
  */

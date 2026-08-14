@@ -57,18 +57,17 @@ import {
   reorderUpstreamCredentials,
   updateUpstreamCredential,
 } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import type { UpstreamCredential } from '../types'
 import { useUpstream } from './upstream-provider'
 
-const schema = z.object({
-  name: z.string().min(1),
-  type: z.string().min(1),
-  key: z.string().optional(),
-  base_url: z.string().optional(),
-  models: z.string().optional(),
-})
-
-type FormValues = z.infer<typeof schema>
+type FormValues = {
+  name: string
+  type: string
+  key?: string
+  base_url?: string
+  models?: string
+}
 
 type Props = {
   open: boolean
@@ -137,6 +136,17 @@ export function UpstreamMutateDrawer({
   const { customerId, triggerRefresh } = useUpstream()
   const isUpdate = Boolean(currentRow)
   const [fetchModelsOpen, setFetchModelsOpen] = useState(false)
+  const schema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, t('Name is required')),
+        type: z.string().min(1, t('Please select a type')),
+        key: z.string().optional(),
+        base_url: z.string().optional(),
+        models: z.string().optional(),
+      }),
+    [t]
+  )
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -203,7 +213,7 @@ export function UpstreamMutateDrawer({
         ...(key ? { key } : {}),
       })
       if (!res.success) {
-        toast.error(res.message || t('Failed to update credential'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to update credential'))
         return
       }
       toast.success(key ? t('Credential rotated') : t('Credential updated'))
@@ -221,7 +231,7 @@ export function UpstreamMutateDrawer({
         priority: 0,
       })
       if (!res.success || !res.data) {
-        toast.error(res.message || t('Failed to create credential'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to create credential'))
         return
       }
       const orderedIds = [...existingIds, res.data.id]
@@ -429,7 +439,7 @@ export function UpstreamMutateDrawer({
             credential_id: isUpdate ? currentRow?.id : undefined,
           })
           if (!res.success) {
-            throw new Error(res.message || t('Failed to fetch models'))
+            throw new Error(apiErrorMessage(t, res.message, 'Failed to fetch models'))
           }
           return Array.isArray(res.data) ? res.data : []
         }}

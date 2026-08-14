@@ -3,7 +3,7 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -43,19 +43,18 @@ import {
 } from '@/components/ui/sheet'
 
 import { createCustomerInvitation } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { CUSTOMER_ROLES, WORKSPACE_ROLES } from '../constants'
 import { useCustomerContext } from '../hooks/use-customer-context'
 import type { Workspace } from '../types'
 import { useMembers } from './members-provider'
 
-const schema = z.object({
-  email: z.string().email(),
-  role: z.string().min(1),
-  workspace_role: z.string().min(1),
-  workspace_id: z.string().min(1),
-})
-
-type FormValues = z.infer<typeof schema>
+type FormValues = {
+  email: string
+  role: string
+  workspace_role: string
+  workspace_id: string
+}
 
 type Props = {
   open: boolean
@@ -73,6 +72,16 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
     currentWorkspaceName,
     triggerRefresh,
   } = useMembers()
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t('Invalid email')),
+        role: z.string().min(1, t('Required')),
+        workspace_role: z.string().min(1, t('Required')),
+        workspace_id: z.string().min(1, t('Required')),
+      }),
+    [t]
+  )
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -113,7 +122,7 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
     }
     const res = await createCustomerInvitation(customerId, payload)
     if (!res.success || !res.data) {
-      toast.error(res.message || t('Failed to create invitation'))
+      toast.error(apiErrorMessage(t, res.message, 'Failed to create invitation'))
       return
     }
     const inv = res.data
@@ -181,8 +190,8 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
                   <Select
                     value={field.value}
                     items={[
-                      { value: CUSTOMER_ROLES.ADMIN, label: 'admin' },
-                      { value: CUSTOMER_ROLES.MEMBER, label: 'member' },
+                      { value: CUSTOMER_ROLES.ADMIN, label: t('Admin') },
+                      { value: CUSTOMER_ROLES.MEMBER, label: t('Member') },
                     ]}
                     onValueChange={(v) =>
                       field.onChange(v ?? CUSTOMER_ROLES.MEMBER)
@@ -194,9 +203,11 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value={CUSTOMER_ROLES.ADMIN}>admin</SelectItem>
+                      <SelectItem value={CUSTOMER_ROLES.ADMIN}>
+                        {t('Admin')}
+                      </SelectItem>
                       <SelectItem value={CUSTOMER_ROLES.MEMBER}>
-                        member
+                        {t('Member')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -254,8 +265,8 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
                   <Select
                     value={field.value}
                     items={[
-                      { value: WORKSPACE_ROLES.ADMIN, label: 'admin' },
-                      { value: WORKSPACE_ROLES.MEMBER, label: 'member' },
+                      { value: WORKSPACE_ROLES.ADMIN, label: t('Admin') },
+                      { value: WORKSPACE_ROLES.MEMBER, label: t('Member') },
                     ]}
                     onValueChange={(v) =>
                       field.onChange(v ?? WORKSPACE_ROLES.MEMBER)
@@ -268,10 +279,10 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value={WORKSPACE_ROLES.ADMIN}>
-                        admin
+                        {t('Admin')}
                       </SelectItem>
                       <SelectItem value={WORKSPACE_ROLES.MEMBER}>
-                        member
+                        {t('Member')}
                       </SelectItem>
                     </SelectContent>
                   </Select>

@@ -24,6 +24,7 @@ import { getCustomer, getWorkspace, transferQuota } from './api'
 import { WorkspaceContextBanner } from './components/workspace-context-banner'
 import { WORKSPACE_STATUS } from './constants'
 import { useCustomerContext } from './hooks/use-customer-context'
+import { apiErrorMessage } from './lib/api-message'
 import { resolveCurrentWorkspace } from './lib/resolve-current-workspace'
 import type { Workspace } from './types'
 
@@ -85,7 +86,11 @@ export function QuotaPage() {
       const wid = Number(workspaceId)
       if (!wid || quotaValue <= 0) throw new Error(t('Invalid transfer amount'))
       const res = await transferQuota(wid, quotaValue)
-      if (!res.success) throw new Error(res.message)
+      if (!res.success) {
+        throw new Error(
+          apiErrorMessage(t, res.message, 'Invalid transfer amount')
+        )
+      }
     },
     onSuccess: () => {
       toast.success(t('Quota transferred'))
@@ -97,7 +102,8 @@ export function QuotaPage() {
         queryKey: ['workspace', currentWorkspaceId],
       })
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) =>
+      toast.error(apiErrorMessage(t, e.message, 'Invalid transfer amount')),
   })
 
   if (ctxLoading) {

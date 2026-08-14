@@ -2,6 +2,7 @@
 Copyright (C) 2023-2026 QuantumNous
 */
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -38,14 +39,12 @@ import { createCustomer } from '../api'
 import { useCustomers } from './customers-provider'
 import { OwnerUserPicker } from './owner-user-picker'
 
-const schema = z.object({
-  name: z.string().min(1),
-  slug: z.string().optional(),
-  remark: z.string().optional(),
-  owner_user_id: z.number().int().positive(),
-})
-
-type FormValues = z.infer<typeof schema>
+type FormValues = {
+  name: string
+  slug?: string
+  remark?: string
+  owner_user_id: number
+}
 
 type Props = {
   open: boolean
@@ -55,6 +54,19 @@ type Props = {
 export function CustomersCreateDrawer({ open, onOpenChange }: Props) {
   const { t } = useTranslation()
   const { triggerRefresh, setCurrentRow, setOpen } = useCustomers()
+  const schema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, t('Name is required')),
+        slug: z.string().optional(),
+        remark: z.string().optional(),
+        owner_user_id: z
+          .number()
+          .int()
+          .positive(t('Please select an owner')),
+      }),
+    [t]
+  )
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -73,7 +85,9 @@ export function CustomersCreateDrawer({ open, onOpenChange }: Props) {
       owner_user_id: values.owner_user_id,
     })
     if (!res.success || !res.data) {
-      toast.error(res.message || t('Failed to create customer'))
+      toast.error(
+        res.message ? t(res.message) : t('Failed to create customer')
+      )
       return
     }
     toast.success(t('Customer created'))
@@ -118,7 +132,10 @@ export function CustomersCreateDrawer({ open, onOpenChange }: Props) {
                 <FormItem>
                   <FormLabel>{t('Slug')}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder='optional' />
+                    <Input
+                      {...field}
+                      placeholder={t('optional, auto-generated from name')}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -28,6 +28,9 @@ export {
   formatDuration,
   getParamOverrideActionLabel,
   parseAuditLine,
+  normalizeUpstreamSource,
+  getUpstreamSourceLabel,
+  getUpstreamSourceVariant,
   isViolationFeeLog,
 } from './format'
 

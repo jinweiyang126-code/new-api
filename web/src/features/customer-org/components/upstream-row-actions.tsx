@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/tooltip'
 
 import { testUpstreamCredential } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { CREDENTIAL_STATUS } from '../constants'
 import type { UpstreamCredential } from '../types'
 import { useUpstream } from './upstream-provider'
@@ -43,12 +44,13 @@ export function UpstreamRowActions({
     try {
       const res = await testUpstreamCredential(customerId, cred.id)
       if (!res.success) {
-        toast.error(res.message || t('Credential test failed'))
+        toast.error(apiErrorMessage(t, res.message, 'Credential test failed'))
         return
       }
-      toast.success(res.data?.message || t('Credential test passed'))
+      // Backend may return an English diagnostic string; always localize for UI.
+      toast.success(t('Credential test passed'))
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t('Credential test failed'))
+      toast.error(apiErrorMessage(t, e instanceof Error ? e.message : '', 'Credential test failed'))
     }
   }
 

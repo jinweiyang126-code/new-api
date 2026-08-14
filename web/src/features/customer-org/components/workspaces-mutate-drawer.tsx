@@ -3,7 +3,7 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -36,16 +36,15 @@ import {
 } from '@/components/ui/sheet'
 
 import { createWorkspace, updateWorkspace } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import type { Workspace } from '../types'
 import { useCustomerContext } from '../hooks/use-customer-context'
 import { useWorkspaces } from './workspaces-provider'
 
-const schema = z.object({
-  name: z.string().min(1),
-  slug: z.string().optional(),
-})
-
-type FormValues = z.infer<typeof schema>
+type FormValues = {
+  name: string
+  slug?: string
+}
 
 type Props = {
   open: boolean
@@ -64,6 +63,14 @@ export function WorkspacesMutateDrawer({
   const { data: ctx } = useCustomerContext()
   const customerId = ctx?.customer?.id ?? 0
   const isUpdate = Boolean(currentRow)
+  const schema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, t('Workspace name is required')),
+        slug: z.string().optional(),
+      }),
+    [t]
+  )
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -89,7 +96,7 @@ export function WorkspacesMutateDrawer({
     if (isUpdate && currentRow) {
       const res = await updateWorkspace(currentRow.id, { name: trimmed })
       if (!res.success) {
-        toast.error(res.message || t('Failed to update workspace'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to update workspace'))
         return
       }
       toast.success(t('Workspace updated'))
@@ -99,7 +106,7 @@ export function WorkspacesMutateDrawer({
         slug: values.slug?.trim() || undefined,
       })
       if (!res.success) {
-        toast.error(res.message || t('Failed to create workspace'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to create workspace'))
         return
       }
       toast.success(t('Workspace created'))

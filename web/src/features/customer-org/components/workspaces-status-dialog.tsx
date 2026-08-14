@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 import { updateWorkspace } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { WORKSPACE_STATUS } from '../constants'
 import { useWorkspaces } from './workspaces-provider'
 
@@ -31,7 +32,7 @@ export function WorkspacesStatusDialog() {
         : WORKSPACE_STATUS.ENABLED
       const res = await updateWorkspace(currentRow.id, { status: next })
       if (!res.success) {
-        toast.error(res.message || t('Failed to update workspace'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to update workspace'))
         return
       }
       toast.success(t('Workspace updated'))

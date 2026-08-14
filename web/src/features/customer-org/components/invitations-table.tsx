@@ -13,6 +13,7 @@ import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
 import { getCustomerInvitations } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import type { Invitation } from '../types'
 import { InvitationsBulkActions } from './invitations-bulk-actions'
 import { useInvitationsColumns } from './invitations-columns'
@@ -112,7 +113,7 @@ export function InvitationsTable() {
     queryFn: async () => {
       const res = await getCustomerInvitations(customerId)
       if (!res.success) {
-        toast.error(res.message || t('Failed to load invitations'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to load invitations'))
         return []
       }
       return res.data ?? []
@@ -195,10 +196,10 @@ export function InvitationsTable() {
             columnId: 'status',
             title: t('Status'),
             options: [
-              { label: 'pending', value: 'pending' },
-              { label: 'accepted', value: 'accepted' },
-              { label: 'revoked', value: 'revoked' },
-              { label: 'expired', value: 'expired' },
+              { label: t('Pending'), value: 'pending' },
+              { label: t('Accepted'), value: 'accepted' },
+              { label: t('Revoked'), value: 'revoked' },
+              { label: t('Expired'), value: 'expired' },
             ],
             singleSelect: true,
           },

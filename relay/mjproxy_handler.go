@@ -274,9 +274,10 @@ func RelaySwapFace(c *gin.Context, info *relaycommon.RelayInfo) *dto.MidjourneyR
 		ImageUrl:    "",
 		Status:      "",
 		Progress:    "0%",
-		FailReason:  "",
-		ChannelId:   c.GetInt("channel_id"),
-		Quota:       priceData.Quota,
+		FailReason:     "",
+		ChannelId:      c.GetInt("channel_id"),
+		UpstreamSource: common.GetContextKeyString(c, constant.ContextKeyUpstreamSource),
+		Quota:          priceData.Quota,
 	}
 	err = midjourneyTask.Insert()
 	if err != nil {
@@ -309,6 +310,7 @@ func RelayMidjourneyTaskImageSeed(c *gin.Context) *dto.MidjourneyResponse {
 		return service.MidjourneyErrorWrapper(constant.MjRequestError, "该任务所属渠道已被禁用")
 	}
 	c.Set("channel_id", originTask.ChannelId)
+	common.SetContextKey(c, constant.ContextKeyUpstreamSource, originTask.UpstreamSource)
 	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", channel.Key))
 
 	requestURL := getMjRequestPath(c.Request.URL.String())
@@ -485,6 +487,7 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 			c.Set("base_url", channel.GetBaseURL())
 			c.Set("channel_id", originTask.ChannelId)
 			c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", channel.Key))
+			common.SetContextKey(c, constant.ContextKeyUpstreamSource, originTask.UpstreamSource)
 			logger.LogDebug(c, "Midjourney action uses origin channel: id=%s, base_url=%s", strconv.Itoa(originTask.ChannelId), channel.GetBaseURL())
 		}
 		midjRequest.Prompt = originTask.Prompt
@@ -589,9 +592,10 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		ImageUrl:    "",
 		Status:      "",
 		Progress:    "0%",
-		FailReason:  "",
-		ChannelId:   c.GetInt("channel_id"),
-		Quota:       priceData.Quota,
+		FailReason:     "",
+		ChannelId:      c.GetInt("channel_id"),
+		UpstreamSource: common.GetContextKeyString(c, constant.ContextKeyUpstreamSource),
+		Quota:          priceData.Quota,
 	}
 	if midjResponse.Code == 3 {
 		//无实例账号自动禁用渠道（No available account instance）

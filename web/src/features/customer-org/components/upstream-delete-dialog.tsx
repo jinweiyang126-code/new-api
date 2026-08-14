@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 import { deleteUpstreamCredential } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { useUpstream } from './upstream-provider'
 
 export function UpstreamDeleteDialog() {
@@ -22,7 +23,7 @@ export function UpstreamDeleteDialog() {
     try {
       const res = await deleteUpstreamCredential(customerId, currentRow.id)
       if (!res.success) {
-        toast.error(res.message || t('Failed to delete credential'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to delete credential'))
         return
       }
       toast.success(t('Credential deleted'))

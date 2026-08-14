@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { acceptInvitation } from './api'
+import { apiErrorMessage } from './lib/api-message'
 
 type Props = {
   initialToken?: string
@@ -28,7 +29,11 @@ export function AcceptInvitationPage({ initialToken = '' }: Props) {
   const acceptMut = useMutation({
     mutationFn: async () => {
       const res = await acceptInvitation(token.trim())
-      if (!res.success) throw new Error(res.message || t('Failed to accept invitation'))
+      if (!res.success) {
+        throw new Error(
+          apiErrorMessage(t, res.message, 'Failed to accept invitation')
+        )
+      }
       return res.data
     },
     onSuccess: () => {
@@ -38,8 +43,12 @@ export function AcceptInvitationPage({ initialToken = '' }: Props) {
     },
     onError: (e: Error) => {
       const msg = e.message || t('Failed to accept invitation')
-      if (/already belongs to a customer/i.test(msg)) {
-        toast.error(t('You already belong to a customer and cannot accept this invitation.'))
+      if (/already belongs to a customer/i.test(msg) || /已归属其他客户/.test(msg)) {
+        toast.error(
+          t(
+            'You already belong to a customer and cannot accept this invitation.'
+          )
+        )
         return
       }
       toast.error(msg)
@@ -76,7 +85,7 @@ export function AcceptInvitationPage({ initialToken = '' }: Props) {
         <Input
           value={token}
           onChange={(e) => setToken(e.target.value)}
-          placeholder='token'
+          placeholder={t('Invitation token')}
         />
       </div>
       <Button

@@ -41,6 +41,7 @@ import {
   createDurationColumn,
   createChannelColumn,
   createProgressColumn,
+  createUpstreamSourceColumn,
 } from './column-helpers'
 
 function parseTaskData(data: unknown): unknown[] {
@@ -161,6 +162,10 @@ export function useTaskLogsColumns(isAdmin: boolean): ColumnDef<TaskLog>[] {
       },
     })
   }
+
+  columns.push(
+    createUpstreamSourceColumn<TaskLog>({ headerLabel: t('Upstream Source') })
+  )
 
   columns.push(
     {

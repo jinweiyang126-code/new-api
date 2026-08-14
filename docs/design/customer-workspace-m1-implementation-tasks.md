@@ -298,7 +298,7 @@ T01 数据模型与迁移（含 BYOK 表字段）
 
 - [x] shared 客户与现网选渠一致 — *`TestSelectChannelSharedCustomerUsesGlobalPath`*
 - [x] dedicated 仅走绑定渠道（除非 fallback） — *`TestSelectChannelDedicatedOnlyBoundChannel` / `NoFallbackErrors`*
-- [x] BYOK 实际使用客户 Key（测试 upstream） — *`TestSelectChannelByokUsesCustomerKey`（组装临时 Channel，Key 解密仅内存）*
+- [x] BYOK 实际使用客户 Key（测试 upstream） — *`TestSelectChannelByokUsesCustomerKey`（组装临时 Channel，Key 解密仅内存）；真实出站复跑见 T13「验收复跑记录」`scripts/byok-live-smoke.mjs`*
 - [x] 个人令牌不受客户 BYOK 影响 — *`TestPersonalTokenAlwaysSharedSource`*
 - [x] **再跑一遍个人令牌 + shared 工作区令牌**（确认选渠改动未破坏 T08） — *`WorkspaceBilling|PersonalTokenBilling` 回归*
 
@@ -406,9 +406,20 @@ T01 数据模型与迁移（含 BYOK 表字段）
 - [x] U1 无法接受 B 的邀请 — *`e2e-u1-reject-b-invite`*  
 - [x] 移除 U1：令牌失效 — *`e2e-remove-u1-token`（修复：移除成员后 `InvalidateUserTokensCache`）*  
 - [x] 个人用户（无客户）原有 curl 流程仍通 — *`e2e-personal-user`*  
-- [x] **BYOK**：为 A 开通 byok，配置测试 Key，工作区令牌走客户 Key；关闭后回落 shared（若 fallback） — *API `e2e-byok-dedicated-api`；选渠 `TestSelectChannelByok*`；fallback `TestSelectChannelByokDisabledIgnoresCredentials`*  
+- [x] **BYOK**：为 A 开通 byok，配置测试 Key，工作区令牌走客户 Key；关闭后回落 shared（若 fallback） — *API `e2e-byok-dedicated-api`；选渠 `TestSelectChannelByok*`；fallback `TestSelectChannelByokDisabledIgnoresCredentials`；**真实出站**见下方复跑记录*  
 - [x] **dedicated**：绑定渠道后流量不进未绑定渠道（除非 fallback） — *`e2e-dedicated-settings` + `TestCustomerUsesScopedUpstream` / SelectChannel 单测*  
 - [x] API/日志无完整上游 Key — *凭证列表仅 hint；`TestUpstreamCredentialCRUDEncryptsAndHidesKey` / `TestCustomerUpstreamCredentialJSONNeverIncludesCiphertext`*
+
+### 验收复跑记录（2026-08-14）
+
+环境：本地 Docker `new-api` → `http://127.0.0.1:3001`（MySQL + Redis）。
+
+| 脚本 | 结果 | 说明 |
+| --- | --- | --- |
+| `node scripts/t13-e2e.mjs` | **9 PASS / 0 FAIL / 1 SKIP** | SKIP：`e2e-ws-token-relay-billing` — 共享渠道打 OpenAI 返回 `403 Country, region, or territory not supported`；扣费仍由 `TestWorkspaceBilling*` / `PersonalTokenBilling*` 覆盖 |
+| `node scripts/byok-live-smoke.mjs` | **4 PASS / 0 FAIL** | BYOK 真实出站冒烟：本地 OpenAI 兼容 mock（`host.docker.internal:18081`）；`upstream_mode=byok` + `allow_global_fallback=false`；工作区令牌 `/v1/chat/completions` 成功；mock 收到的 `Authorization` 为客户 BYOK Key；消费日志 `upstream_source=byok` |
+
+结论：T13 API E2E 复跑通过；BYOK 出站选渠 / Key 透传 / 日志标记已实测通过。共享上游 live 计费仍受本机区域限制，不阻塞 M1 验收签字。
 
 ---
 

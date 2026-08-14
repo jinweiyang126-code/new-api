@@ -87,7 +87,7 @@ features/<name>/
 - URL 状态：`useTableUrlState`  
 - 弹层状态：`useDialogState` + Provider（`open: create | update | delete | enable | disable | …`）  
 - 表单：React Hook Form + Zod；抽屉布局用 `sideDrawer*` class helpers  
-- 文案：`en.json` / `zh.json` 同步；操作栏用 `t('Actions')`、`t('Edit')`  
+- 文案：遵守 [frontend-i18n-standard.md](./frontend-i18n-standard.md)；`en.json` / `zh.json` 同步；操作栏用 `t('Actions')`、`t('Edit')`  
 - Select 选项注释：选项内「标题 + `text-muted-foreground` 说明」，必要时选中项下方再显示当前说明（参考上游模式、API Key 组选择）  
 - 选择资源（用户、渠道等）：用可搜索 Picker/Combobox，列表展示**名称**，不要只填裸 ID  
 
@@ -99,11 +99,11 @@ features/<name>/
 - [ ] 创建 / 编辑走抽屉；删除 / 启停走确认框  
 - [ ] 详情（如有）只读；编辑可写  
 - [ ] `pnpm typecheck` 通过；改动文件 oxlint error 清零  
-- [ ] i18n 中英齐全  
+- [ ] i18n 按 [frontend-i18n-standard.md](./frontend-i18n-standard.md) 自检通过（中英词条、toast、Zod、API 错误）  
 
 ---
 
 ## 7. 非目标
 
-- 仪表盘、向导、纯设置表单页：不必强行套 DataTable，但仍优先复用 `SectionPageLayout`、抽屉与确认框模式  
+- 仪表盘、向导、纯设置表单页：不必强行套 DataTable，但仍优先复用 `SectionPageLayout`、抽屉与确认框模式；**国际化仍须遵守** [frontend-i18n-standard.md](./frontend-i18n-standard.md)  
 - 移动端：沿用 DataTable 的 mobile meta（`mobileOrder` / `mobileHidden` / `mobileBadge`），不另造一套列表

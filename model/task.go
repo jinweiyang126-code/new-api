@@ -54,6 +54,8 @@ type Task struct {
 	UserId     int                   `json:"user_id" gorm:"index"`
 	Group      string                `json:"group" gorm:"type:varchar(50)"` // 修正计费用
 	ChannelId  int                   `json:"channel_id" gorm:"index"`
+	// UpstreamSource is shared|dedicated|byok from channel select (T15); empty on legacy rows.
+	UpstreamSource string               `json:"upstream_source,omitempty" gorm:"type:varchar(32);default:'';column:upstream_source"`
 	Quota      int                   `json:"quota"`
 	Action     string                `json:"action" gorm:"type:varchar(40);index"` // 任务类型, song, lyrics, description-mode
 	Status     TaskStatus            `json:"status" gorm:"type:varchar(20);index"` // 任务状态
@@ -199,16 +201,17 @@ func InitTask(platform constant.TaskPlatform, relayInfo *commonRelay.RelayInfo) 
 	}
 
 	t := &Task{
-		TaskID:      taskID,
-		UserId:      relayInfo.UserId,
-		Group:       relayInfo.UsingGroup,
-		SubmitTime:  time.Now().Unix(),
-		Status:      TaskStatusNotStart,
-		Progress:    "0%",
-		ChannelId:   relayInfo.ChannelId,
-		Platform:    platform,
-		Properties:  properties,
-		PrivateData: privateData,
+		TaskID:         taskID,
+		UserId:         relayInfo.UserId,
+		Group:          relayInfo.UsingGroup,
+		SubmitTime:     time.Now().Unix(),
+		Status:         TaskStatusNotStart,
+		Progress:       "0%",
+		ChannelId:      relayInfo.ChannelId,
+		UpstreamSource: relayInfo.UpstreamSource,
+		Platform:       platform,
+		Properties:     properties,
+		PrivateData:    privateData,
 	}
 	return t
 }

@@ -18,6 +18,7 @@ import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
 import { getCustomerMembers, getWorkspaceMembers } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { CREDENTIAL_STATUS, getCredentialStatusOptions } from '../constants'
 import { MembersBulkActions } from './members-bulk-actions'
 import { useMembersColumns } from './members-columns'
@@ -112,7 +113,7 @@ export function MembersTable() {
       if (isPersonal) {
         const res = await getCustomerMembers(customerId)
         if (!res.success) {
-          toast.error(res.message || t('Failed to load members'))
+          toast.error(apiErrorMessage(t, res.message, 'Failed to load members'))
           return []
         }
         return (res.data ?? []).map((m) => ({
@@ -127,7 +128,7 @@ export function MembersTable() {
       }
       const res = await getWorkspaceMembers(currentWorkspaceId)
       if (!res.success) {
-        toast.error(res.message || t('Failed to load members'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to load members'))
         return []
       }
       return (res.data ?? []).map((m) => ({
@@ -213,9 +214,9 @@ return (
             columnId: 'role',
             title: t('Role'),
             options: [
-              { label: 'owner', value: 'owner' },
-              { label: 'admin', value: 'admin' },
-              { label: 'member', value: 'member' },
+              { label: t('Owner'), value: 'owner' },
+              { label: t('Admin'), value: 'admin' },
+              { label: t('Member'), value: 'member' },
             ],
             singleSelect: true,
           },

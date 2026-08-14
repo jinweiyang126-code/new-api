@@ -18,6 +18,7 @@ import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
 import { getUpstreamCredentials } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { CREDENTIAL_STATUS, getCredentialStatusOptions } from '../constants'
 import type { UpstreamCredential } from '../types'
 import { UpstreamBulkActions } from './upstream-bulk-actions'
@@ -110,7 +111,7 @@ export function UpstreamTable() {
     queryFn: async () => {
       const res = await getUpstreamCredentials(customerId)
       if (!res.success) {
-        toast.error(res.message || t('Failed to load credentials'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to load credentials'))
         return []
       }
       return res.data ?? []

@@ -45,7 +45,9 @@ export async function getCustomer(
 export async function createCustomer(
   data: CreateCustomerPayload
 ): Promise<ApiResponse<CreateCustomerResult>> {
-  const res = await api.post('/api/customers/', data)
+  const res = await api.post('/api/customers/', data, {
+    skipBusinessError: true,
+  })
   return res.data
 }
 

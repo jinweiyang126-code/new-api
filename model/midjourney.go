@@ -20,6 +20,8 @@ type Midjourney struct {
 	Progress    string `json:"progress" gorm:"type:varchar(30);index"`
 	FailReason  string `json:"fail_reason"`
 	ChannelId   int    `json:"channel_id"`
+	// UpstreamSource is shared|dedicated|byok from channel select (T15); empty on legacy rows.
+	UpstreamSource string `json:"upstream_source,omitempty" gorm:"type:varchar(32);default:'';column:upstream_source"`
 	Quota       int    `json:"quota"`
 	Buttons     string `json:"buttons"`
 	Properties  string `json:"properties"`

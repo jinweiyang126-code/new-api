@@ -260,6 +260,7 @@ export interface MidjourneyLog {
   id: number
   user_id: number
   channel_id: number
+  upstream_source?: string
   code: number
   mj_id: string
   action: string // IMAGINE, UPSCALE, VARIATION, etc. (backend field name)
@@ -292,6 +293,7 @@ export interface TaskLog {
   task_id: string
   action: string // MUSIC, LYRICS, GENERATE, TEXT_GENERATE, etc.
   channel_id: number
+  upstream_source?: string
   submit_time: number // seconds
   finish_time?: number // seconds
   progress?: string

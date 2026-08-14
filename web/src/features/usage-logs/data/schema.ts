@@ -45,6 +45,10 @@ export const usageLogSchema = z.object({
   other: z.string().default(''),
   request_id: z.string().default(''),
   upstream_request_id: z.string().default(''),
+  // shared | dedicated | byok — set by relay channel select (T15); empty on older logs
+  upstream_source: z.string().optional().default(''),
+  customer_id: z.number().optional().default(0),
+  workspace_id: z.number().optional().default(0),
 })
 
 export type UsageLog = z.infer<typeof usageLogSchema>

@@ -75,6 +75,8 @@ import {
   getFirstResponseTimeColor,
   getResponseTimeColor,
   renderAuditContent,
+  getUpstreamSourceLabel,
+  normalizeUpstreamSource,
 } from '../../lib/format'
 import {
   getLogTypeConfig,
@@ -652,6 +654,14 @@ export function DetailsDialog(props: DetailsDialogProps) {
             <DetailRow
               label={t('Upstream Request ID')}
               value={props.log.upstream_request_id}
+              mono
+            />
+          )}
+
+          {normalizeUpstreamSource(props.log.upstream_source) && (
+            <DetailRow
+              label={t('Upstream Source')}
+              value={getUpstreamSourceLabel(props.log.upstream_source, t)}
               mono
             />
           )}

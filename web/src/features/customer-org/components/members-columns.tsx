@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { formatTimestamp } from '@/lib/format'
 
 import { CREDENTIAL_STATUS } from '../constants'
+import { roleLabel } from '../lib/api-message'
 import type { MemberRow } from './members-provider'
 import { MembersRowActions } from './members-row-actions'
 
@@ -24,7 +25,7 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
           checked={table.getIsAllPageRowsSelected()}
           indeterminate={table.getIsSomePageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label='Select all'
+          aria-label={t('Select all')}
           className='translate-y-[2px]'
         />
       ),
@@ -32,7 +33,7 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label='Select row'
+          aria-label={t('Select row')}
           className='translate-y-[2px]'
         />
       ),
@@ -61,7 +62,7 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
       size: 120,
       cell: ({ row }) => (
         <StatusBadge
-          label={row.original.role}
+          label={roleLabel(t, row.original.role)}
           variant='neutral'
           copyable={false}
         />

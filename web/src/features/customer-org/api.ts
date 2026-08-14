@@ -24,9 +24,11 @@ export async function getSelfCustomer(): Promise<
 export async function setCurrentWorkspace(
   workspaceId: number
 ): Promise<ApiResponse<{ current_workspace_id: number }>> {
-  const res = await api.post('/api/user/self/current-workspace', {
-    workspace_id: workspaceId,
-  })
+  const res = await api.post(
+    '/api/user/self/current-workspace',
+    { workspace_id: workspaceId },
+    { skipBusinessError: true }
+  )
   return res.data
 }
 
@@ -55,7 +57,9 @@ export async function createWorkspace(
   customerId: number,
   data: { name: string; slug?: string }
 ): Promise<ApiResponse<Workspace>> {
-  const res = await api.post(`/api/customers/${customerId}/workspaces`, data)
+  const res = await api.post(`/api/customers/${customerId}/workspaces`, data, {
+    skipBusinessError: true,
+  })
   return res.data
 }
 
@@ -63,7 +67,9 @@ export async function updateWorkspace(
   workspaceId: number,
   data: { name?: string; status?: number }
 ): Promise<ApiResponse<Workspace>> {
-  const res = await api.put(`/api/workspaces/${workspaceId}`, data)
+  const res = await api.put(`/api/workspaces/${workspaceId}`, data, {
+    skipBusinessError: true,
+  })
   return res.data
 }
 
@@ -71,9 +77,11 @@ export async function transferQuota(
   workspaceId: number,
   amount: number
 ): Promise<ApiResponse> {
-  const res = await api.post(`/api/workspaces/${workspaceId}/transfer-quota`, {
-    amount,
-  })
+  const res = await api.post(
+    `/api/workspaces/${workspaceId}/transfer-quota`,
+    { amount },
+    { skipBusinessError: true }
+  )
   return res.data
 }
 
@@ -89,7 +97,8 @@ export async function removeCustomerMember(
   userId: number
 ): Promise<ApiResponse> {
   const res = await api.delete(
-    `/api/customers/${customerId}/members/${userId}`
+    `/api/customers/${customerId}/members/${userId}`,
+    { skipBusinessError: true }
   )
   return res.data
 }
@@ -99,7 +108,8 @@ export async function removeWorkspaceMember(
   userId: number
 ): Promise<ApiResponse> {
   const res = await api.delete(
-    `/api/workspaces/${workspaceId}/members/${userId}`
+    `/api/workspaces/${workspaceId}/members/${userId}`,
+    { skipBusinessError: true }
   )
   return res.data
 }
@@ -121,21 +131,33 @@ export async function createCustomerInvitation(
     expires_at?: number
   }
 ): Promise<ApiResponse<Invitation>> {
-  const res = await api.post(`/api/customers/${customerId}/invitations`, data)
+  const res = await api.post(
+    `/api/customers/${customerId}/invitations`,
+    data,
+    { skipBusinessError: true }
+  )
   return res.data
 }
 
 export async function revokeInvitation(
   invitationId: number
 ): Promise<ApiResponse<Invitation>> {
-  const res = await api.post(`/api/invitations/${invitationId}/revoke`)
+  const res = await api.post(
+    `/api/invitations/${invitationId}/revoke`,
+    undefined,
+    { skipBusinessError: true }
+  )
   return res.data
 }
 
 export async function acceptInvitation(
   token: string
 ): Promise<ApiResponse<Invitation>> {
-  const res = await api.post(`/api/invitations/${encodeURIComponent(token)}/accept`)
+  const res = await api.post(
+    `/api/invitations/${encodeURIComponent(token)}/accept`,
+    undefined,
+    { skipBusinessError: true }
+  )
   return res.data
 }
 
@@ -159,7 +181,8 @@ export async function createUpstreamCredential(
 ): Promise<ApiResponse<UpstreamCredential>> {
   const res = await api.post(
     `/api/customers/${customerId}/upstream-credentials`,
-    data
+    data,
+    { skipBusinessError: true }
   )
   return res.data
 }
@@ -170,7 +193,8 @@ export async function reorderUpstreamCredentials(
 ): Promise<ApiResponse<UpstreamCredential[]>> {
   const res = await api.put(
     `/api/customers/${customerId}/upstream-credentials/reorder`,
-    { ordered_ids: orderedIds }
+    { ordered_ids: orderedIds },
+    { skipBusinessError: true }
   )
   return res.data
 }
@@ -190,7 +214,8 @@ export async function updateUpstreamCredential(
 ): Promise<ApiResponse<UpstreamCredential>> {
   const res = await api.put(
     `/api/customers/${customerId}/upstream-credentials/${credentialId}`,
-    data
+    data,
+    { skipBusinessError: true }
   )
   return res.data
 }
@@ -200,7 +225,8 @@ export async function deleteUpstreamCredential(
   credentialId: number
 ): Promise<ApiResponse> {
   const res = await api.delete(
-    `/api/customers/${customerId}/upstream-credentials/${credentialId}`
+    `/api/customers/${customerId}/upstream-credentials/${credentialId}`,
+    { skipBusinessError: true }
   )
   return res.data
 }
@@ -210,7 +236,9 @@ export async function testUpstreamCredential(
   credentialId: number
 ): Promise<ApiResponse<{ ok: boolean; message: string }>> {
   const res = await api.post(
-    `/api/customers/${customerId}/upstream-credentials/${credentialId}/test`
+    `/api/customers/${customerId}/upstream-credentials/${credentialId}/test`,
+    undefined,
+    { skipBusinessError: true }
   )
   return res.data
 }
@@ -226,7 +254,8 @@ export async function fetchUpstreamCredentialModels(
 ): Promise<ApiResponse<string[]>> {
   const res = await api.post(
     `/api/customers/${customerId}/upstream-credentials/fetch-models`,
-    data
+    data,
+    { skipBusinessError: true }
   )
   return res.data
 }

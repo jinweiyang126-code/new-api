@@ -9,6 +9,10 @@ import { TableId } from '@/components/table-id'
 import { Checkbox } from '@/components/ui/checkbox'
 import { formatTimestamp } from '@/lib/format'
 
+import {
+  invitationStatusLabel,
+  roleLabel,
+} from '../lib/api-message'
 import type { Invitation } from '../types'
 import { InvitationsRowActions } from './invitations-row-actions'
 import { useMembers } from './members-provider'
@@ -41,7 +45,7 @@ export function useInvitationsColumns(): ColumnDef<Invitation>[] {
           checked={table.getIsAllPageRowsSelected()}
           indeterminate={table.getIsSomePageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label='Select all'
+          aria-label={t('Select all')}
           className='translate-y-[2px]'
         />
       ),
@@ -49,7 +53,7 @@ export function useInvitationsColumns(): ColumnDef<Invitation>[] {
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label='Select row'
+          aria-label={t('Select row')}
           className='translate-y-[2px]'
         />
       ),
@@ -75,14 +79,14 @@ export function useInvitationsColumns(): ColumnDef<Invitation>[] {
       accessorKey: 'role',
       header: t('Customer role'),
       size: 110,
-      cell: ({ row }) => row.original.role,
+      cell: ({ row }) => roleLabel(t, row.original.role),
       meta: { mobileOrder: 4, mobileHidden: true },
     },
     {
       accessorKey: 'workspace_role',
       header: t('Workspace role'),
       size: 120,
-      cell: ({ row }) => row.original.workspace_role,
+      cell: ({ row }) => roleLabel(t, row.original.workspace_role),
       meta: { mobileOrder: 5, mobileHidden: true },
     },
     {
@@ -105,7 +109,7 @@ export function useInvitationsColumns(): ColumnDef<Invitation>[] {
       size: 110,
       cell: ({ row }) => (
         <StatusBadge
-          label={row.original.status}
+          label={invitationStatusLabel(t, row.original.status)}
           variant={invitationStatusVariant(row.original.status)}
           copyable={false}
         />

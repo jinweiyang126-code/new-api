@@ -349,6 +349,10 @@ function CommonLogsCard<TData>({
           cell={cells.get('token_name')}
           valueClassName='[&_.flex-col]:max-w-none [&_.flex-col>*:not(:first-child)]:text-[11px] [&_.flex-col>*:not(:first-child)]:leading-none'
         />
+        <SummaryField
+          label={t('Upstream Source')}
+          cell={cells.get('upstream_source')}
+        />
         {rowData ? (
           <MobileStreamTimingField log={rowData} />
         ) : (
@@ -391,6 +395,10 @@ function TaskLogsCard<TData>({
         <SummaryField label={t('Submit Time')} cell={submitTimeCell} />
         <SummaryField label={t('User')} cell={cells.get('user')} primaryOnly />
         <SummaryField
+          label={t('Upstream Source')}
+          cell={cells.get('upstream_source')}
+        />
+        <SummaryField
           label={t('Result')}
           cell={cells.get('fail_reason')}
           className='col-span-2 bg-transparent px-0 py-0'
@@ -424,6 +432,10 @@ function DrawingLogsCard<TData>({
           label={t('Channel')}
           cell={cells.get('channel')}
           primaryOnly
+        />
+        <SummaryField
+          label={t('Upstream Source')}
+          cell={cells.get('upstream_source')}
         />
         <SummaryField label={t('Task ID')} cell={cells.get('mj_id')} />
         <SummaryField

@@ -53,6 +53,7 @@ import { PromptDialog } from '../dialogs/prompt-dialog'
 import {
   createDurationColumn,
   createChannelColumn,
+  createUpstreamSourceColumn,
   createProgressColumn,
   createFailReasonColumn,
 } from './column-helpers'
@@ -116,6 +117,12 @@ export function useDrawingLogsColumns(
       createChannelColumn<MidjourneyLog>({ headerLabel: t('Channel') })
     )
   }
+
+  columns.push(
+    createUpstreamSourceColumn<MidjourneyLog>({
+      headerLabel: t('Upstream Source'),
+    })
+  )
 
   columns.push({
     accessorKey: 'action',

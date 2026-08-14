@@ -116,6 +116,8 @@ type RelayInfo struct {
 	CustomerId             int // 0 = personal token
 	WorkspaceId            int // 0 = personal; non-zero => debit workspace pool only
 	WorkspaceQuota         int // remaining workspace pool (filled when WorkspaceId > 0)
+	// UpstreamSource is shared|dedicated|byok from customer channel select (T15).
+	UpstreamSource string
 	RelayFormat            types.RelayFormat
 	SendResponseCount      int
 	ReceivedResponseCount  int
@@ -233,6 +235,9 @@ func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 	}
 
 	info.ChannelMeta = channelMeta
+
+	// Keep routing source in sync with the latest channel select (incl. retries).
+	info.UpstreamSource = common.GetContextKeyString(c, constant.ContextKeyUpstreamSource)
 
 	// Channel identity feeds the converter options snapshot (e.g.
 	// OpenRouterDialect); drop the cache so a cross-channel retry rebuilds it.
@@ -479,6 +484,7 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		UserEmail:     common.GetContextKeyString(c, constant.ContextKeyUserEmail),
 		CustomerId:    common.GetContextKeyInt(c, constant.ContextKeyCustomerId),
 		WorkspaceId:   common.GetContextKeyInt(c, constant.ContextKeyWorkspaceId),
+		UpstreamSource: common.GetContextKeyString(c, constant.ContextKeyUpstreamSource),
 
 		OriginModelName: common.GetContextKeyString(c, constant.ContextKeyOriginalModel),
 

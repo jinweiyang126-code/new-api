@@ -13,6 +13,7 @@ import {
   removeWorkspaceMember,
   revokeInvitation,
 } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { useMembers } from './members-provider'
 
 export function MembersConfirmDialogs() {
@@ -44,7 +45,7 @@ export function MembersConfirmDialogs() {
             )
           : await removeCustomerMember(customerId, currentMember.user_id)
       if (!res.success) {
-        toast.error(res.message || t('Failed to remove member'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to remove member'))
         return
       }
       toast.success(t('Member removed'))
@@ -64,7 +65,7 @@ export function MembersConfirmDialogs() {
     try {
       const res = await revokeInvitation(currentInvitation.id)
       if (!res.success) {
-        toast.error(res.message || t('Failed to revoke invitation'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to revoke invitation'))
         return
       }
       toast.success(t('Invitation revoked'))

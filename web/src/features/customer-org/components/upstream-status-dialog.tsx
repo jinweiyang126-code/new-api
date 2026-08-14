@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 import { updateUpstreamCredential } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 import { CREDENTIAL_STATUS } from '../constants'
 import { useUpstream } from './upstream-provider'
 
@@ -32,7 +33,7 @@ export function UpstreamStatusDialog() {
         status: next,
       })
       if (!res.success) {
-        toast.error(res.message || t('Failed to update credential'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to update credential'))
         return
       }
       toast.success(

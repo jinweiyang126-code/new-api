@@ -47,6 +47,9 @@ import {
   getTieredBillingSummary,
   hasAnyCacheTokens,
   parseLogOther,
+  getUpstreamSourceLabel,
+  getUpstreamSourceVariant,
+  normalizeUpstreamSource,
   isViolationFeeLog,
   renderAuditContent,
 } from '../../lib/format'
@@ -534,6 +537,30 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       }
     )
   }
+
+  columns.push({
+    id: 'upstream_source',
+    header: t('Upstream Source'),
+    accessorFn: (row) => row.upstream_source || '',
+    size: 110,
+    cell: ({ row }) => {
+      const log = row.original
+      if (!isDisplayableLogType(log.type)) return null
+      const source = normalizeUpstreamSource(log.upstream_source)
+      if (!source) {
+        return <span className='text-muted-foreground/50 text-xs'>—</span>
+      }
+      return (
+        <StatusBadge
+          label={getUpstreamSourceLabel(source, t)}
+          variant={getUpstreamSourceVariant(source)}
+          copyable={false}
+          size='sm'
+          showDot={false}
+        />
+      )
+    },
+  })
 
   columns.push({
     accessorKey: 'token_name',

@@ -20,6 +20,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Zap } from 'lucide-react'
 /* eslint-disable react-refresh/only-export-components */
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { DataTableColumnHeader } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
@@ -32,7 +33,12 @@ import {
 import { formatTimestampToDate, formatTokens } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-import { formatDuration } from '../../lib/format'
+import {
+  formatDuration,
+  getUpstreamSourceLabel,
+  getUpstreamSourceVariant,
+  normalizeUpstreamSource,
+} from '../../lib/format'
 import { FailReasonDialog } from '../dialogs/fail-reason-dialog'
 
 /**
@@ -190,6 +196,45 @@ export function createChannelColumn<T>(config: {
         />
       )
     },
+    meta: { label: headerLabel },
+  }
+}
+
+function UpstreamSourceCell({ source }: { source?: string }) {
+  const { t } = useTranslation()
+  const normalized = normalizeUpstreamSource(source)
+  if (!normalized) {
+    return <span className='text-muted-foreground/50 text-xs'>—</span>
+  }
+  return (
+    <StatusBadge
+      label={getUpstreamSourceLabel(normalized, t)}
+      variant={getUpstreamSourceVariant(normalized)}
+      copyable={false}
+      size='sm'
+      showDot={false}
+    />
+  )
+}
+
+/**
+ * Create an upstream source column (shared | dedicated | byok)
+ */
+export function createUpstreamSourceColumn<T extends { upstream_source?: string }>(config: {
+  headerLabel: string
+}): ColumnDef<T> {
+  const { headerLabel } = config
+
+  return {
+    id: 'upstream_source',
+    accessorFn: (row) => row.upstream_source || '',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={headerLabel} />
+    ),
+    size: 110,
+    cell: ({ row }) => (
+      <UpstreamSourceCell source={row.original.upstream_source} />
+    ),
     meta: { label: headerLabel },
   }
 }
