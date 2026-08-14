@@ -56,7 +56,49 @@ func ListCustomerChannelBindings(customerId int) ([]*CustomerChannelBinding, err
 	}
 	var rows []*CustomerChannelBinding
 	err := DB.Where("customer_id = ?", customerId).Order("priority desc, id asc").Find(&rows).Error
-	return rows, err
+	if err != nil {
+		return nil, err
+	}
+	attachChannelBindingNames(rows)
+	return rows, nil
+}
+
+func attachChannelBindingNames(rows []*CustomerChannelBinding) {
+	if len(rows) == 0 {
+		return
+	}
+	ids := make([]int, 0, len(rows))
+	seen := make(map[int]struct{}, len(rows))
+	for _, row := range rows {
+		if row == nil || row.ChannelId <= 0 {
+			continue
+		}
+		if _, ok := seen[row.ChannelId]; ok {
+			continue
+		}
+		seen[row.ChannelId] = struct{}{}
+		ids = append(ids, row.ChannelId)
+	}
+	if len(ids) == 0 {
+		return
+	}
+	var channels []struct {
+		Id   int
+		Name string
+	}
+	if err := DB.Model(&Channel{}).Select("id", "name").Where("id IN ?", ids).Find(&channels).Error; err != nil {
+		return
+	}
+	names := make(map[int]string, len(channels))
+	for _, ch := range channels {
+		names[ch.Id] = ch.Name
+	}
+	for _, row := range rows {
+		if row == nil {
+			continue
+		}
+		row.ChannelName = names[row.ChannelId]
+	}
 }
 
 // CreateCustomerChannelBinding binds a platform channel to a customer.
@@ -71,7 +113,7 @@ func CreateCustomerChannelBinding(customerId, channelId, priority int, modelMapp
 		return nil, err
 	}
 	var ch Channel
-	if err := DB.Select("id").Where("id = ?", channelId).First(&ch).Error; err != nil {
+	if err := DB.Select("id", "name").Where("id = ?", channelId).First(&ch).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrInvalidChannelId
 		}
@@ -86,6 +128,7 @@ func CreateCustomerChannelBinding(customerId, channelId, priority int, modelMapp
 		Status:       CustomerStatusEnabled,
 		CreatedAt:    now,
 		UpdatedAt:    now,
+		ChannelName:  ch.Name,
 	}
 	err := DB.Create(row).Error
 	if err != nil {

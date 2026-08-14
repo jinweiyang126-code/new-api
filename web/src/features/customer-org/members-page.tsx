@@ -336,7 +336,7 @@ export function MembersPage() {
                   ) : (
                     <div className='space-y-1'>
                       <Label>{t('Workspace')}</Label>
-                      <div className='border-input bg-muted/40 flex h-9 w-44 items-center rounded-md border px-3 text-sm font-medium'>
+                      <div className='border-input bg-muted/40 flex h-8 w-44 items-center rounded-md border px-3 text-sm font-medium'>
                         {currentWorkspace?.name ?? `#${currentWorkspaceId}`}
                       </div>
                     </div>
@@ -366,17 +366,13 @@ export function MembersPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className='space-y-1'>
-                    <Label className='invisible select-none' aria-hidden>
-                      {t('Create Invitation')}
-                    </Label>
-                    <Button
-                      disabled={inviteMut.isPending}
-                      onClick={() => inviteMut.mutate()}
-                    >
-                      {t('Create Invitation')}
-                    </Button>
-                  </div>
+                  <Button
+                    className='h-8'
+                    disabled={inviteMut.isPending}
+                    onClick={() => inviteMut.mutate()}
+                  >
+                    {t('Create Invitation')}
+                  </Button>
                 </div>
               </section>
 

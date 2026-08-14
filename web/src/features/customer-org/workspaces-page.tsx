@@ -20,7 +20,7 @@ import { resolveCurrentWorkspace } from './lib/resolve-current-workspace'
 function WorkspacesContent() {
   const { t } = useTranslation()
   const { data: ctx, isLoading } = useCustomerContext()
-  const { open, setOpen } = useWorkspaces()
+  const { open, setOpen, currentRow } = useWorkspaces()
 
   if (isLoading) {
     return (
@@ -59,8 +59,9 @@ function WorkspacesContent() {
       </SectionPageLayout>
 
       <WorkspacesMutateDrawer
-        open={open === 'create'}
+        open={open === 'create' || open === 'update'}
         onOpenChange={(isOpen) => !isOpen && setOpen(null)}
+        currentRow={open === 'update' ? currentRow : null}
       />
       <WorkspacesStatusDialog />
     </>

@@ -1,11 +1,9 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import {
   SideDrawerSection,
@@ -14,17 +12,8 @@ import {
   sideDrawerFooterClassName,
   sideDrawerHeaderClassName,
 } from '@/components/drawer-layout'
+import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Sheet,
   SheetClose,
@@ -34,19 +23,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { formatQuota } from '@/lib/format'
+import { formatQuota, formatTimestamp } from '@/lib/format'
 
 import {
-  createChannelBinding,
-  deleteChannelBinding,
   getChannelBindings,
   getCustomer,
   getCustomerWorkspaces,
-  updateUpstreamSettings,
 } from '../api'
-import { UPSTREAM_MODE } from '../constants'
+import { CUSTOMER_STATUS } from '../constants'
 import type { Customer } from '../types'
-import { useCustomers } from './customers-provider'
 
 type Props = {
   open: boolean
@@ -54,10 +39,17 @@ type Props = {
   customer: Customer | null
 }
 
+function InfoRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className='flex items-start justify-between gap-4 text-sm'>
+      <span className='text-muted-foreground shrink-0'>{label}</span>
+      <span className='min-w-0 text-right break-words'>{children}</span>
+    </div>
+  )
+}
+
 export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
   const { t } = useTranslation()
-  const { triggerRefresh } = useCustomers()
-  const queryClient = useQueryClient()
   const customerId = customer?.id ?? 0
 
   const { data: detail } = useQuery({
@@ -80,7 +72,7 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
     enabled: open && customerId > 0,
   })
 
-  const { data: bindings = [], refetch: refetchBindings } = useQuery({
+  const { data: bindings = [] } = useQuery({
     queryKey: ['customer-bindings', customerId],
     queryFn: async () => {
       const res = await getChannelBindings(customerId)
@@ -91,75 +83,9 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
   })
 
   const current = detail ?? customer
-  const [mode, setMode] = useState(UPSTREAM_MODE.SHARED)
-  const [allowFallback, setAllowFallback] = useState(true)
-  const [byokEnabled, setByokEnabled] = useState(false)
-  const [channelId, setChannelId] = useState('')
-  const [priority, setPriority] = useState('0')
-
-  useEffect(() => {
-    if (!current) return
-    setMode((current.upstream_mode as typeof mode) || UPSTREAM_MODE.SHARED)
-    setAllowFallback(Boolean(current.allow_global_fallback))
-    setByokEnabled(Boolean(current.byok_enabled))
-  }, [current])
-
-  const saveUpstream = useMutation({
-    mutationFn: async () => {
-      const res = await updateUpstreamSettings(customerId, {
-        upstream_mode: mode,
-        allow_global_fallback: allowFallback,
-        byok_enabled: byokEnabled,
-      })
-      if (!res.success) throw new Error(res.message || 'failed')
-      return res.data
-    },
-    onSuccess: () => {
-      toast.success(t('Upstream settings saved'))
-      void queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
-      triggerRefresh()
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || t('Failed to save upstream settings'))
-    },
-  })
-
-  const addBinding = useMutation({
-    mutationFn: async () => {
-      const id = parseInt(channelId, 10)
-      if (!id) throw new Error(t('Invalid channel id'))
-      const res = await createChannelBinding(customerId, {
-        channel_id: id,
-        priority: parseInt(priority, 10) || 0,
-      })
-      if (!res.success) throw new Error(res.message || 'failed')
-      return res.data
-    },
-    onSuccess: () => {
-      toast.success(t('Channel binding added'))
-      setChannelId('')
-      void refetchBindings()
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || t('Failed to add channel binding'))
-    },
-  })
-
-  const removeBinding = useMutation({
-    mutationFn: async (bindingId: number) => {
-      const res = await deleteChannelBinding(customerId, bindingId)
-      if (!res.success) throw new Error(res.message || 'failed')
-    },
-    onSuccess: () => {
-      toast.success(t('Channel binding removed'))
-      void refetchBindings()
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || t('Failed to remove channel binding'))
-    },
-  })
-
   if (!current) return null
+
+  const enabled = current.status === CUSTOMER_STATUS.ENABLED
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -167,11 +93,51 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
         <SheetHeader className={sideDrawerHeaderClassName()}>
           <SheetTitle>{current.name}</SheetTitle>
           <SheetDescription>
-            {current.slug} · {t('Quota')}: {formatQuota(current.quota)}
+            {t('Customer details (read only)')}
           </SheetDescription>
         </SheetHeader>
 
         <div className='flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-2'>
+          <SideDrawerSection>
+            <SideDrawerSectionHeader title={t('Overview')} />
+            <div className='mt-3 space-y-3'>
+              <InfoRow label={t('Slug')}>{current.slug}</InfoRow>
+              <InfoRow label={t('Status')}>
+                {enabled ? (
+                  <StatusBadge
+                    label={t('Enabled')}
+                    variant='success'
+                    copyable={false}
+                  />
+                ) : (
+                  <StatusBadge
+                    label={t('Disabled')}
+                    variant='danger'
+                    copyable={false}
+                  />
+                )}
+              </InfoRow>
+              <InfoRow label={t('Owner')}>
+                {current.owner_username ||
+                  (current.owner_user_id
+                    ? `#${current.owner_user_id}`
+                    : '—')}
+              </InfoRow>
+              <InfoRow label={t('Quota')}>
+                {formatQuota(current.quota)}
+              </InfoRow>
+              <InfoRow label={t('Used')}>
+                {formatQuota(current.used_quota)}
+              </InfoRow>
+              <InfoRow label={t('Created At')}>
+                {formatTimestamp(current.created_at)}
+              </InfoRow>
+              <InfoRow label={t('Remark')}>
+                {current.remark?.trim() ? current.remark : '—'}
+              </InfoRow>
+            </div>
+          </SideDrawerSection>
+
           <SideDrawerSection>
             <SideDrawerSectionHeader title={t('Workspaces')} />
             <div className='mt-3 space-y-2'>
@@ -212,97 +178,51 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
 
           <SideDrawerSection>
             <SideDrawerSectionHeader title={t('Upstream Settings')} />
-            <div className='mt-3 space-y-4'>
-              <div className='space-y-2'>
-                <Label>{t('Upstream Mode')}</Label>
-                <Select
-                  value={mode}
-                  onValueChange={(v) => setMode(v as typeof mode)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={UPSTREAM_MODE.SHARED}>
-                      shared
-                    </SelectItem>
-                    <SelectItem value={UPSTREAM_MODE.DEDICATED}>
-                      dedicated
-                    </SelectItem>
-                    <SelectItem value={UPSTREAM_MODE.BYOK}>byok</SelectItem>
-                    <SelectItem value={UPSTREAM_MODE.HYBRID}>hybrid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <label className='flex items-center gap-2 text-sm'>
-                <Checkbox
-                  checked={allowFallback}
-                  onCheckedChange={(v) => setAllowFallback(Boolean(v))}
+            <div className='mt-3 space-y-3'>
+              <InfoRow label={t('Upstream Mode')}>
+                <StatusBadge
+                  label={current.upstream_mode || 'shared'}
+                  variant='neutral'
+                  copyable={false}
                 />
-                {t('Allow global fallback')}
-              </label>
-              <label className='flex items-center gap-2 text-sm'>
-                <Checkbox
-                  checked={byokEnabled}
-                  onCheckedChange={(v) => setByokEnabled(Boolean(v))}
-                />
-                {t('Enable BYOK')}
-              </label>
-              <Button
-                size='sm'
-                disabled={saveUpstream.isPending}
-                onClick={() => saveUpstream.mutate()}
-              >
-                {t('Save Upstream Settings')}
-              </Button>
+              </InfoRow>
+              <InfoRow label={t('Allow global fallback')}>
+                {current.allow_global_fallback ? t('Yes') : t('No')}
+              </InfoRow>
+              <InfoRow label={t('Enable BYOK')}>
+                {current.byok_enabled ? t('Yes') : t('No')}
+              </InfoRow>
             </div>
           </SideDrawerSection>
 
           <SideDrawerSection>
             <SideDrawerSectionHeader title={t('Channel Bindings')} />
-            <div className='mt-3 space-y-3'>
-              {bindings.map((b) => (
-                <div
-                  key={b.id}
-                  className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'
-                >
-                  <span>
-                    {t('Channel')} #{b.channel_id}
-                    <span className='text-muted-foreground ml-2'>
+            <div className='mt-3 space-y-2'>
+              {bindings.length === 0 ? (
+                <p className='text-muted-foreground text-sm'>
+                  {t('No channel bindings')}
+                </p>
+              ) : (
+                bindings.map((b) => (
+                  <div
+                    key={b.id}
+                    className='flex items-center justify-between rounded-md border px-3 py-2 text-sm'
+                  >
+                    <div className='min-w-0'>
+                      <div className='truncate font-medium'>
+                        {b.channel_name?.trim() ||
+                          `${t('Channel')} #${b.channel_id}`}
+                      </div>
+                      <div className='text-muted-foreground text-xs'>
+                        ID {b.channel_id}
+                      </div>
+                    </div>
+                    <span className='text-muted-foreground shrink-0'>
                       priority {b.priority}
                     </span>
-                  </span>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => removeBinding.mutate(b.id)}
-                  >
-                    <Trash2 className='h-4 w-4' />
-                  </Button>
-                </div>
-              ))}
-              <div className='flex gap-2'>
-                <Input
-                  type='number'
-                  placeholder={t('Channel ID')}
-                  value={channelId}
-                  onChange={(e) => setChannelId(e.target.value)}
-                />
-                <Input
-                  type='number'
-                  placeholder={t('Priority')}
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                  className='w-24'
-                />
-                <Button
-                  size='sm'
-                  disabled={addBinding.isPending}
-                  onClick={() => addBinding.mutate()}
-                >
-                  {t('Add')}
-                </Button>
-              </div>
+                  </div>
+                ))
+              )}
             </div>
           </SideDrawerSection>
         </div>

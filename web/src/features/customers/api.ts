@@ -19,6 +19,8 @@ export async function getCustomers(params: {
   page_size?: number
   keyword?: string
   status?: string
+  sort_by?: string
+  sort_order?: string
 }): Promise<GetCustomersResponse> {
   const res = await api.get('/api/customers/', {
     params: {
@@ -26,6 +28,8 @@ export async function getCustomers(params: {
       page_size: params.page_size ?? 20,
       keyword: params.keyword || undefined,
       status: params.status || undefined,
+      sort_by: params.sort_by || undefined,
+      sort_order: params.sort_order || undefined,
     },
   })
   return res.data

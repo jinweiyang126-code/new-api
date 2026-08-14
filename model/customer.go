@@ -96,7 +96,7 @@ func GetCustomerById(id int) (*Customer, error) {
 
 // GetAllCustomers returns a paginated customer list (platform root).
 // keyword matches name/slug/remark (case-insensitive). status < 0 means all.
-func GetAllCustomers(startIdx, pageSize int, keyword string, status int) (customers []*CustomerView, total int64, err error) {
+func GetAllCustomers(startIdx, pageSize int, keyword string, status int, sortBy, sortOrder string) (customers []*CustomerView, total int64, err error) {
 	tx := DB.Model(&Customer{})
 	keyword = strings.TrimSpace(keyword)
 	if keyword != "" {
@@ -110,13 +110,29 @@ func GetAllCustomers(startIdx, pageSize int, keyword string, status int) (custom
 	if err != nil {
 		return nil, 0, err
 	}
+	orderClause := customerListOrder(sortBy, sortOrder)
 	var rows []*Customer
-	err = tx.Order("id desc").Limit(pageSize).Offset(startIdx).Find(&rows).Error
+	err = tx.Order(orderClause).Limit(pageSize).Offset(startIdx).Find(&rows).Error
 	if err != nil {
 		return nil, 0, err
 	}
 	views, err := AttachCustomerOwnerUsernames(rows)
 	return views, total, err
+}
+
+func customerListOrder(sortBy, sortOrder string) string {
+	col := "id"
+	switch strings.TrimSpace(sortBy) {
+	case "id", "name", "quota", "status", "created_at", "upstream_mode", "owner_user_id", "used_quota":
+		col = sortBy
+	case "owner_username":
+		col = "owner_user_id"
+	}
+	dir := "desc"
+	if strings.EqualFold(strings.TrimSpace(sortOrder), "asc") {
+		dir = "asc"
+	}
+	return col + " " + dir
 }
 
 // AttachCustomerOwnerUsernames fills owner_username for display.

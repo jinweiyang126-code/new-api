@@ -91,7 +91,7 @@ func TestGetAllCustomersIncludesOwnerUsername(t *testing.T) {
 	_, err := CreateCustomerWithOwner(customer, owner.Id)
 	require.NoError(t, err)
 
-	list, total, err := GetAllCustomers(0, 20, "", -1)
+	list, total, err := GetAllCustomers(0, 20, "", -1, "", "")
 	require.NoError(t, err)
 	require.Equal(t, int64(1), total)
 	require.Len(t, list, 1)

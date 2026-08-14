@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
+import { Checkbox } from '@/components/ui/checkbox'
 import { formatQuota, formatTimestamp } from '@/lib/format'
 
 import { WORKSPACE_STATUS } from '../constants'
@@ -18,6 +19,29 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
   const { currentWorkspaceId } = useWorkspaces()
 
   return [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          indeterminate={table.getIsSomePageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label='Select all'
+          className='translate-y-[2px]'
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label='Select row'
+          className='translate-y-[2px]'
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 40,
+    },
     {
       accessorKey: 'id',
       header: t('ID'),
@@ -93,7 +117,8 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
     },
     {
       id: 'actions',
-      size: 56,
+      header: () => t('Actions'),
+      size: 88,
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => <WorkspacesRowActions row={row} />,

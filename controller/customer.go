@@ -48,7 +48,14 @@ func GetCustomers(c *gin.Context) {
 				status = parsed
 			}
 		}
-		customers, total, err := model.GetAllCustomers(pageInfo.GetStartIdx(), pageInfo.GetPageSize(), keyword, status)
+		customers, total, err := model.GetAllCustomers(
+			pageInfo.GetStartIdx(),
+			pageInfo.GetPageSize(),
+			keyword,
+			status,
+			c.Query("sort_by"),
+			c.Query("sort_order"),
+		)
 		if err != nil {
 			common.ApiError(c, err)
 			return

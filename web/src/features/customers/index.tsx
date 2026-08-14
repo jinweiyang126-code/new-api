@@ -8,6 +8,7 @@ import { SectionPageLayout } from '@/components/layout'
 import { CustomerTopupDialog } from './components/customer-topup-dialog'
 import { CustomersCreateDrawer } from './components/customers-create-drawer'
 import { CustomersDetailDrawer } from './components/customers-detail-drawer'
+import { CustomersEditDrawer } from './components/customers-edit-drawer'
 import { CustomersPrimaryButtons } from './components/customers-primary-buttons'
 import {
   CustomersProvider,
@@ -37,6 +38,11 @@ function CustomersContent() {
       <CustomersCreateDrawer
         open={open === 'create'}
         onOpenChange={(isOpen) => !isOpen && setOpen(null)}
+      />
+      <CustomersEditDrawer
+        open={open === 'update'}
+        onOpenChange={(isOpen) => !isOpen && setOpen(null)}
+        customer={currentRow}
       />
       <CustomersDetailDrawer
         open={open === 'detail'}

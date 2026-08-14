@@ -7,7 +7,7 @@ import useDialogState from '@/hooks/use-dialog'
 
 import type { Workspace } from '../types'
 
-export type WorkspacesDialogType = 'create' | 'disable' | 'enable'
+export type WorkspacesDialogType = 'create' | 'update' | 'disable' | 'enable'
 
 type WorkspacesContextType = {
   open: WorkspacesDialogType | null

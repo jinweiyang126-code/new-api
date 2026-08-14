@@ -41,6 +41,7 @@ export type ChannelBinding = {
   id: number
   customer_id: number
   channel_id: number
+  channel_name?: string
   priority: number
   model_mapping?: string
   status: number
@@ -53,6 +54,16 @@ export type ApiResponse<T = unknown> = {
   message: string
   data?: T
 }
+
+export type CustomerSortBy =
+  | 'id'
+  | 'name'
+  | 'quota'
+  | 'status'
+  | 'created_at'
+  | 'upstream_mode'
+  | 'owner_username'
+  | 'used_quota'
 
 export type GetCustomersResponse = ApiResponse<{
   items: Customer[]

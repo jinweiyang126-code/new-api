@@ -3,6 +3,8 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
+import type { OnChangeFn, SortingState } from '@tanstack/react-table'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -20,16 +22,30 @@ import {
   CUSTOMER_STATUS,
   getCustomerStatusOptions,
 } from '../constants'
+import type { CustomerSortBy } from '../types'
+import { DataTableBulkActions } from './data-table-bulk-actions'
 import { useCustomersColumns } from './customers-columns'
 import { useCustomers } from './customers-provider'
 
 const route = getRouteApi('/_authenticated/customers/')
+
+const CUSTOMER_SORTABLE_COLUMNS = new Set<CustomerSortBy>([
+  'id',
+  'name',
+  'quota',
+  'status',
+  'created_at',
+  'upstream_mode',
+  'owner_username',
+  'used_quota',
+])
 
 export function CustomersTable() {
   const { t } = useTranslation()
   const columns = useCustomersColumns()
   const { refreshTrigger } = useCustomers()
   const isMobile = useMediaQuery('(max-width: 640px)')
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const {
     globalFilter,
@@ -54,6 +70,27 @@ export function CustomersTable() {
       | string[]
       | undefined) ?? []
 
+  const sortParams = useMemo(() => {
+    const activeSort = sorting[0]
+    if (
+      !activeSort ||
+      !CUSTOMER_SORTABLE_COLUMNS.has(activeSort.id as CustomerSortBy)
+    ) {
+      return {}
+    }
+    return {
+      sort_by: activeSort.id as CustomerSortBy,
+      sort_order: activeSort.desc ? 'desc' : 'asc',
+    } as const
+  }, [sorting])
+
+  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
+    setSorting(updater)
+    if (pagination.pageIndex > 0) {
+      onPaginationChange({ ...pagination, pageIndex: 0 })
+    }
+  }
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
       'customers',
@@ -61,6 +98,7 @@ export function CustomersTable() {
       pagination.pageSize,
       globalFilter,
       statusFilter,
+      sortParams,
       refreshTrigger,
     ],
     queryFn: async () => {
@@ -69,6 +107,7 @@ export function CustomersTable() {
         page_size: pagination.pageSize,
         keyword: globalFilter?.trim() || undefined,
         status: statusFilter[0],
+        ...sortParams,
       })
       if (!result.success) {
         toast.error(result.message || t('Failed to load customers'))
@@ -85,14 +124,18 @@ export function CustomersTable() {
   const { table } = useDataTable({
     data: data?.items ?? [],
     columns,
+    enableRowSelection: true,
     columnFilters,
     globalFilter,
     pagination,
+    sorting,
     onPaginationChange,
     onGlobalFilterChange,
     onColumnFiltersChange,
+    onSortingChange: handleSortingChange,
     manualPagination: true,
     manualFiltering: true,
+    manualSorting: true,
     totalCount: data?.total ?? 0,
     ensurePageInRange,
   })
@@ -119,13 +162,11 @@ export function CustomersTable() {
           },
         ],
       }}
-      getRowClassName={(row, { isMobile: mobile }) =>
-        row.original.status === CUSTOMER_STATUS.DISABLED
-          ? mobile
-            ? DISABLED_ROW_MOBILE
-            : DISABLED_ROW_DESKTOP
-          : undefined
-      }
+      getRowClassName={(row, { isMobile: mobile }) => {
+        if (row.original.status !== CUSTOMER_STATUS.DISABLED) return undefined
+        return mobile ? DISABLED_ROW_MOBILE : DISABLED_ROW_DESKTOP
+      }}
+      bulkActions={<DataTableBulkActions table={table} />}
     />
   )
 }

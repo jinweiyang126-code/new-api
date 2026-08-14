@@ -20,61 +20,64 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { getUsers, searchUsers } from '@/features/users/api'
-import type { User } from '@/features/users/types'
+import { getChannels, searchChannels } from '@/features/channels/api'
+import type { Channel } from '@/features/channels/types'
 import { cn } from '@/lib/utils'
 
-type OwnerUserPickerProps = {
+type ChannelPickerProps = {
   value: number
-  onValueChange: (userId: number) => void
+  onValueChange: (channelId: number, channel?: Channel) => void
+  excludeIds?: number[]
   disabled?: boolean
 }
 
-function userLabel(user: User) {
-  const name = user.display_name?.trim() || user.username
-  if (name === user.username) {
-    return `${user.username} (#${user.id})`
-  }
-  return `${name} (@${user.username}, #${user.id})`
+function channelLabel(channel: Channel) {
+  return `${channel.name} (#${channel.id})`
 }
 
-export function OwnerUserPicker({
+export function ChannelPicker({
   value,
   onValueChange,
+  excludeIds = [],
   disabled,
-}: OwnerUserPickerProps) {
+}: ChannelPickerProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
+  const [selectedCache, setSelectedCache] = useState<Channel | null>(null)
+
+  const excludeSet = useMemo(() => new Set(excludeIds), [excludeIds])
 
   const { data, isFetching } = useQuery({
-    queryKey: ['customer-owner-users', keyword],
+    queryKey: ['customer-binding-channels', keyword],
     queryFn: async () => {
       const res = keyword.trim()
-        ? await searchUsers({
+        ? await searchChannels({
             keyword: keyword.trim(),
             p: 1,
             page_size: 50,
           })
-        : await getUsers({ p: 1, page_size: 50 })
+        : await getChannels({ p: 1, page_size: 50 })
       if (!res.success) {
-        throw new Error(res.message || 'Failed to load users')
+        throw new Error(res.message || 'Failed to load channels')
       }
-      return (res.data?.items ?? []) as User[]
+      return (res.data?.items ?? []) as Channel[]
     },
     enabled: open,
     staleTime: 15_000,
   })
 
-  const selected = useMemo(
-    () => (data ?? []).find((u) => u.id === value) ?? null,
-    [data, value]
+  const channels = useMemo(
+    () => (data ?? []).filter((ch) => !excludeSet.has(ch.id) || ch.id === value),
+    [data, excludeSet, value]
   )
 
-  // Keep label for selected id even if not in current page (after search).
-  const [selectedCache, setSelectedCache] = useState<User | null>(null)
-  const displayUser = selected ?? (selectedCache?.id === value ? selectedCache : null)
-  const users = data ?? []
+  const selected = useMemo(
+    () => channels.find((ch) => ch.id === value) ?? null,
+    [channels, value]
+  )
+  const displayChannel =
+    selected ?? (selectedCache?.id === value ? selectedCache : null)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -86,15 +89,15 @@ export function OwnerUserPicker({
             role='combobox'
             aria-expanded={open}
             disabled={disabled}
-            className='w-full justify-between font-normal'
+            className='w-full min-w-56 justify-between font-normal'
           />
         }
       >
         <span className='truncate'>
           {(() => {
-            if (displayUser) return userLabel(displayUser)
+            if (displayChannel) return channelLabel(displayChannel)
             if (value > 0) return `#${value}`
-            return t('Select owner user')
+            return t('Select channel')
           })()}
         </span>
         <ChevronsUpDown className='ms-2 size-4 shrink-0 opacity-50' />
@@ -102,37 +105,35 @@ export function OwnerUserPicker({
       <PopoverContent className='w-80 p-0' align='start'>
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder={t('Search username...')}
+            placeholder={t('Search channel...')}
             value={keyword}
             onValueChange={setKeyword}
           />
           <CommandList>
             <CommandEmpty>
-              {isFetching ? t('Loading...') : t('No users found')}
+              {isFetching ? t('Loading...') : t('No channels found')}
             </CommandEmpty>
             <CommandGroup>
-              {users.map((user) => (
+              {channels.map((channel) => (
                 <CommandItem
-                  key={user.id}
-                  value={String(user.id)}
+                  key={channel.id}
+                  value={String(channel.id)}
                   onSelect={() => {
-                    onValueChange(user.id)
-                    setSelectedCache(user)
+                    onValueChange(channel.id, channel)
+                    setSelectedCache(channel)
                     setOpen(false)
                   }}
                 >
                   <Check
                     className={cn(
                       'me-2 size-4',
-                      value === user.id ? 'opacity-100' : 'opacity-0'
+                      value === channel.id ? 'opacity-100' : 'opacity-0'
                     )}
                   />
                   <div className='min-w-0 flex-1'>
-                    <div className='truncate font-medium'>
-                      {user.display_name?.trim() || user.username}
-                    </div>
+                    <div className='truncate font-medium'>{channel.name}</div>
                     <div className='text-muted-foreground truncate text-xs'>
-                      @{user.username} · ID {user.id}
+                      ID {channel.id}
                     </div>
                   </div>
                 </CommandItem>

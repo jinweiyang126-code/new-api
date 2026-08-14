@@ -10,6 +10,7 @@ type CustomerChannelBinding struct {
 	Status       int    `json:"status" gorm:"default:1"`
 	CreatedAt    int64  `json:"created_at" gorm:"bigint"`
 	UpdatedAt    int64  `json:"updated_at" gorm:"bigint"`
+	ChannelName  string `json:"channel_name,omitempty" gorm:"-"`
 }
 
 func (CustomerChannelBinding) TableName() string {

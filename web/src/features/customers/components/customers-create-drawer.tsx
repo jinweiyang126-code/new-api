@@ -81,7 +81,7 @@ export function CustomersCreateDrawer({ open, onOpenChange }: Props) {
     onOpenChange(false)
     triggerRefresh()
     setCurrentRow(res.data.customer)
-    setOpen('detail')
+    setOpen('update')
   }
 
   return (
