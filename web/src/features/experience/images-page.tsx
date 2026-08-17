@@ -51,6 +51,7 @@ import {
 } from './api'
 import { ExperienceShell } from './components/experience-shell'
 import { OptionChip } from './components/option-chip'
+import { IMAGE_VIDEO_STUDIO_URL } from './constants'
 import { useExperiencePricing } from './hooks/use-experience-pricing'
 import { mapAspectRatioToImageSize } from './lib/estimate-cost'
 import type { GeneratedImageItem } from './types'
@@ -205,8 +206,8 @@ export function ExperienceImagesPage() {
   return (
     <ExperienceShell
       mode='images'
-      logsLabel={t('View in usage logs')}
-      logsTo='/usage-logs/common'
+      logsLabel={t('Image and video studio')}
+      logsTo={IMAGE_VIDEO_STUDIO_URL}
       form={
         <>
           <div className='grid shrink-0 gap-2'>

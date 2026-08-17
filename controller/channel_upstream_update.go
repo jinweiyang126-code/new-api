@@ -281,6 +281,77 @@ func parseOpenAIModelIDs(body []byte) ([]string, error) {
 	return ids, nil
 }
 
+// fetchBasicRouterUpstreamModelIDs merges chat (/v1/models), image (/v1/image-models)
+// and video (/v1/video-models) catalogs exposed by BasicRouter.
+func fetchBasicRouterUpstreamModelIDs(channel *model.Channel, baseURL string) ([]string, error) {
+	key, _, apiErr := channel.GetNextEnabledKey()
+	if apiErr != nil {
+		return nil, fmt.Errorf("获取渠道密钥失败: %w", apiErr)
+	}
+	key = strings.TrimSpace(key)
+	headers, err := buildFetchModelsHeaders(channel, key)
+	if err != nil {
+		return nil, sanitizeFetchModelsError(err, key)
+	}
+
+	base := strings.TrimRight(baseURL, "/")
+	paths := []string{
+		"/v1/models",
+		"/v1/image-models",
+		"/v1/video-models",
+	}
+	seen := make(map[string]struct{})
+	var merged []string
+	var lastErr error
+	for _, path := range paths {
+		body, fetchErr := getFetchModelsResponseBody(http.MethodGet, base+path, channel, headers)
+		if fetchErr != nil {
+			lastErr = sanitizeFetchModelsError(fetchErr, key)
+			continue
+		}
+		ids, parseErr := parseBasicRouterModelIDs(body)
+		if parseErr != nil {
+			lastErr = parseErr
+			continue
+		}
+		for _, id := range ids {
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			merged = append(merged, id)
+		}
+	}
+	if len(merged) == 0 {
+		if lastErr != nil {
+			return nil, lastErr
+		}
+		return nil, fmt.Errorf("BasicRouter returned no models from /v1/models, /v1/image-models, /v1/video-models")
+	}
+	return normalizeModelNames(merged), nil
+}
+
+func parseBasicRouterModelIDs(body []byte) ([]string, error) {
+	var result struct {
+		Data []struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if err := common.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("invalid BasicRouter models response: %w", err)
+	}
+	ids := make([]string, 0, len(result.Data))
+	for _, item := range result.Data {
+		if id := strings.TrimSpace(item.ID); id != "" {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("BasicRouter models response contains no valid model IDs")
+	}
+	return ids, nil
+}
+
 func sanitizeFetchModelsError(err error, key string) error {
 	if err == nil {
 		return nil
@@ -368,6 +439,10 @@ func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
 
 	if channel.Type == constant.ChannelTypeCodex {
 		return service.FetchCodexChannelModels(channel)
+	}
+
+	if channel.Type == constant.ChannelTypeBasicRouter {
+		return fetchBasicRouterUpstreamModelIDs(channel, baseURL)
 	}
 
 	var url string

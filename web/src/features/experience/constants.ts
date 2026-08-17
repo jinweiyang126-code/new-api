@@ -26,3 +26,5 @@ export const EXPERIENCE_API = {
 
 export const VIDEO_POLL_INTERVAL_MS = 3000
 export const VIDEO_POLL_INTERVAL_HIDDEN_MS = 8000
+
+export const IMAGE_VIDEO_STUDIO_URL = 'https://megick.abcyjw.me/'

@@ -1,6 +1,10 @@
 package common
 
-import "github.com/QuantumNous/new-api/constant"
+import (
+	"strings"
+
+	"github.com/QuantumNous/new-api/constant"
+)
 
 // GetEndpointTypesByChannelType 获取渠道最优先端点类型（所有的渠道都支持 OpenAI 端点）
 func GetEndpointTypesByChannelType(channelType int, modelName string) []constant.EndpointType {
@@ -30,6 +34,11 @@ func GetEndpointTypesByChannelType(channelType int, modelName string) []constant
 		endpointTypes = []constant.EndpointType{constant.EndpointTypeOpenAI, constant.EndpointTypeOpenAIResponse}
 	case constant.ChannelTypeSora:
 		endpointTypes = []constant.EndpointType{constant.EndpointTypeOpenAIVideo}
+	case constant.ChannelTypeBasicRouter:
+		if isBasicRouterVideoModel(modelName) {
+			return []constant.EndpointType{constant.EndpointTypeOpenAIVideo}
+		}
+		endpointTypes = []constant.EndpointType{constant.EndpointTypeOpenAI}
 	case constant.ChannelTypeSub2API, constant.ChannelTypeNewAPI:
 		endpointTypes = []constant.EndpointType{
 			constant.EndpointTypeOpenAI,
@@ -57,4 +66,12 @@ func GetEndpointTypesByChannelType(channelType int, modelName string) []constant
 		endpointTypes = append([]constant.EndpointType{constant.EndpointTypeImageGeneration}, endpointTypes...)
 	}
 	return endpointTypes
+}
+
+func isBasicRouterVideoModel(modelName string) bool {
+	lower := strings.ToLower(modelName)
+	return strings.Contains(lower, "seedance") ||
+		strings.Contains(lower, "kling") ||
+		strings.Contains(lower, "-video") ||
+		strings.HasSuffix(lower, "video")
 }

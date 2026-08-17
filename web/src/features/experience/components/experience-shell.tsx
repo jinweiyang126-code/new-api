@@ -83,12 +83,14 @@ export function ExperienceShell({
                 {wireframeHint}
               </p>
             ) : null}
-            <Link
-              to={logsTo}
+            <a
+              href={logsTo}
+              target='_blank'
+              rel='noopener noreferrer'
               className='text-muted-foreground hover:text-foreground shrink-0 text-sm underline-offset-4 hover:underline'
             >
               {logsLabel}
-            </Link>
+            </a>
           </div>
         </header>
 

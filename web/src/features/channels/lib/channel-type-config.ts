@@ -164,6 +164,18 @@ export const CHANNEL_TYPE_CONFIGS: Record<number, ChannelTypeConfig> = {
       models: 'Models',
     },
   },
+  61: {
+    id: 61,
+    name: CHANNEL_TYPES[61],
+    icon: 'openai',
+    defaultBaseUrl: 'https://api.basicrouter.ai/api',
+    hints: {
+      baseUrl: 'Default: https://api.basicrouter.ai/api (do not append /v1)',
+      key: 'BasicRouter API Key',
+      models:
+        'Fetched from /v1/models + /v1/image-models + /v1/video-models (e.g. seedream-4.5, seedance-2.0)',
+    },
+  },
 }
 
 /**

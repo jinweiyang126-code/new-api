@@ -56,6 +56,7 @@ import {
 import { ExperienceShell } from './components/experience-shell'
 import { OptionChip } from './components/option-chip'
 import {
+  IMAGE_VIDEO_STUDIO_URL,
   VIDEO_POLL_INTERVAL_HIDDEN_MS,
   VIDEO_POLL_INTERVAL_MS,
 } from './constants'
@@ -324,8 +325,8 @@ export function ExperienceVideosPage() {
   return (
     <ExperienceShell
       mode='videos'
-      logsLabel={t('View in task logs')}
-      logsTo='/usage-logs/task'
+      logsLabel={t('Image and video studio')}
+      logsTo={IMAGE_VIDEO_STUDIO_URL}
       form={
         <>
           <div className='grid shrink-0 gap-2'>
