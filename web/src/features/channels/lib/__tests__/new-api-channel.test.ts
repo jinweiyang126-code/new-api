@@ -20,6 +20,7 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
 import {
+  CHANNEL_TYPE_BASIC_ROUTER,
   CHANNEL_TYPE_NEW_API,
   CHANNEL_TYPE_OPTIONS,
   MODEL_FETCHABLE_TYPES,
@@ -56,12 +57,17 @@ describe('New API channel', () => {
       CHANNEL_TYPE_OPTIONS.findIndex((item) => item.value === 58)
     )
     assert.equal(MODEL_FETCHABLE_TYPES.has(CHANNEL_TYPE_NEW_API), true)
+    assert.equal(MODEL_FETCHABLE_TYPES.has(CHANNEL_TYPE_BASIC_ROUTER), true)
     assert.equal(getChannelTypeIcon(CHANNEL_TYPE_NEW_API), 'NewAPI')
     assert.equal(
       getKeyPromptForType(CHANNEL_TYPE_NEW_API),
       'Enter API key for this channel'
     )
     assert.equal(getChannelTypeConfig(CHANNEL_TYPE_NEW_API).icon, 'NewAPI')
+    assert.equal(
+      getKeyPromptForType(CHANNEL_TYPE_BASIC_ROUTER),
+      'BasicRouter API Key'
+    )
   })
 
   test('requires a non-blank Base URL', () => {
