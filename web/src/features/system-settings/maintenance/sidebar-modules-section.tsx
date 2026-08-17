@@ -69,6 +69,10 @@ export function SidebarModulesSection({
       title: t('Chat area'),
       description: t('Playground experiments and live conversations.'),
     },
+    experience: {
+      title: t('Experience Center area'),
+      description: t('Try image and video generation without API keys.'),
+    },
     console: {
       title: t('Console area'),
       description: t('Dashboards, tokens, and usage analytics.'),
@@ -95,6 +99,16 @@ export function SidebarModulesSection({
       chat: {
         title: t('Chat'),
         description: t('Access previous conversations and start new ones.'),
+      },
+    },
+    experience: {
+      images: {
+        title: t('Image Generation'),
+        description: t('Generate images from text prompts.'),
+      },
+      videos: {
+        title: t('Video Generation'),
+        description: t('Generate videos from text prompts.'),
       },
     },
     console: {

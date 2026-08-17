@@ -59,6 +59,11 @@ export const SIDEBAR_MODULES_DEFAULT: SidebarModulesAdminConfig = {
     playground: true,
     chat: true,
   },
+  experience: {
+    enabled: true,
+    images: true,
+    videos: true,
+  },
   console: {
     enabled: true,
     detail: true,

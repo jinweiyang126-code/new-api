@@ -40,6 +40,8 @@ import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardSectionRouteImport } from './routes/_authenticated/dashboard/$section'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedExperienceImagesRouteImport } from './routes/_authenticated/experience/images'
+import { Route as AuthenticatedExperienceVideosRouteImport } from './routes/_authenticated/experience/videos'
 import { Route as AuthenticatedInvitationsAcceptRouteImport } from './routes/_authenticated/invitations/accept'
 import { Route as AuthenticatedKeysIndexRouteImport } from './routes/_authenticated/keys/index'
 import { Route as AuthenticatedMembersIndexRouteImport } from './routes/_authenticated/members/index'
@@ -232,6 +234,18 @@ const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
     path: '/errors/$error',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExperienceImagesRoute =
+  AuthenticatedExperienceImagesRouteImport.update({
+    id: '/experience/images',
+    path: '/experience/images',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExperienceVideosRoute =
+  AuthenticatedExperienceVideosRouteImport.update({
+    id: '/experience/videos',
+    path: '/experience/videos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInvitationsAcceptRoute =
@@ -462,6 +476,8 @@ export interface FileRoutesByFullPath {
   '/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/experience/images': typeof AuthenticatedExperienceImagesRoute
+  '/experience/videos': typeof AuthenticatedExperienceVideosRoute
   '/invitations/accept': typeof AuthenticatedInvitationsAcceptRoute
   '/members/$section': typeof AuthenticatedMembersSectionRoute
   '/models/$section': typeof AuthenticatedModelsSectionRoute
@@ -526,6 +542,8 @@ export interface FileRoutesByTo {
   '/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/experience/images': typeof AuthenticatedExperienceImagesRoute
+  '/experience/videos': typeof AuthenticatedExperienceVideosRoute
   '/invitations/accept': typeof AuthenticatedInvitationsAcceptRoute
   '/members/$section': typeof AuthenticatedMembersSectionRoute
   '/models/$section': typeof AuthenticatedModelsSectionRoute
@@ -594,6 +612,8 @@ export interface FileRoutesById {
   '/_authenticated/chat/$chatId': typeof AuthenticatedChatChatIdRoute
   '/_authenticated/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/_authenticated/experience/images': typeof AuthenticatedExperienceImagesRoute
+  '/_authenticated/experience/videos': typeof AuthenticatedExperienceVideosRoute
   '/_authenticated/invitations/accept': typeof AuthenticatedInvitationsAcceptRoute
   '/_authenticated/members/$section': typeof AuthenticatedMembersSectionRoute
   '/_authenticated/models/$section': typeof AuthenticatedModelsSectionRoute
@@ -661,6 +681,8 @@ export interface FileRouteTypes {
     | '/chat/$chatId'
     | '/dashboard/$section'
     | '/errors/$error'
+    | '/experience/images'
+    | '/experience/videos'
     | '/invitations/accept'
     | '/members/$section'
     | '/models/$section'
@@ -725,6 +747,8 @@ export interface FileRouteTypes {
     | '/chat/$chatId'
     | '/dashboard/$section'
     | '/errors/$error'
+    | '/experience/images'
+    | '/experience/videos'
     | '/invitations/accept'
     | '/members/$section'
     | '/models/$section'
@@ -792,6 +816,8 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/$chatId'
     | '/_authenticated/dashboard/$section'
     | '/_authenticated/errors/$error'
+    | '/_authenticated/experience/images'
+    | '/_authenticated/experience/videos'
     | '/_authenticated/invitations/accept'
     | '/_authenticated/members/$section'
     | '/_authenticated/models/$section'
@@ -1067,6 +1093,20 @@ declare module '@tanstack/react-router' {
       path: '/errors/$error'
       fullPath: '/errors/$error'
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/experience/images': {
+      id: '/_authenticated/experience/images'
+      path: '/experience/images'
+      fullPath: '/experience/images'
+      preLoaderRoute: typeof AuthenticatedExperienceImagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/experience/videos': {
+      id: '/_authenticated/experience/videos'
+      path: '/experience/videos'
+      fullPath: '/experience/videos'
+      preLoaderRoute: typeof AuthenticatedExperienceVideosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invitations/accept': {
@@ -1399,6 +1439,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatChatIdRoute: typeof AuthenticatedChatChatIdRoute
   AuthenticatedDashboardSectionRoute: typeof AuthenticatedDashboardSectionRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedExperienceImagesRoute: typeof AuthenticatedExperienceImagesRoute
+  AuthenticatedExperienceVideosRoute: typeof AuthenticatedExperienceVideosRoute
   AuthenticatedInvitationsAcceptRoute: typeof AuthenticatedInvitationsAcceptRoute
   AuthenticatedMembersSectionRoute: typeof AuthenticatedMembersSectionRoute
   AuthenticatedModelsSectionRoute: typeof AuthenticatedModelsSectionRoute
@@ -1429,6 +1471,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatChatIdRoute: AuthenticatedChatChatIdRoute,
   AuthenticatedDashboardSectionRoute: AuthenticatedDashboardSectionRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedExperienceImagesRoute: AuthenticatedExperienceImagesRoute,
+  AuthenticatedExperienceVideosRoute: AuthenticatedExperienceVideosRoute,
   AuthenticatedInvitationsAcceptRoute: AuthenticatedInvitationsAcceptRoute,
   AuthenticatedMembersSectionRoute: AuthenticatedMembersSectionRoute,
   AuthenticatedModelsSectionRoute: AuthenticatedModelsSectionRoute,

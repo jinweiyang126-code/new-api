@@ -31,6 +31,8 @@
     "@hugeicons/react": "^1.1.9",
     "@lezer/highlight": "^1.2.3",
     "@lobehub/icons": "^5.10.1",
+    "@rspack/binding": "^2.1.10",
+    "@rspack/core": "^2.1.10",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-router": "^1.170.17",
     "@tanstack/react-table": "^8.21.3",
@@ -109,5 +111,8 @@
     "postcss": "8.5.15",
     "qs": "6.15.2",
     "uuid": "14.0.0"
+  },
+  "optionalDependencies": {
+    "@rspack/binding-win32-x64-msvc": "^2.1.10"
   }
 }

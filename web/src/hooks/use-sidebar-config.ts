@@ -42,6 +42,11 @@ const DEFAULT_SIDEBAR_MODULES: SidebarModulesAdminConfig = {
     playground: true,
     chat: true,
   },
+  experience: {
+    enabled: true,
+    images: true,
+    videos: true,
+  },
   console: {
     enabled: true,
     detail: true,
@@ -104,6 +109,8 @@ const mergeWithDefaultSidebarModules = (
  */
 const URL_TO_CONFIG_MAP: Record<string, { section: string; module: string }> = {
   '/playground': { section: 'chat', module: 'playground' },
+  '/experience/images': { section: 'experience', module: 'images' },
+  '/experience/videos': { section: 'experience', module: 'videos' },
   '/dashboard': { section: 'console', module: 'detail' },
   '/dashboard/overview': { section: 'console', module: 'detail' },
   '/dashboard/models': { section: 'console', module: 'detail' },

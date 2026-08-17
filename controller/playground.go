@@ -12,36 +12,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Playground(c *gin.Context) {
-	var newAPIError *types.NewAPIError
-
-	defer func() {
-		if newAPIError != nil {
-			c.JSON(newAPIError.StatusCode, gin.H{
-				"error": newAPIError.ToOpenAIError(),
-			})
-		}
-	}()
-
+func playgroundSetup(c *gin.Context) *types.NewAPIError {
 	useAccessToken := c.GetBool("use_access_token")
 	if useAccessToken {
-		newAPIError = types.NewError(errors.New("暂不支持使用 access token"), types.ErrorCodeAccessDenied, types.ErrOptionWithSkipRetry())
-		return
+		return types.NewError(errors.New("暂不支持使用 access token"), types.ErrorCodeAccessDenied, types.ErrOptionWithSkipRetry())
 	}
 
 	relayInfo, err := relaycommon.GenRelayInfo(c, types.RelayFormatOpenAI, nil, nil)
 	if err != nil {
-		newAPIError = types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
-		return
+		return types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
 	}
 
 	userId := c.GetInt("id")
-
-	// Write user context to ensure acceptUnsetRatio is available
 	userCache, err := model.GetUserCache(userId)
 	if err != nil {
-		newAPIError = types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
-		return
+		return types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
 	}
 	userCache.WriteContext(c)
 
@@ -51,6 +36,43 @@ func Playground(c *gin.Context) {
 		Group:  relayInfo.UsingGroup,
 	}
 	_ = middleware.SetupContextForToken(c, tempToken)
+	return nil
+}
 
+func writePlaygroundSetupError(c *gin.Context, newAPIError *types.NewAPIError) {
+	c.JSON(newAPIError.StatusCode, gin.H{
+		"error": newAPIError.ToOpenAIError(),
+	})
+}
+
+func Playground(c *gin.Context) {
+	if newAPIError := playgroundSetup(c); newAPIError != nil {
+		writePlaygroundSetupError(c, newAPIError)
+		return
+	}
 	Relay(c, types.RelayFormatOpenAI)
+}
+
+func PlaygroundImage(c *gin.Context) {
+	if newAPIError := playgroundSetup(c); newAPIError != nil {
+		writePlaygroundSetupError(c, newAPIError)
+		return
+	}
+	Relay(c, types.RelayFormatOpenAIImage)
+}
+
+func PlaygroundVideo(c *gin.Context) {
+	if newAPIError := playgroundSetup(c); newAPIError != nil {
+		writePlaygroundSetupError(c, newAPIError)
+		return
+	}
+	RelayTask(c)
+}
+
+func PlaygroundVideoFetch(c *gin.Context) {
+	if newAPIError := playgroundSetup(c); newAPIError != nil {
+		writePlaygroundSetupError(c, newAPIError)
+		return
+	}
+	RelayTaskFetch(c)
 }

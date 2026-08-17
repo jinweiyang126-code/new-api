@@ -1,6 +1,6 @@
 # 体验中心（Experience Center）设计
 
-**文档状态**：**已确认**（2026-08-14）；可按 §9 分期开工（建议先 M1 图片）  
+**文档状态**：**已确认**（2026-08-14）；M1 图片 + M1.1 视频 `/pg` 已接入（2026-08-17）  
 **范围**：左侧菜单新增独立一级「体验中心」；一期仅 OpenAI 兼容 **图片生成** 与 **视频生成**  
 **对标现网**：Playground（登录态 `/pg/chat/completions` + session Bearer + `IsPlayground` 计费）  
 **相关文档**：[frontend-i18n-standard.md](./frontend-i18n-standard.md)、[customer-workspace-design.md](./customer-workspace-design.md)（额度 / 工作区扣费）  
@@ -145,25 +145,36 @@ flowchart TD
 
 与 Chat Playground 的差别：Playground 为「上对话流 + 底输入」；体验中心为「**左表单 + 右画布**」，不做多轮会话。
 
-#### 图片页布局细节
+#### 图片页输入（对照产品截图，线框已对齐）
 
 ```text
-左：模型 → Prompt → size / quality / n → [Generate]
-右：空态 或 loading 或 图片网格（n>1）+ 单图预览 / 下载
+顶栏 Tab：图片 | 视频
+左栏：
+  模型下拉
+  参考图虚线上传区
+  描述多行输入
+底栏（粘性）：
+  预估费用
+  [尺寸·比例·数量] 设置摘要 → 上浮面板（Size / Aspect ratio / Count）
+  [生成图片]
+右栏：空态 / 加载 / 结果画布
 ```
 
-- 页头次要链接：「在使用日志中查看」→ `/usage-logs/common`  
-- 右栏失败：简短错误摘要；同时 toast  
-
-#### 视频页布局细节
+#### 视频页输入（对照产品截图，线框已对齐）
 
 ```text
-左：模型 → Prompt → duration / resolution → [Generate]
-右：状态进度（queued → processing → completed/failed）→ 单路 <video> 预览 + 下载
+顶栏 Tab：图片 | 视频
+左栏：
+  模型下拉
+  模式（图生视频首帧 / 文生视频）
+  参考内容：上传首帧图（图生视频时显示）
+  描述 / 提示词
+底栏（粘性）：
+  预估费用（credits / second）
+  [清晰度·比例·时长] 设置摘要 → 上浮面板
+  [生成视频]
+右栏：空态 / 进度 / 单路视频预览
 ```
-
-- 页头次要链接：「在任务日志中查看」→ `/usage-logs/task`  
-- 右栏为**单路视频**（非多图网格）；失败可改参重试  
 
 ### 5.1 图片生成（`/experience/images`）
 
@@ -340,3 +351,5 @@ flowchart TD
 | --- | --- | --- |
 | v0.1 | 2026-08-14 | 初稿：菜单位置 A + 一期范围 A；对齐 Playground |
 | v0.2 | 2026-08-14 | 设计确认；写入 §5.0 页面布局；§10 开放项定稿 |
+| v0.3 | 2026-08-17 | 静态线框空壳可预览：侧栏「体验中心」+ `/experience/images`、`/experience/videos`（未接 `/pg` 生成 API） |
+| v0.4 | 2026-08-17 | 接入 `/pg/images/generations`、`/pg/videos`（含轮询）与 `/v1/videos/:id/content` 预览；预估费用对齐 `/api/pricing` |

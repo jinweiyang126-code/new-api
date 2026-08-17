@@ -24,6 +24,7 @@ import {
   FileText,
   FlaskConical,
   FolderKanban,
+  Image,
   Key,
   LayoutDashboard,
   ListTodo,
@@ -34,6 +35,7 @@ import {
   Ticket,
   User,
   Users,
+  Video,
   Wallet,
   Waypoints,
 } from 'lucide-react'
@@ -66,6 +68,22 @@ export function useSidebarData(): SidebarData {
             title: t('Chat'),
             icon: MessageSquare,
             type: 'chat-presets',
+          },
+        ],
+      },
+      {
+        id: 'experience',
+        title: t('Experience Center'),
+        items: [
+          {
+            title: t('Image Generation'),
+            url: '/experience/images',
+            icon: Image,
+          },
+          {
+            title: t('Video Generation'),
+            url: '/experience/videos',
+            icon: Video,
           },
         ],
       },
