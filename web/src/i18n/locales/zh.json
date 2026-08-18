@@ -5592,7 +5592,7 @@
     "Send requests to OpenAI-compatible /v1 for chat, image, and video.": "向 OpenAI 兼容的 /v1 发送对话、图片与视频请求。",
     "Ready to start?": "准备开始？",
     "One key for models — and an enterprise path with customers and workspaces.": "一把密钥调用模型；企业还可按客户与工作区协作。",
-    "Connect. Route. Scale. Instantly.": "接入。路由。扩展。即刻。",
+    "Connect. Route. Scale. Instantly.": "接入. 路由. 扩展. 即刻.",
     "One key. Chat, image, and video.": "一把密钥，对话、图片与视频。",
     "From key to first token": "从密钥到首个 Token",
     "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.": "签发令牌后，即可通过同一条 OpenAI 兼容接口调用对话、图片与视频，无需改客户端。",
