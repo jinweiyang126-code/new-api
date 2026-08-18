@@ -31,15 +31,15 @@ export function Enterprise(props: EnterpriseProps) {
   const { t } = useTranslation()
 
   return (
-    <section className='relative z-10 px-6 pb-24 md:pb-32'>
-      <div className='border-border/40 bg-muted/10 mx-auto max-w-6xl overflow-hidden rounded-2xl border'>
+    <section className='relative z-10 px-6 py-16 md:py-20'>
+      <div className='border-border/40 bg-muted/10 mx-auto max-w-6xl overflow-hidden rounded-3xl border'>
         <div className='grid lg:grid-cols-12'>
-          <div className='border-border/40 px-6 py-10 md:px-10 md:py-12 lg:col-span-5 lg:border-r'>
+          <div className='border-border/40 px-6 py-12 md:px-12 md:py-16 lg:col-span-5 lg:border-r'>
             <AnimateInView>
-              <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
+              <p className='text-muted-foreground mb-4 text-xs font-medium tracking-[0.18em] uppercase'>
                 {t('Enterprise plan')}
               </p>
-              <h2 className='text-2xl leading-tight font-bold tracking-tight md:text-3xl'>
+              <h2 className='text-[clamp(1.75rem,3vw,2.35rem)] leading-[1.15] font-semibold tracking-tight'>
                 {t('Customers and workspaces')}
               </h2>
               <p className='text-muted-foreground mt-4 text-sm leading-relaxed'>
@@ -56,7 +56,7 @@ export function Enterprise(props: EnterpriseProps) {
                 </div>
               </div>
               <div className='bg-border/60 mx-auto h-6 w-px' />
-              <div className='border-blue-500/30 bg-blue-500/5 flex items-start gap-3 rounded-xl border px-4 py-3'>
+              <div className='flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/5 px-4 py-3'>
                 <Building2 className='mt-0.5 size-4 shrink-0 text-blue-400' />
                 <div>
                   <p className='text-sm font-semibold'>{t('Customer')}</p>
@@ -87,7 +87,7 @@ export function Enterprise(props: EnterpriseProps) {
             </AnimateInView>
           </div>
 
-          <div className='px-6 py-10 md:px-10 md:py-12 lg:col-span-7'>
+          <div className='px-6 py-12 md:px-12 md:py-16 lg:col-span-7'>
             <div className='grid gap-6 sm:grid-cols-2'>
               <AnimateInView delay={120}>
                 <h3 className='mb-2 flex items-center gap-2 text-sm font-semibold'>
@@ -121,12 +121,18 @@ export function Enterprise(props: EnterpriseProps) {
               </p>
               <div className='mt-5'>
                 {props.isAuthenticated ? (
-                  <Button className='group' render={<Link to='/dashboard' />}>
+                  <Button
+                    className='group h-11 rounded-full px-6 text-sm font-semibold'
+                    render={<Link to='/dashboard' />}
+                  >
                     {t('Go to Dashboard')}
                     <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
                   </Button>
                 ) : (
-                  <Button className='group' render={<Link to='/sign-up' />}>
+                  <Button
+                    className='group h-11 rounded-full px-6 text-sm font-semibold'
+                    render={<Link to='/sign-up' />}
+                  >
                     {t('Get Started')}
                     <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
                   </Button>

@@ -2040,7 +2040,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "相关项目",
     "footer.defaultCopyright": "版权所有。",
-    "footer.newapi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
+    "footer.new\u0061pi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "对于 2025 年 5 月 10 日之后添加的渠道，在部署时无需从模型名称中移除 \".\"",
     "For private deployments, format: https://fastgpt.run/api/openapi": "对于私有部署，格式为：https://fastgpt.run/api/openapi",
     "Force a syntactically valid JSON response": "强制返回语法合法的 JSON",
@@ -2096,7 +2096,7 @@
     "Generate new backup codes for account recovery": "生成新的备份代码用于账户恢复",
     "Generate New Codes": "生成新代码",
     "Generate tokens from the Tokens page; you can scope them to specific models, groups, IPs, and rate-limits.": "在「令牌」页面生成 API Key，可以按模型、分组、IP、速率等维度精细化授权。",
-    "Generated image": "生成的图像",
+    "Generated image": "生成图片",
     "Generating new codes will invalidate all existing backup codes.": "生成新代码将使所有现有备份代码失效。",
     "Generating...": "生成中...",
     "Generation quality preset": "生成质量预设",
@@ -5556,7 +5556,6 @@
     "Video generation failed": "视频生成失败",
     "Generated images will appear here after you submit a prompt.": "提交提示词后，生成的图片将显示在这里。",
     "Generated video will appear here after you submit a prompt.": "提交提示词后，生成的视频将显示在这里。",
-    "Generated image": "生成图片",
     "Download failed": "下载失败",
     "Please upload a first-frame image": "请上传首帧图片",
     "No task id returned": "未返回任务 ID",
@@ -5592,6 +5591,12 @@
     "Call the API": "调用 API",
     "Send requests to OpenAI-compatible /v1 for chat, image, and video.": "向 OpenAI 兼容的 /v1 发送对话、图片与视频请求。",
     "Ready to start?": "准备开始？",
-    "One key for models — and an enterprise path with customers and workspaces.": "一把密钥调用模型；企业还可按客户与工作区协作。"
+    "One key for models — and an enterprise path with customers and workspaces.": "一把密钥调用模型；企业还可按客户与工作区协作。",
+    "Connect. Route. Scale. Instantly.": "接入。路由。扩展。即刻。",
+    "One key. Chat, image, and video.": "一把密钥，对话、图片与视频。",
+    "From key to first token": "从密钥到首个 Token",
+    "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.": "签发令牌后，即可通过同一条 OpenAI 兼容接口调用对话、图片与视频，无需改客户端。",
+    "Key capabilities": "核心能力",
+    "Route anything. Bill anything. Ship on one protocol.": "统一路由、计量与结算，一套协议即可上线。"
   }
 }

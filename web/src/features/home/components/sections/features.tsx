@@ -17,7 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import { ArrowUpRight, Code, ImageIcon, Video, Wallet } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Code,
+  ImageIcon,
+  Shield,
+  Video,
+  Wallet,
+  Zap,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { AnimateInView } from '@/components/animate-in-view'
@@ -37,7 +45,7 @@ export function Features(_props: FeaturesProps) {
       desc: t(
         'Issue a key and call OpenAI-compatible /v1 routes without changing your client.'
       ),
-      icon: <Code className='size-4 text-blue-400' />,
+      icon: <Code className='size-5' strokeWidth={1.5} />,
       href: '/pricing' as const,
       action: t('Explore pricing'),
     },
@@ -47,7 +55,7 @@ export function Features(_props: FeaturesProps) {
       desc: t(
         'Generate images in the console after sign-in. Quota follows your account or workspace.'
       ),
-      icon: <ImageIcon className='size-4 text-violet-400' />,
+      icon: <ImageIcon className='size-5' strokeWidth={1.5} />,
       href: '/experience/images' as const,
       action: t('Try image generation'),
     },
@@ -57,55 +65,80 @@ export function Features(_props: FeaturesProps) {
       desc: t(
         'Submit video jobs and preview results with the same account quota.'
       ),
-      icon: <Video className='size-4 text-amber-400' />,
+      icon: <Video className='size-5' strokeWidth={1.5} />,
       href: '/experience/videos' as const,
       action: t('Try video generation'),
+    },
+    {
+      id: 'speed',
+      title: t('Lightning Fast'),
+      desc: t(
+        'Optimized network architecture ensures millisecond response times'
+      ),
+      icon: <Zap className='size-5' strokeWidth={1.5} />,
+      href: '/pricing' as const,
+      action: t('Explore pricing'),
+    },
+    {
+      id: 'secure',
+      title: t('Secure & Reliable'),
+      desc: t(
+        'Enterprise-grade security with comprehensive permission management'
+      ),
+      icon: <Shield className='size-5' strokeWidth={1.5} />,
+      href: '/pricing' as const,
+      action: t('Explore pricing'),
     },
     {
       id: 'pricing',
       title: t('Usage and pricing'),
       desc: t('See model prices before you integrate. Pay for what you use.'),
-      icon: <Wallet className='size-4 text-emerald-400' />,
+      icon: <Wallet className='size-5' strokeWidth={1.5} />,
       href: '/pricing' as const,
       action: t('View Pricing'),
     },
   ]
 
   return (
-    <section className='relative z-10 px-6 pt-24 pb-10 md:pt-32 md:pb-12'>
+    <section className='relative z-10 px-6 py-20 md:py-28 lg:py-32'>
       <div className='mx-auto max-w-6xl'>
-        <AnimateInView className='mb-14 max-w-lg'>
-          <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
+        <AnimateInView className='mx-auto mb-14 max-w-2xl text-center md:mb-16'>
+          <p className='text-muted-foreground mb-4 text-xs font-medium tracking-[0.18em] uppercase'>
             {t('Capabilities')}
           </p>
-          <h2 className='text-2xl leading-tight font-bold tracking-tight md:text-3xl'>
-            {t('What you can run today')}
+          <h2 className='text-[clamp(1.85rem,3.6vw,2.85rem)] leading-[1.12] font-semibold tracking-tight'>
+            {t('Key capabilities')}
           </h2>
+          <p className='text-muted-foreground mt-4 text-base leading-relaxed md:text-[17px]'>
+            {t('Route anything. Bill anything. Ship on one protocol.')}
+          </p>
         </AnimateInView>
 
-        <div className='grid gap-3 sm:grid-cols-2'>
+        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5'>
           {cards.map((card, i) => (
             <AnimateInView
               key={card.id}
-              delay={i * 80}
+              delay={i * 70}
               animation='scale-in'
               className='h-full'
             >
               <Link
                 to={card.href}
-                className='border-border/40 bg-muted/10 hover:bg-muted/20 group flex h-full flex-col rounded-xl border p-6 transition-colors md:p-7'
+                className='border-border/40 bg-muted/10 hover:bg-muted/20 group flex h-full flex-col rounded-2xl border p-7 transition-colors md:p-8'
               >
-                <div className='mb-4 flex items-center justify-between gap-3'>
-                  <span className='border-border/40 bg-background flex size-9 items-center justify-center rounded-lg border'>
+                <div className='mb-6 flex items-center justify-between gap-3'>
+                  <span className='border-border/40 bg-background text-foreground/80 flex size-11 items-center justify-center rounded-xl border'>
                     {card.icon}
                   </span>
-                  <ArrowUpRight className='text-muted-foreground/50 group-hover:text-foreground size-4 transition-colors' />
+                  <ArrowUpRight className='text-muted-foreground/40 group-hover:text-foreground size-4 transition-colors' />
                 </div>
-                <h3 className='text-base font-semibold'>{card.title}</h3>
-                <p className='text-muted-foreground mt-2 flex-1 text-sm leading-relaxed'>
+                <h3 className='text-lg font-semibold tracking-tight'>
+                  {card.title}
+                </h3>
+                <p className='text-muted-foreground mt-2.5 flex-1 text-sm leading-relaxed'>
                   {card.desc}
                 </p>
-                <span className='text-foreground/80 mt-5 text-sm font-medium'>
+                <span className='text-foreground/80 mt-6 text-sm font-medium'>
                   {card.action}
                 </span>
               </Link>
@@ -113,7 +146,7 @@ export function Features(_props: FeaturesProps) {
           ))}
         </div>
 
-        <AnimateInView delay={200} className='mt-6 text-center'>
+        <AnimateInView delay={200} className='mt-10 text-center'>
           <a
             href={IMAGE_VIDEO_STUDIO_URL}
             target='_blank'

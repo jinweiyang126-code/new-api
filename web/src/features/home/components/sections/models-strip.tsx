@@ -32,36 +32,36 @@ export function ModelsStrip() {
   const { t } = useTranslation()
 
   return (
-    <section className='border-border/40 relative z-10 border-y px-6 py-12 md:py-16'>
+    <section className='relative z-10 px-6 py-16 md:py-20'>
       <div className='mx-auto max-w-6xl'>
-        <AnimateInView className='mb-8 text-center'>
-          <p className='text-muted-foreground mb-2 text-xs font-medium tracking-widest uppercase'>
+        <AnimateInView className='mb-10 text-center'>
+          <p className='text-muted-foreground mb-3 text-xs font-medium tracking-[0.18em] uppercase'>
             {t('Compatible models')}
           </p>
-          <p className='text-muted-foreground mx-auto max-w-2xl text-sm leading-relaxed'>
+          <h2 className='text-xl font-semibold tracking-tight md:text-2xl'>
             {t(
               'One protocol. Models from OpenAI, Claude, Gemini, DeepSeek, Qwen, and more.'
             )}
-          </p>
+          </h2>
         </AnimateInView>
 
         <AnimateInView
           delay={80}
-          className='flex flex-wrap items-center justify-center gap-2.5'
+          className='flex flex-wrap items-center justify-center gap-3'
         >
           {AI_MODELS.map((iconName) => (
             <div
               key={iconName}
-              className='border-border/40 bg-muted/15 text-foreground/80 flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm'
+              className='border-border/40 bg-muted/15 text-foreground/85 flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm'
             >
-              {getLobeIcon(iconName, 20)}
+              {getLobeIcon(iconName, 22)}
               <span>{modelLabel(iconName)}</span>
             </div>
           ))}
         </AnimateInView>
 
-        <AnimateInView delay={140} className='mt-8'>
-          <p className='text-muted-foreground/50 mb-3 text-center text-[10px] font-bold tracking-[0.15em] uppercase'>
+        <AnimateInView delay={140} className='mt-10'>
+          <p className='text-muted-foreground/50 mb-4 text-center text-[11px] font-medium tracking-[0.16em] uppercase'>
             {t('Supported Applications')}
           </p>
           <div className='flex flex-wrap items-center justify-center gap-3'>
@@ -69,7 +69,7 @@ export function ModelsStrip() {
               href='https://cherry-ai.com'
               target='_blank'
               rel='noopener noreferrer'
-              className='border-border/40 bg-muted/15 text-foreground/80 hover:border-border hover:bg-muted/30 hover:text-foreground flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors'
+              className='border-border/40 bg-muted/15 text-foreground/80 hover:border-border hover:bg-muted/30 hover:text-foreground flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors'
             >
               <CherryStudio.Color size={20} className='shrink-0' />
               <span>Cherry Studio</span>
@@ -77,7 +77,7 @@ export function ModelsStrip() {
             {AI_APPLICATIONS.map((name) => (
               <div
                 key={name}
-                className='border-border/40 bg-muted/15 text-foreground/70 flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm'
+                className='border-border/40 bg-muted/15 text-foreground/70 flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm'
               >
                 {getLobeIcon(name, 20)}
                 <span>{modelLabel(name)}</span>

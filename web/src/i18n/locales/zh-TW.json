@@ -5249,6 +5249,12 @@
     "Zero retention": "零數據保留",
     "Zhipu": "智譜",
     "Zhipu V4": "智譜 V4",
-    "Zoom": "縮放"
+    "Zoom": "縮放",
+    "Connect. Route. Scale. Instantly.": "接入。路由。擴展。即刻。",
+    "One key. Chat, image, and video.": "一把金鑰，對話、圖片與影片。",
+    "From key to first token": "從金鑰到首個 Token",
+    "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.": "簽發令牌後，即可透過同一條 OpenAI 相容介面呼叫對話、圖片與影片，無需改客戶端。",
+    "Key capabilities": "核心能力",
+    "Route anything. Bill anything. Ship on one protocol.": "統一路由、計量與結算，一套協定即可上線。"
   }
 }

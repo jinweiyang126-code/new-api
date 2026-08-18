@@ -28,7 +28,7 @@ export function HowItWorks() {
     {
       num: '1',
       title: t('Create an account'),
-          desc: t('Register, then use the console or accept a customer invite.'),
+      desc: t('Register, then use the console or accept a customer invite.'),
       icon: <UserPlus className='size-6' strokeWidth={1.5} />,
     },
     {
@@ -50,18 +50,18 @@ export function HowItWorks() {
   ]
 
   return (
-    <section className='border-border/40 relative z-10 border-t px-6 py-24 md:py-32'>
+    <section className='relative z-10 px-6 py-20 md:py-28 lg:py-32'>
       <div className='mx-auto max-w-6xl'>
         <AnimateInView className='mb-16 text-center md:mb-20'>
-          <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
+          <p className='text-muted-foreground mb-4 text-xs font-medium tracking-[0.18em] uppercase'>
             {t('How It Works')}
           </p>
-          <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
+          <h2 className='text-[clamp(1.85rem,3.6vw,2.85rem)] font-semibold tracking-tight'>
             {t('Three steps to start calling')}
           </h2>
         </AnimateInView>
 
-        <div className='grid gap-8 md:grid-cols-3 md:gap-12'>
+        <div className='grid gap-10 md:grid-cols-3 md:gap-12'>
           {steps.map((step, i) => (
             <AnimateInView
               key={step.num}
@@ -77,8 +77,10 @@ export function HowItWorks() {
                   {step.num}
                 </div>
               </div>
-              <h3 className='mb-2 text-base font-semibold'>{step.title}</h3>
-              <p className='text-muted-foreground max-w-[260px] text-sm leading-relaxed'>
+              <h3 className='mb-2 text-lg font-semibold tracking-tight'>
+                {step.title}
+              </h3>
+              <p className='text-muted-foreground max-w-[280px] text-sm leading-relaxed'>
                 {step.desc}
               </p>
             </AnimateInView>

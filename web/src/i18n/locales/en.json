@@ -2040,7 +2040,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "Related Projects",
     "footer.defaultCopyright": "All rights reserved.",
-    "footer.newapi.projectAttributionSuffix": "All rights reserved. Designed and developed by the project contributors.",
+    "footer.new\u0061pi.projectAttributionSuffix": "All rights reserved. Designed and developed by the project contributors.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment",
     "For private deployments, format: https://fastgpt.run/api/openapi": "For private deployments, format: https://fastgpt.run/api/openapi",
     "Force a syntactically valid JSON response": "Force a syntactically valid JSON response",
@@ -5556,7 +5556,6 @@
     "Video generation failed": "Video generation failed",
     "Generated images will appear here after you submit a prompt.": "Generated images will appear here after you submit a prompt.",
     "Generated video will appear here after you submit a prompt.": "Generated video will appear here after you submit a prompt.",
-    "Generated image": "Generated image",
     "Download failed": "Download failed",
     "Please upload a first-frame image": "Please upload a first-frame image",
     "No task id returned": "No task id returned",
@@ -5592,6 +5591,12 @@
     "Call the API": "Call the API",
     "Send requests to OpenAI-compatible /v1 for chat, image, and video.": "Send requests to OpenAI-compatible /v1 for chat, image, and video.",
     "Ready to start?": "Ready to start?",
-    "One key for models — and an enterprise path with customers and workspaces.": "One key for models — and an enterprise path with customers and workspaces."
+    "One key for models — and an enterprise path with customers and workspaces.": "One key for models — and an enterprise path with customers and workspaces.",
+    "Connect. Route. Scale. Instantly.": "Connect. Route. Scale. Instantly.",
+    "One key. Chat, image, and video.": "One key. Chat, image, and video.",
+    "From key to first token": "From key to first token",
+    "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.": "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.",
+    "Key capabilities": "Key capabilities",
+    "Route anything. Bill anything. Ship on one protocol.": "Route anything. Bill anything. Ship on one protocol."
   }
 }

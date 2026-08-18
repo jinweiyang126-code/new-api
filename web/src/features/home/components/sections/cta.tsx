@@ -36,38 +36,41 @@ export function CTA(props: CTAProps) {
   }
 
   return (
-    <section className='relative z-10 overflow-hidden px-6 py-24 md:py-32'>
+    <section className='relative z-10 overflow-hidden px-6 py-24 md:py-32 lg:py-40'>
       <div
         aria-hidden
-        className='absolute inset-0 -z-10 opacity-20 dark:opacity-[0.1]'
+        className='absolute inset-0 -z-10'
         style={{
           background: [
-            'radial-gradient(ellipse 50% 50% at 30% 50%, oklch(0.7 0.15 250 / 70%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 40% at 70% 40%, oklch(0.65 0.12 200 / 50%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 55% 50% at 50% 50%, oklch(0.7 0.16 250 / 22%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 40% 40% at 78% 35%, oklch(0.68 0.14 280 / 14%) 0%, transparent 70%)',
           ].join(', '),
         }}
       />
 
       <AnimateInView
-        className='mx-auto max-w-2xl text-center'
+        className='mx-auto max-w-3xl text-center'
         animation='scale-in'
       >
-        <h2 className='text-2xl leading-tight font-bold tracking-tight md:text-4xl'>
+        <h2 className='text-[clamp(2rem,5vw,3.5rem)] leading-[1.1] font-semibold tracking-tight'>
           {t('Ready to start?')}
         </h2>
-        <p className='text-muted-foreground/80 mx-auto mt-5 max-w-md text-sm leading-relaxed md:text-base'>
+        <p className='text-muted-foreground mx-auto mt-5 max-w-xl text-base leading-relaxed md:text-lg'>
           {t(
             'One key for models — and an enterprise path with customers and workspaces.'
           )}
         </p>
-        <div className='mt-8 flex items-center justify-center gap-3'>
-          <Button className='group rounded-lg' render={<Link to='/sign-up' />}>
+        <div className='mt-10 flex flex-wrap items-center justify-center gap-3'>
+          <Button
+            className='group h-12 rounded-full px-8 text-sm font-semibold'
+            render={<Link to='/sign-up' />}
+          >
             {t('Get Started')}
-            <ArrowRight className='ml-1 size-3.5 transition-transform duration-200 group-hover:translate-x-0.5' />
+            <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
           </Button>
           <Button
             variant='outline'
-            className='border-border/50 hover:border-border hover:bg-muted/50 rounded-lg'
+            className='border-border/50 hover:border-border hover:bg-muted/50 h-12 rounded-full px-8 text-sm font-medium'
             render={<Link to='/pricing' />}
           >
             {t('View Pricing')}
