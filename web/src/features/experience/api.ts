@@ -94,18 +94,59 @@ export function getImageTaskId(task: ImageTaskResponse): string | undefined {
   return task.id || task.task_id
 }
 
-export function mapImageTaskToItems(task: ImageTaskResponse): GeneratedImageItem[] {
-  const revised = task.metadata?.revised_prompt
-  const fromList = task.metadata?.images
-  if (Array.isArray(fromList) && fromList.length > 0) {
-    return fromList
-      .filter((url): url is string => typeof url === 'string' && Boolean(url))
-      .map((url) => ({ src: url, revisedPrompt: revised }))
+function isUsableImageSrc(url: string): boolean {
+  const value = url.trim()
+  if (!value) return false
+  if (value.startsWith('data:image/')) return true
+  if (value.includes('/v1/videos/') && value.includes('/content')) return false
+  return (
+    /^https?:\/\//i.test(value) ||
+    value.startsWith('/') ||
+    value.startsWith('data:')
+  )
+}
+
+function urlsFromUnknown(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return []
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        return urlsFromUnknown(JSON.parse(trimmed))
+      } catch {
+        return isUsableImageSrc(trimmed) ? [trimmed] : []
+      }
+    }
+    return isUsableImageSrc(trimmed) ? [trimmed] : []
   }
-  if (typeof task.metadata?.url === 'string' && task.metadata.url) {
-    return [{ src: task.metadata.url, revisedPrompt: revised }]
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => urlsFromUnknown(item))
+  }
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>
+    for (const key of ['url', 'b64_json', 'imageUrl', 'image_url', 'src']) {
+      if (!(key in obj)) continue
+      if (key === 'b64_json' && typeof obj.b64_json === 'string' && obj.b64_json) {
+        return [`data:image/png;base64,${obj.b64_json}`]
+      }
+      const found = urlsFromUnknown(obj[key])
+      if (found.length > 0) return found
+    }
   }
   return []
+}
+
+export function mapImageTaskToItems(task: ImageTaskResponse): GeneratedImageItem[] {
+  const revised = task.metadata?.revised_prompt
+  const urls = [
+    ...urlsFromUnknown(task.metadata?.images),
+    ...urlsFromUnknown(task.metadata?.url),
+    ...urlsFromUnknown(task.data),
+  ].filter(isUsableImageSrc)
+  return [...new Set(urls)].map((url) => ({
+    src: url,
+    revisedPrompt: revised,
+  }))
 }
 
 export function mapImageResponseToItems(

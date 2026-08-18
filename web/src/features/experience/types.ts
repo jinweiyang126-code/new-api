@@ -47,8 +47,9 @@ export type ImageTaskResponse = {
   created_at?: number
   completed_at?: number
   error?: { message?: string; code?: string }
+  data?: ImageGenerationData[]
   metadata?: {
-    images?: string[]
+    images?: string[] | string
     url?: string
     revised_prompt?: string
   }

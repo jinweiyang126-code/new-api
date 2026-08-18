@@ -184,6 +184,7 @@ export function ExperienceImagesPage() {
     taskId: string,
     signal: AbortSignal
   ): Promise<ImageTaskResponse> => {
+    let emptyCompleteStreak = 0
     for (;;) {
       const status = await fetchImageStatus(taskId, signal)
       const label = status.status || 'unknown'
@@ -192,9 +193,20 @@ export function ExperienceImagesPage() {
         typeof status.progress === 'number' ? status.progress : 0
       )
 
-      if (label === 'completed') return status
       if (label === 'failed') {
         throw new Error(status.error?.message || t('Generation failed'))
+      }
+      if (label === 'completed') {
+        if (mapImageTaskToItems(status).length > 0) return status
+        if (status.error?.message) {
+          throw new Error(status.error.message)
+        }
+        emptyCompleteStreak += 1
+        if (emptyCompleteStreak >= 5) {
+          throw new Error(t('No images returned'))
+        }
+      } else {
+        emptyCompleteStreak = 0
       }
 
       const interval = document.hidden
@@ -253,11 +265,15 @@ export function ExperienceImagesPage() {
         setProgressPercent(response.progress ?? 0)
 
         const completed =
-          response.status === 'completed'
+          response.status === 'completed' &&
+          mapImageTaskToItems(response).length > 0
             ? response
             : await pollUntilDone(taskId, controller.signal)
 
         items = mapImageTaskToItems(completed)
+        if (items.length === 0 && completed.error?.message) {
+          throw new Error(completed.error.message)
+        }
       } else {
         items = mapImageResponseToItems(response)
       }

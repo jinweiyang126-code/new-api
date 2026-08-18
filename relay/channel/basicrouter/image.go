@@ -33,7 +33,6 @@ func convertOpenAIImageToBasicRouter(request dto.ImageRequest, upstreamModel str
 		Count:      count,
 		Resolution: resolutionFromImageRequest(request),
 		Ratio:      ratioFromImageRequest(request),
-		ImageURLs:  []string{},
 	}
 }
 

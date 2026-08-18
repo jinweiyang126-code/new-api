@@ -2,6 +2,7 @@ package basicrouter
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -59,17 +60,22 @@ type submitEnvelope struct {
 }
 
 type pollEnvelope struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Data    struct {
-		TaskID       string `json:"taskId"`
-		Status       string `json:"status"`
-		ErrorMessage string `json:"errorMessage"`
-		VideoURL     string `json:"videoUrl"`
-		LastFrameURL string `json:"lastFrameUrl"`
-		Images       string `json:"images"`
-		Text         string `json:"text"`
-	} `json:"data"`
+	Code    json.RawMessage `json:"code"`
+	Message string          `json:"message"`
+	Data    pollData        `json:"data"`
+}
+
+type pollData struct {
+	TaskID       string          `json:"taskId"`
+	Status       string          `json:"status"`
+	ErrorMessage json.RawMessage `json:"errorMessage"`
+	VideoURL     string          `json:"videoUrl"`
+	LastFrameURL string          `json:"lastFrameUrl"`
+	Images       json.RawMessage `json:"images"`
+	ImageURLs    json.RawMessage `json:"imageUrls"`
+	ImageURL     json.RawMessage `json:"imageUrl"`
+	URL          json.RawMessage `json:"url"`
+	Text         json.RawMessage `json:"text"`
 }
 
 func (a *TaskAdaptor) Init(info *relaycommon.RelayInfo) {
@@ -225,7 +231,9 @@ func (a *TaskAdaptor) convertToImageSubmitPayload(req *relaycommon.TaskSubmitReq
 		Count:      count,
 		Resolution: resolutionFromSizeQuality(req.Size, quality),
 		Ratio:      ratioFromSize(req.Size),
-		ImageURLs:  []string{},
+	}
+	if req.HasImage() {
+		payload.ImageURLs = append([]string{}, req.Images...)
 	}
 	if req.Metadata != nil {
 		_ = taskcommon.UnmarshalMetadata(req.Metadata, payload)
@@ -233,6 +241,9 @@ func (a *TaskAdaptor) convertToImageSubmitPayload(req *relaycommon.TaskSubmitReq
 		if payload.Text == "" {
 			payload.Text = req.Prompt
 		}
+	}
+	if len(payload.ImageURLs) == 0 {
+		payload.ImageURLs = nil
 	}
 	return payload, nil
 }
@@ -437,7 +448,10 @@ func (a *TaskAdaptor) FetchTask(baseURL, key string, body map[string]any, proxy 
 		baseURL = defaultBaseURL
 	}
 	path := videoSubmitPath
-	if action, _ := body["action"].(string); action == constant.TaskActionImageGenerate {
+	action, _ := body["action"].(string)
+	if action == constant.TaskActionImageGenerate ||
+		strings.Contains(strings.ToLower(action), "image") ||
+		strings.HasPrefix(taskID, "img_") {
 		path = imageSubmitPath
 	}
 	uri := strings.TrimRight(baseURL, "/") + path + "/" + taskID
@@ -455,12 +469,14 @@ func (a *TaskAdaptor) FetchTask(baseURL, key string, body map[string]any, proxy 
 }
 
 func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, error) {
-	var poll pollEnvelope
-	if err := common.Unmarshal(respBody, &poll); err != nil {
+	poll, err := parsePollBody(respBody)
+	if err != nil {
 		return nil, errors.Wrap(err, "unmarshal basicrouter poll failed")
 	}
 	taskResult := &relaycommon.TaskInfo{Code: 0}
 	status := strings.ToLower(poll.Data.Status)
+	urls := extractImageURLs(poll.Data)
+	errMsg := common.JsonRawMessageToString(poll.Data.ErrorMessage)
 	switch status {
 	case "pending", "queued":
 		taskResult.Status = model.TaskStatusQueued
@@ -469,17 +485,27 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 		taskResult.Status = model.TaskStatusInProgress
 		taskResult.Progress = taskcommon.ProgressInProgress
 	case "success", "succeeded", "completed":
-		taskResult.Status = model.TaskStatusSuccess
-		taskResult.Progress = taskcommon.ProgressComplete
 		if poll.Data.VideoURL != "" {
+			taskResult.Status = model.TaskStatusSuccess
+			taskResult.Progress = taskcommon.ProgressComplete
 			taskResult.Url = poll.Data.VideoURL
-		} else if urls, err := parseImageURLList(poll.Data.Images); err == nil && len(urls) > 0 {
+		} else if len(urls) > 0 {
+			taskResult.Status = model.TaskStatusSuccess
+			taskResult.Progress = taskcommon.ProgressComplete
 			taskResult.Url = urls[0]
+		} else if errMsg != "" {
+			taskResult.Status = model.TaskStatusFailure
+			taskResult.Progress = taskcommon.ProgressComplete
+			taskResult.Reason = errMsg
+		} else {
+			// Some providers flip to success a tick before URLs are attached.
+			taskResult.Status = model.TaskStatusInProgress
+			taskResult.Progress = taskcommon.ProgressInProgress
 		}
 	case "failed", "error", "cancelled":
 		taskResult.Status = model.TaskStatusFailure
 		taskResult.Progress = taskcommon.ProgressComplete
-		taskResult.Reason = poll.Data.ErrorMessage
+		taskResult.Reason = errMsg
 		if taskResult.Reason == "" {
 			taskResult.Reason = poll.Message
 		}
@@ -493,19 +519,120 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	return taskResult, nil
 }
 
+func parsePollBody(respBody []byte) (pollEnvelope, error) {
+	var poll pollEnvelope
+	if err := common.Unmarshal(respBody, &poll); err != nil {
+		return poll, err
+	}
+	if poll.Data.Status == "" && poll.Data.TaskID == "" {
+		var inner pollData
+		if err := common.Unmarshal(respBody, &inner); err == nil && (inner.Status != "" || inner.TaskID != "") {
+			poll.Data = inner
+		}
+	}
+	return poll, nil
+}
+
+func extractImageURLs(data pollData) []string {
+	for _, raw := range []json.RawMessage{data.Images, data.ImageURLs, data.ImageURL, data.URL} {
+		if urls := extractImageURLsFromRaw(raw); len(urls) > 0 {
+			return urls
+		}
+	}
+	return nil
+}
+
+func extractImageURLsFromRaw(raw json.RawMessage) []string {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return nil
+	}
+	switch trimmed[0] {
+	case '"':
+		var s string
+		if err := common.Unmarshal(trimmed, &s); err != nil {
+			return nil
+		}
+		s = strings.TrimSpace(s)
+		if s == "" {
+			return nil
+		}
+		if isMediaURL(s) {
+			return []string{s}
+		}
+		if s[0] == '[' || s[0] == '{' || s[0] == '"' {
+			return extractImageURLsFromRaw(json.RawMessage(s))
+		}
+		return nil
+	case '[':
+		var asStrings []string
+		if err := common.Unmarshal(trimmed, &asStrings); err == nil {
+			return filterMediaURLs(asStrings)
+		}
+		var items []json.RawMessage
+		if err := common.Unmarshal(trimmed, &items); err != nil {
+			return nil
+		}
+		var out []string
+		for _, item := range items {
+			out = append(out, extractImageURLsFromRaw(item)...)
+		}
+		return out
+	case '{':
+		var obj map[string]json.RawMessage
+		if err := common.Unmarshal(trimmed, &obj); err != nil {
+			return nil
+		}
+		for _, key := range []string{"url", "imageUrl", "image_url", "src", "images", "imageUrls"} {
+			if v, ok := obj[key]; ok {
+				if urls := extractImageURLsFromRaw(v); len(urls) > 0 {
+					return urls
+				}
+			}
+		}
+		return nil
+	}
+	s := strings.Trim(string(trimmed), `"'`)
+	if isMediaURL(s) {
+		return []string{s}
+	}
+	return nil
+}
+
 func parseImageURLList(raw string) ([]string, error) {
 	raw = strings.TrimSpace(raw)
-	if raw == "" {
+	if raw == "" || raw == "null" {
 		return nil, nil
 	}
-	var urls []string
-	if err := common.Unmarshal([]byte(raw), &urls); err == nil {
+	urls := extractImageURLsFromRaw(json.RawMessage(raw))
+	if len(urls) > 0 {
 		return urls, nil
 	}
-	if strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://") {
-		return []string{raw}, nil
+	if raw == "[]" || raw == "\"[]\"" {
+		return []string{}, nil
 	}
 	return nil, fmt.Errorf("invalid images field")
+}
+
+func filterMediaURLs(urls []string) []string {
+	out := make([]string, 0, len(urls))
+	for _, u := range urls {
+		u = strings.TrimSpace(u)
+		if isMediaURL(u) {
+			out = append(out, u)
+		}
+	}
+	return out
+}
+
+func isMediaURL(u string) bool {
+	return strings.HasPrefix(u, "http://") ||
+		strings.HasPrefix(u, "https://") ||
+		strings.HasPrefix(u, "data:image/")
+}
+
+func isVideoProxyURL(u string) bool {
+	return strings.Contains(u, "/v1/videos/") && strings.Contains(u, "/content")
 }
 
 func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, error) {
@@ -520,26 +647,27 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 
 	var poll pollEnvelope
 	if len(originTask.Data) > 0 {
-		_ = common.Unmarshal(originTask.Data, &poll)
+		poll, _ = parsePollBody(originTask.Data)
 		if poll.Data.VideoURL != "" {
 			openAIVideo.SetMetadata("url", poll.Data.VideoURL)
 		}
 		if poll.Data.LastFrameURL != "" {
 			openAIVideo.SetMetadata("last_frame_url", poll.Data.LastFrameURL)
 		}
-		if poll.Data.Images != "" {
-			if urls, err := parseImageURLList(poll.Data.Images); err == nil && len(urls) > 0 {
-				openAIVideo.SetMetadata("images", urls)
-				openAIVideo.SetMetadata("url", urls[0])
-			}
+		if urls := extractImageURLs(poll.Data); len(urls) > 0 {
+			openAIVideo.SetMetadata("images", urls)
+			openAIVideo.SetMetadata("url", urls[0])
 		}
-		if poll.Data.Text != "" {
-			openAIVideo.SetMetadata("revised_prompt", poll.Data.Text)
+		if text := common.JsonRawMessageToString(poll.Data.Text); text != "" {
+			openAIVideo.SetMetadata("revised_prompt", text)
 		}
 		if originTask.Status == model.TaskStatusFailure {
-			msg := poll.Data.ErrorMessage
+			msg := common.JsonRawMessageToString(poll.Data.ErrorMessage)
 			if msg == "" {
 				msg = poll.Message
+			}
+			if msg == "" {
+				msg = originTask.FailReason
 			}
 			code := "basicrouter_video_failed"
 			if originTask.Action == constant.TaskActionImageGenerate {
@@ -551,8 +679,10 @@ func (a *TaskAdaptor) ConvertToOpenAIVideo(originTask *model.Task) ([]byte, erro
 			}
 		}
 	}
-	if originTask.GetResultURL() != "" {
-		openAIVideo.SetMetadata("url", originTask.GetResultURL())
+	if resultURL := originTask.GetResultURL(); resultURL != "" && !isVideoProxyURL(resultURL) {
+		if openAIVideo.Metadata == nil || openAIVideo.Metadata["url"] == nil {
+			openAIVideo.SetMetadata("url", resultURL)
+		}
 	}
 	return common.Marshal(openAIVideo)
 }

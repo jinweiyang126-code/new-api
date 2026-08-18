@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,13 +60,30 @@ func TestParseTaskResultImageSuccess(t *testing.T) {
 	require.Equal(t, "https://cdn/a.png", info.Url)
 }
 
+func TestParseTaskResultImageSuccessArray(t *testing.T) {
+	a := &TaskAdaptor{}
+	body := []byte(`{"code":200,"message":"success","data":{"taskId":"u1","status":"success","errorMessage":null,"images":["https://cdn/a.png"],"text":null}}`)
+	info, err := a.ParseTaskResult(body)
+	require.NoError(t, err)
+	require.Equal(t, "SUCCESS", string(info.Status))
+	require.Equal(t, "https://cdn/a.png", info.Url)
+}
+
+func TestParseTaskResultImageSuccessWaitsForURLs(t *testing.T) {
+	a := &TaskAdaptor{}
+	body := []byte(`{"code":200,"data":{"taskId":"u1","status":"success","images":null}}`)
+	info, err := a.ParseTaskResult(body)
+	require.NoError(t, err)
+	require.Equal(t, "IN_PROGRESS", info.Status)
+}
+
 func TestConvertToOpenAIVideoImageMetadata(t *testing.T) {
 	a := &TaskAdaptor{}
 	task := &model.Task{
 		TaskID:   "task_local",
 		Status:   model.TaskStatusSuccess,
 		Progress: "100%",
-		Action:   "imageGenerate",
+		Action:   constant.TaskActionImageGenerate,
 		Data:     []byte(`{"code":0,"data":{"status":"success","images":"[\"https://cdn/a.png\"]","text":"a cat"}}`),
 	}
 	task.Properties.OriginModelName = "seedream-4.5"
@@ -80,4 +99,45 @@ func TestConvertToOpenAIVideoImageMetadata(t *testing.T) {
 	images, ok := meta["images"].([]any)
 	require.True(t, ok)
 	require.Equal(t, "https://cdn/a.png", images[0])
+}
+
+func TestConvertToOpenAIVideoImageMetadataArray(t *testing.T) {
+	a := &TaskAdaptor{}
+	task := &model.Task{
+		TaskID:   "task_local",
+		Status:   model.TaskStatusSuccess,
+		Progress: "100%",
+		Action:   constant.TaskActionImageGenerate,
+		Data:     []byte(`{"code":200,"data":{"status":"success","images":["https://cdn/a.png"],"text":null}}`),
+	}
+	raw, err := a.ConvertToOpenAIVideo(task)
+	require.NoError(t, err)
+
+	var ov map[string]any
+	require.NoError(t, json.Unmarshal(raw, &ov))
+	meta, ok := ov["metadata"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "https://cdn/a.png", meta["url"])
+	images, ok := meta["images"].([]any)
+	require.True(t, ok)
+	require.Equal(t, "https://cdn/a.png", images[0])
+}
+
+func TestImageSubmitOmitsEmptyImageURLs(t *testing.T) {
+	a := &TaskAdaptor{}
+	payload, err := a.convertToImageSubmitPayload(&relaycommon.TaskSubmitReq{
+		Prompt:   "太阳落山",
+		Model:    "seedream-5.0",
+		Size:     "2048x1152",
+		Metadata: map[string]any{"count": 1},
+	}, &relaycommon.RelayInfo{
+		OriginModelName: "seedream-5.0",
+		ChannelMeta:     &relaycommon.ChannelMeta{UpstreamModelName: "seedream-5.0"},
+	})
+	require.NoError(t, err)
+	raw, err := json.Marshal(payload)
+	require.NoError(t, err)
+	require.NotContains(t, string(raw), "imageUrls")
+	require.Contains(t, string(raw), `"resolution":"2k"`)
+	require.Contains(t, string(raw), `"ratio":"16:9"`)
 }
