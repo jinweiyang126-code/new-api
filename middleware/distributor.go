@@ -323,6 +323,12 @@ func getModelRequest(c *gin.Context) (*ModelRequest, bool, error) {
 			modelRequest.Model = getTaskOriginModelName(c)
 		}
 		c.Set("relay_mode", relayMode)
+	} else if strings.HasPrefix(c.Request.URL.Path, "/pg/images/generations/") ||
+		(strings.HasPrefix(c.Request.URL.Path, "/v1/images/generations/") && c.Request.Method == http.MethodGet) {
+		// Async image task fetch (BasicRouter Experience Center / OpenAI-shaped poll).
+		c.Set("relay_mode", relayconstant.RelayModeVideoFetchByID)
+		shouldSelectChannel = false
+		modelRequest.Model = getTaskOriginModelName(c)
 	} else if strings.Contains(c.Request.URL.Path, "/v1/video/generations") {
 		relayMode := relayconstant.RelayModeUnknown
 		if c.Request.Method == http.MethodPost {

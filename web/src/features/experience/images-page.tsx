@@ -46,15 +46,23 @@ import { cn } from '@/lib/utils'
 
 import {
   extractRelayErrorMessage,
+  fetchImageStatus,
   generateImages,
+  getImageTaskId,
+  isImageTaskResponse,
   mapImageResponseToItems,
+  mapImageTaskToItems,
 } from './api'
 import { ExperienceShell } from './components/experience-shell'
 import { OptionChip } from './components/option-chip'
-import { IMAGE_VIDEO_STUDIO_URL } from './constants'
+import {
+  IMAGE_POLL_INTERVAL_HIDDEN_MS,
+  IMAGE_POLL_INTERVAL_MS,
+  IMAGE_VIDEO_STUDIO_URL,
+} from './constants'
 import { useExperiencePricing } from './hooks/use-experience-pricing'
 import { mapAspectRatioToImageSize } from './lib/estimate-cost'
-import type { GeneratedImageItem } from './types'
+import type { GeneratedImageItem, ImageTaskResponse } from './types'
 
 type PreviewState = 'empty' | 'loading' | 'result' | 'failed'
 
@@ -83,8 +91,44 @@ function resolveImageSize(sizeLabel: string, aspectRatio: string): string {
   return base
 }
 
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'))
+      return
+    }
+    const timer = window.setTimeout(() => resolve(), ms)
+    signal?.addEventListener(
+      'abort',
+      () => {
+        window.clearTimeout(timer)
+        reject(new DOMException('Aborted', 'AbortError'))
+      },
+      { once: true }
+    )
+  })
+}
+
+function formatImageStatusLabel(
+  status: string,
+  t: (key: string) => string
+): string {
+  switch (status) {
+    case 'queued':
+      return t('Queued')
+    case 'in_progress':
+      return t('Processing')
+    case 'completed':
+      return t('Completed')
+    case 'failed':
+      return t('Failed')
+    default:
+      return status
+  }
+}
+
 /**
- * Image generation experience — left form + right canvas, via /pg/images/generations.
+ * Image generation experience — submit /pg/images/generations (sync or async task).
  */
 export function ExperienceImagesPage() {
   const { t } = useTranslation()
@@ -97,6 +141,8 @@ export function ExperienceImagesPage() {
   const [previewState, setPreviewState] = useState<PreviewState>('empty')
   const [results, setResults] = useState<GeneratedImageItem[]>([])
   const [errorMessage, setErrorMessage] = useState('')
+  const [progressLabel, setProgressLabel] = useState('')
+  const [progressPercent, setProgressPercent] = useState(0)
   const abortRef = useRef<AbortController | null>(null)
 
   const { availableModels, displayText: estimatedCostText, isLoading } =
@@ -134,6 +180,30 @@ export function ExperienceImagesPage() {
   const settingsSummary = `${size} · ${ratio} · ${count}${t('images unit')}`
   const canGenerate = Boolean(model) && !isLoading
 
+  const pollUntilDone = async (
+    taskId: string,
+    signal: AbortSignal
+  ): Promise<ImageTaskResponse> => {
+    for (;;) {
+      const status = await fetchImageStatus(taskId, signal)
+      const label = status.status || 'unknown'
+      setProgressLabel(formatImageStatusLabel(label, t))
+      setProgressPercent(
+        typeof status.progress === 'number' ? status.progress : 0
+      )
+
+      if (label === 'completed') return status
+      if (label === 'failed') {
+        throw new Error(status.error?.message || t('Generation failed'))
+      }
+
+      const interval = document.hidden
+        ? IMAGE_POLL_INTERVAL_HIDDEN_MS
+        : IMAGE_POLL_INTERVAL_MS
+      await sleep(interval, signal)
+    }
+  }
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast.error(t('Please enter a prompt'))
@@ -152,6 +222,8 @@ export function ExperienceImagesPage() {
     setPreviewState('loading')
     setErrorMessage('')
     setResults([])
+    setProgressLabel(formatImageStatusLabel('queued', t))
+    setProgressPercent(0)
 
     try {
       const n = Number(count) || 1
@@ -169,7 +241,27 @@ export function ExperienceImagesPage() {
         throw new Error(response.error.message)
       }
 
-      const items = mapImageResponseToItems(response)
+      let items: GeneratedImageItem[] = []
+      if (isImageTaskResponse(response)) {
+        const taskId = getImageTaskId(response)
+        if (!taskId) {
+          throw new Error(t('No task id returned'))
+        }
+        setProgressLabel(
+          formatImageStatusLabel(response.status || 'queued', t)
+        )
+        setProgressPercent(response.progress ?? 0)
+
+        const completed =
+          response.status === 'completed'
+            ? response
+            : await pollUntilDone(taskId, controller.signal)
+
+        items = mapImageTaskToItems(completed)
+      } else {
+        items = mapImageResponseToItems(response)
+      }
+
       if (items.length === 0) {
         throw new Error(t('No images returned'))
       }
@@ -370,7 +462,10 @@ export function ExperienceImagesPage() {
           {previewState === 'loading' ? (
             <div className='text-muted-foreground flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8'>
               <Loader2 className='size-8 animate-spin opacity-60' />
-              <p className='text-sm'>{t('Generating…')}</p>
+              <p className='text-sm'>{progressLabel || t('Generating…')}</p>
+              {progressPercent > 0 ? (
+                <p className='text-xs opacity-70'>{progressPercent}%</p>
+              ) : null}
             </div>
           ) : null}
 

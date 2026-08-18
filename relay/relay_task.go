@@ -386,7 +386,10 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 	}
 
 	path := c.Request.URL.Path
-	isOpenAIVideoAPI := strings.HasPrefix(path, "/v1/videos/") || strings.HasPrefix(path, "/pg/videos/")
+	isOpenAIVideoAPI := strings.HasPrefix(path, "/v1/videos/") ||
+		strings.HasPrefix(path, "/pg/videos/") ||
+		strings.HasPrefix(path, "/pg/images/generations/") ||
+		strings.HasPrefix(path, "/v1/images/generations/")
 
 	// Gemini/Vertex 支持实时查询：用户 fetch 时直接从上游拉取最新状态
 	if realtimeResp := tryRealtimeFetch(originTask, isOpenAIVideoAPI); len(realtimeResp) > 0 {
@@ -394,7 +397,7 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 		return
 	}
 
-	// OpenAI Video API 格式: 走各 adaptor 的 ConvertToOpenAIVideo
+	// OpenAI Video API 格式（含异步图片任务）: 走各 adaptor 的 ConvertToOpenAIVideo
 	if isOpenAIVideoAPI {
 		adaptor := GetTaskAdaptor(originTask.Platform)
 		if adaptor == nil {
@@ -425,15 +428,17 @@ func videoFetchByIDRespBodyBuilder(c *gin.Context) (respBody []byte, taskResp *d
 	return
 }
 
-// tryRealtimeFetch 尝试从上游实时拉取 Gemini/Vertex 任务状态。
-// 仅当渠道类型为 Gemini 或 Vertex 时触发；其他渠道或出错时返回 nil。
+// tryRealtimeFetch 尝试从上游实时拉取任务状态。
+// Gemini / Vertex / BasicRouter 在用户 fetch 时直拉上游；其他渠道或出错时返回 nil。
 // 当非 OpenAI Video API 时，还会构建自定义格式的响应体。
 func tryRealtimeFetch(task *model.Task, isOpenAIVideoAPI bool) []byte {
 	channelModel, err := model.GetChannelById(task.ChannelId, true)
 	if err != nil {
 		return nil
 	}
-	if channelModel.Type != constant.ChannelTypeVertexAi && channelModel.Type != constant.ChannelTypeGemini {
+	switch channelModel.Type {
+	case constant.ChannelTypeVertexAi, constant.ChannelTypeGemini, constant.ChannelTypeBasicRouter:
+	default:
 		return nil
 	}
 
@@ -466,6 +471,10 @@ func tryRealtimeFetch(task *model.Task, isOpenAIVideoAPI bool) []byte {
 	}
 
 	snap := task.Snapshot()
+
+	if len(body) > 0 {
+		task.Data = body
+	}
 
 	// 将上游最新状态更新到 task
 	if ti.Status != "" {

@@ -37,6 +37,23 @@ export type ImageGenerationResponse = {
   error?: { message?: string; code?: string | number; type?: string }
 }
 
+export type ImageTaskResponse = {
+  id?: string
+  task_id?: string
+  object?: string
+  model?: string
+  status?: string
+  progress?: number
+  created_at?: number
+  completed_at?: number
+  error?: { message?: string; code?: string }
+  metadata?: {
+    images?: string[]
+    url?: string
+    revised_prompt?: string
+  }
+}
+
 export type VideoSubmitRequest = {
   model: string
   prompt: string

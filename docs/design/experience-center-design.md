@@ -45,7 +45,7 @@
 | 能力                 | 现状                                                                                                                | 体验中心用法                                                    |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Chat Playground      | `/playground` → `POST /pg/chat/completions`                                                                    | 模式对标；体验中心不复用该页面                                  |
-| 图片 relay           | `POST /v1/images/generations`（`TokenAuth`）                                                                    | 新增`/pg/images/...` 包装，内部走同一 relay；`BasicRouter` 渠道在 adaptor 内 submit+poll 异步图生并回写 OpenAI 形态 |
+| 图片 relay           | `POST /v1/images/generations`（`TokenAuth`）                                                                    | 新增`/pg/images/...` 包装；OpenAI 渠道仍同步；`BasicRouter` 走异步 Task（`POST` 提交 + `GET .../:task_id` 轮询），与视频同形 |
 | 视频 relay           | `POST /v1/videos`、`GET /v1/videos/:id`；内容 `GET /v1/videos/:task_id/content`（已支持 `TokenOrUserAuth`） | 新增`/pg/videos` 提交/查询；`BasicRouter` 走 TaskAdaptor → `/v1/video-generations` |
 | 使用日志 / 任务日志  | `/usage-logs/common`、`/usage-logs/task`、`/usage-logs/drawing`                                               | 图片进普通消费日志；视频进任务日志；页内提供「查看日志」入口    |
 | 客户 / 工作区 / BYOK | M1 已交付                                                                                                           | 与 Playground 相同计费与选渠上下文                              |
@@ -221,7 +221,8 @@ flowchart TD
 
 | 方法     | 路径                                | 说明                                                                   |
 | -------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| `POST` | `/pg/images/generations`          | `UserAuth` + `Distribute`；标记 `IsPlayground`；复用 Image relay |
+| `POST` | `/pg/images/generations`          | `UserAuth` + `Distribute`；OpenAI 渠道同步 Image relay；BasicRouter 走 Task 提交 |
+| `GET`  | `/pg/images/generations/:task_id` | 异步图片任务状态（OpenAI Video 形响应，`metadata.images`） |
 | `POST` | `/pg/videos`                      | 同上；复用 Video / Task relay                                          |
 | `GET`  | `/pg/videos/:task_id`             | 任务状态查询（用户态）                                                 |
 | （复用） | `GET /v1/videos/:task_id/content` | 已有`TokenOrUserAuth`，体验页可直接用 session Bearer                 |
@@ -355,3 +356,4 @@ flowchart TD
 | v0.3 | 2026-08-17 | 静态线框空壳可预览：侧栏「体验中心」+`/experience/images`、`/experience/videos`（未接 `/pg` 生成 API）              |
 | v0.4 | 2026-08-17 | 接入`/pg/images/generations`、`/pg/videos`（含轮询）与 `/v1/videos/:id/content` 预览；预估费用对齐 `/api/pricing` |
 | v0.5 | 2026-08-17 | 并存 BasicRouter：新渠道类型 `BasicRouter`；对外仍为 OpenAI 形态 `/v1`+`/pg`，对内适配异步 `/v1/image-generations`、`/v1/video-generations`；从上游获取合并 image/video models |
+| v0.6 | 2026-08-17 | BasicRouter 图片改为异步任务（与视频同形）：`GET /pg/images/generations/:task_id`；体验中心图片页提交后轮询，避免网关 50s `context canceled` |

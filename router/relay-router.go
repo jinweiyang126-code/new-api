@@ -5,6 +5,7 @@ import (
 	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/relay"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/types"
 
 	"github.com/gin-gonic/gin"
@@ -66,6 +67,7 @@ func SetRelayRouter(router *gin.Engine) {
 	{
 		playgroundRouter.POST("/chat/completions", controller.Playground)
 		playgroundRouter.POST("/images/generations", controller.PlaygroundImage)
+		playgroundRouter.GET("/images/generations/:task_id", controller.PlaygroundImageFetch)
 		playgroundRouter.POST("/videos", controller.PlaygroundVideo)
 		playgroundRouter.GET("/videos/:task_id", controller.PlaygroundVideoFetch)
 	}
@@ -118,7 +120,16 @@ func SetRelayRouter(router *gin.Engine) {
 			controller.Relay(c, types.RelayFormatOpenAIImage)
 		})
 		httpRouter.POST("/images/generations", func(c *gin.Context) {
+			if c.GetInt("channel_type") == constant.ChannelTypeBasicRouter {
+				c.Set("relay_mode", relayconstant.RelayModeVideoSubmit)
+				controller.RelayTask(c)
+				return
+			}
 			controller.Relay(c, types.RelayFormatOpenAIImage)
+		})
+		httpRouter.GET("/images/generations/:task_id", func(c *gin.Context) {
+			c.Set("relay_mode", relayconstant.RelayModeVideoFetchByID)
+			controller.RelayTaskFetch(c)
 		})
 		httpRouter.POST("/images/edits", func(c *gin.Context) {
 			controller.Relay(c, types.RelayFormatOpenAIImage)

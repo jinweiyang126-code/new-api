@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relaykit/types"
 
 	"github.com/gin-gonic/gin"
@@ -58,7 +60,23 @@ func PlaygroundImage(c *gin.Context) {
 		writePlaygroundSetupError(c, newAPIError)
 		return
 	}
+	// BasicRouter image generation is async (upstream task + poll); avoid holding
+	// the HTTP request open for minutes (gateway/client cancel → context canceled).
+	if c.GetInt("channel_type") == constant.ChannelTypeBasicRouter {
+		c.Set("relay_mode", relayconstant.RelayModeVideoSubmit)
+		RelayTask(c)
+		return
+	}
 	Relay(c, types.RelayFormatOpenAIImage)
+}
+
+func PlaygroundImageFetch(c *gin.Context) {
+	if newAPIError := playgroundSetup(c); newAPIError != nil {
+		writePlaygroundSetupError(c, newAPIError)
+		return
+	}
+	c.Set("relay_mode", relayconstant.RelayModeVideoFetchByID)
+	RelayTaskFetch(c)
 }
 
 func PlaygroundVideo(c *gin.Context) {

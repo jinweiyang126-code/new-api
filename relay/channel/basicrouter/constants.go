@@ -8,12 +8,10 @@ var ModelList = []string{
 var ChannelName = "basicrouter"
 
 const (
-	defaultBaseURL          = "https://api.basicrouter.ai/api"
-	imageSubmitPath         = "/v1/image-generations"
-	videoSubmitPath         = "/v1/video-generations"
-	imagePollInterval       = 2  // seconds
-	imagePollMaxAttempts    = 90 // ~3 minutes
-	defaultImageResolution  = "2k"
-	defaultImageRatio       = "1:1"
-	defaultVideoTypeText2V  = 1
+	defaultBaseURL         = "https://api.basicrouter.ai/api"
+	imageSubmitPath        = "/v1/image-generations"
+	videoSubmitPath        = "/v1/video-generations"
+	defaultImageResolution = "2k"
+	defaultImageRatio      = "1:1"
+	defaultVideoTypeText2V = 1
 )

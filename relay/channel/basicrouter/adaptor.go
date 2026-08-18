@@ -1,7 +1,6 @@
 package basicrouter
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -97,35 +96,10 @@ func (a *Adaptor) ConvertImageRequest(c *gin.Context, info *relaycommon.RelayInf
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {
-	if info.RelayMode != relayconstant.RelayModeImagesGenerations {
-		return channel.DoApiRequest(a, c, info, requestBody)
+	if info.RelayMode == relayconstant.RelayModeImagesGenerations {
+		return nil, errors.New("basicrouter image generation is async; use task submit (/pg|/v1 images/generations) and poll by task id")
 	}
-
-	bodyBytes, err := io.ReadAll(requestBody)
-	if err != nil {
-		return nil, err
-	}
-	var payload imageSubmitRequest
-	if err := common.Unmarshal(bodyBytes, &payload); err != nil {
-		return nil, fmt.Errorf("invalid basicrouter image body: %w", err)
-	}
-	base := strings.TrimRight(info.ChannelBaseUrl, "/")
-	if base == "" {
-		base = defaultBaseURL
-	}
-	imageResp, err := submitAndPollImage(c, base, info.ApiKey, a.proxy, payload)
-	if err != nil {
-		return nil, err
-	}
-	encoded, err := common.Marshal(imageResp)
-	if err != nil {
-		return nil, err
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(bytes.NewReader(encoded)),
-		Header:     make(http.Header),
-	}, nil
+	return channel.DoApiRequest(a, c, info, requestBody)
 }
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (usage any, err *types.NewAPIError) {

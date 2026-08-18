@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 export const EXPERIENCE_API = {
   IMAGE_GENERATIONS: '/pg/images/generations',
+  imageStatus: (taskId: string) =>
+    `/pg/images/generations/${encodeURIComponent(taskId)}`,
   VIDEO_SUBMIT: '/pg/videos',
   videoStatus: (taskId: string) => `/pg/videos/${encodeURIComponent(taskId)}`,
   videoContent: (taskId: string) =>
@@ -26,5 +28,7 @@ export const EXPERIENCE_API = {
 
 export const VIDEO_POLL_INTERVAL_MS = 3000
 export const VIDEO_POLL_INTERVAL_HIDDEN_MS = 8000
+export const IMAGE_POLL_INTERVAL_MS = 3000
+export const IMAGE_POLL_INTERVAL_HIDDEN_MS = 8000
 
 export const IMAGE_VIDEO_STUDIO_URL = 'https://megick.abcyjw.me/'
