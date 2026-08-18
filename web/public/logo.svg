@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Token API">
+  <title>Token API</title>
+  <defs>
+    <linearGradient id="token-api-mark" x1="10" y1="6" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA"/>
+      <stop offset="0.48" stop-color="#818CF8"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="32" fill="url(#token-api-mark)"/>
+  <circle cx="32" cy="32" r="29.5" stroke="#fff" stroke-opacity="0.18" stroke-width="1.5"/>
+  <path
+    fill="#fff"
+    d="M17 18.25h30a2.75 2.75 0 0 1 0 5.5H35.5v21.5a2.75 2.75 0 0 1-5.5 0V23.75H17a2.75 2.75 0 0 1 0-5.5Z"
+  />
+</svg>

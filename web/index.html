@@ -1,20 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google" content="notranslate" />
 
     <!-- Primary Meta Tags -->
-    <title>New API</title>
-    <meta name="title" content="New API" />
+    <title>Token API</title>
+    <meta name="title" content="Token API" />
     <meta
       name="description"
       content="Unified AI API gateway and admin dashboard."
     />
 
-    <meta name="theme-color" content="#fff" />
+    <meta name="theme-color" content="#020817" />
+    <script>
+      (function () {
+        try {
+          var match = document.cookie.match(/(?:^|; )vite-ui-theme=([^;]*)/)
+          var theme = match ? decodeURIComponent(match[1]) : 'dark'
+          var resolved =
+            theme === 'system'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : theme === 'light'
+                ? 'light'
+                : 'dark'
+          document.documentElement.classList.remove('light', 'dark')
+          document.documentElement.classList.add(resolved)
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) {
+            meta.setAttribute(
+              'content',
+              resolved === 'dark' ? '#020817' : '#fff'
+            )
+          }
+        } catch (e) {}
+      })()
+    </script>
     <!--umami-->
     <!--Google Analytics-->
   </head>
