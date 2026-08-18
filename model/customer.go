@@ -117,7 +117,13 @@ func GetAllCustomers(startIdx, pageSize int, keyword string, status int, sortBy,
 		return nil, 0, err
 	}
 	views, err := AttachCustomerOwnerUsernames(rows)
-	return views, total, err
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := OverlayCustomerViewUsedQuota(views); err != nil {
+		return nil, 0, err
+	}
+	return views, total, nil
 }
 
 func customerListOrder(sortBy, sortOrder string) string {
@@ -176,6 +182,9 @@ func GetCustomerViewById(id int) (*CustomerView, error) {
 	}
 	if len(views) == 0 {
 		return nil, ErrCustomerNotFound
+	}
+	if err := OverlayCustomerViewUsedQuota(views); err != nil {
+		return nil, err
 	}
 	return views[0], nil
 }

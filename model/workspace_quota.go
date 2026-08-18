@@ -105,6 +105,70 @@ func UpdateWorkspaceUsedQuota(id int, quota int) {
 	}
 }
 
+// UpdateCustomerUsedQuota increments customers.used_quota for stats (does not change pool balance).
+func UpdateCustomerUsedQuota(id int, quota int) {
+	if id <= 0 || quota == 0 {
+		return
+	}
+	err := DB.Model(&Customer{}).Where("id = ?", id).
+		Update("used_quota", gorm.Expr("used_quota + ?", quota)).Error
+	if err != nil {
+		common.SysLog("failed to update customer used quota: " + err.Error())
+	}
+}
+
+// SumWorkspaceUsedQuotaByCustomerIDs returns SUM(workspaces.used_quota) per customer.
+func SumWorkspaceUsedQuotaByCustomerIDs(ids []int) (map[int]int, error) {
+	out := make(map[int]int, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	type row struct {
+		CustomerId int `gorm:"column:customer_id"`
+		Used       int `gorm:"column:used"`
+	}
+	var rows []row
+	err := DB.Model(&Workspace{}).
+		Select("customer_id, COALESCE(SUM(used_quota), 0) as used").
+		Where("customer_id IN ?", ids).
+		Group("customer_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		out[r.CustomerId] = r.Used
+	}
+	return out, nil
+}
+
+// OverlayCustomerViewUsedQuota sets each view's UsedQuota from workspace totals so
+// the customer list matches actual workspace consumption (legacy rows never wrote customers.used_quota).
+func OverlayCustomerViewUsedQuota(views []*CustomerView) error {
+	if len(views) == 0 {
+		return nil
+	}
+	ids := make([]int, 0, len(views))
+	for _, v := range views {
+		if v != nil && v.Id > 0 {
+			ids = append(ids, v.Id)
+		}
+	}
+	sums, err := SumWorkspaceUsedQuotaByCustomerIDs(ids)
+	if err != nil {
+		return err
+	}
+	for _, v := range views {
+		if v == nil {
+			continue
+		}
+		if used, ok := sums[v.Id]; ok && used > v.UsedQuota {
+			v.UsedQuota = used
+		}
+	}
+	return nil
+}
+
 // ValidateWorkspaceTokenActive ensures customer and workspace exist and are enabled.
 func ValidateWorkspaceTokenActive(customerId, workspaceId int) error {
 	if workspaceId <= 0 {

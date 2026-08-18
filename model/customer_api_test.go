@@ -124,3 +124,32 @@ func TestTopUpCustomerQuota(t *testing.T) {
 	_, err = TopUpCustomerQuota(customer.Id, -1)
 	require.ErrorIs(t, err, ErrInvalidTopupAmount)
 }
+
+func TestCustomerUsedQuotaComesFromWorkspaces(t *testing.T) {
+	db := setupCustomerAPITestDB(t)
+
+	owner := &User{
+		Username: "owner-used", Password: "password123", Role: common.RoleCommonUser,
+		Status: common.UserStatusEnabled, Group: "default", AuthVersion: 1, AffCode: "owner-used-aff",
+	}
+	require.NoError(t, db.Create(owner).Error)
+	customer := &Customer{Name: "Used Co"}
+	ws, err := CreateCustomerWithOwner(customer, owner.Id)
+	require.NoError(t, err)
+
+	require.NoError(t, db.Model(&Workspace{}).Where("id = ?", ws.Id).Update("used_quota", 12345).Error)
+
+	view, err := GetCustomerViewById(customer.Id)
+	require.NoError(t, err)
+	require.Equal(t, 12345, view.UsedQuota)
+
+	list, total, err := GetAllCustomers(0, 20, "", -1, "", "")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Equal(t, 12345, list[0].UsedQuota)
+
+	UpdateCustomerUsedQuota(customer.Id, 100)
+	stored, err := GetCustomerById(customer.Id)
+	require.NoError(t, err)
+	require.Equal(t, 100, stored.UsedQuota)
+}

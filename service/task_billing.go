@@ -64,7 +64,7 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 		CustomerId:  info.CustomerId,
 		WorkspaceId: info.WorkspaceId,
 	})
-	model.UpdateUserUsedQuotaAndRequestCount(info.UserId, info.PriceData.Quota)
+	updateRelayUsedQuota(info, info.PriceData.Quota)
 	model.UpdateChannelUsedQuota(info.ChannelId, info.PriceData.Quota)
 }
 
@@ -118,6 +118,34 @@ func taskAdjustTokenQuota(ctx context.Context, task *model.Task, delta int) {
 	if err != nil {
 		logger.LogWarn(ctx, fmt.Sprintf("调整令牌额度失败 (delta=%d, task=%s): %s", delta, task.TaskID, err.Error()))
 	}
+}
+
+func updateTaskUsedQuota(task *model.Task, quota int) {
+	if task == nil || quota == 0 {
+		return
+	}
+	customerId, workspaceId := 0, 0
+	if task.PrivateData.TokenId > 0 {
+		if token, err := model.GetTokenById(task.PrivateData.TokenId); err == nil && token != nil {
+			customerId = token.CustomerId
+			workspaceId = token.WorkspaceId
+		}
+	}
+	if workspaceId > 0 {
+		model.UpdateWorkspaceUsedQuota(workspaceId, quota)
+		if customerId <= 0 {
+			if ws, err := model.GetWorkspaceById(workspaceId); err == nil && ws != nil {
+				customerId = ws.CustomerId
+			}
+		}
+		model.UpdateCustomerUsedQuota(customerId, quota)
+		return
+	}
+	if customerId > 0 {
+		model.UpdateCustomerUsedQuota(customerId, quota)
+		return
+	}
+	model.UpdateUserUsedQuotaAndRequestCount(task.UserId, quota)
 }
 
 // taskBillingOther 从 task 的 BillingContext 构建日志 Other 字段。
@@ -250,7 +278,7 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 	if quotaDelta > 0 {
 		logType = model.LogTypeConsume
 		logQuota = quotaDelta
-		model.UpdateUserUsedQuotaAndRequestCount(task.UserId, quotaDelta)
+		updateTaskUsedQuota(task, quotaDelta)
 		model.UpdateChannelUsedQuota(task.ChannelId, quotaDelta)
 	} else {
 		logType = model.LogTypeRefund

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -356,6 +357,80 @@ func updateChannelMoonshotBalance(channel *model.Channel) (float64, error) {
 	return availableBalanceUsd, nil
 }
 
+type basicRouterBalanceResponse struct {
+	Code        json.RawMessage `json:"code"`
+	Message     string          `json:"message"`
+	TotalCredit json.RawMessage `json:"totalCredit"`
+	Data        json.RawMessage `json:"data"`
+}
+
+func updateChannelBasicRouterBalance(channel *model.Channel) (float64, error) {
+	baseURL := strings.TrimRight(channel.GetBaseURL(), "/")
+	if baseURL == "" && channel.Type >= 0 && channel.Type < len(constant.ChannelBaseURLs) {
+		baseURL = strings.TrimRight(constant.ChannelBaseURLs[channel.Type], "/")
+	}
+	if baseURL == "" {
+		baseURL = "https://api.basicrouter.ai/api"
+	}
+	url := baseURL + "/v1/billing/balance"
+	body, err := GetResponseBody("GET", url, channel, GetAuthHeader(channel.Key))
+	if err != nil {
+		return 0, err
+	}
+	balance, err := parseBasicRouterBalance(body)
+	if err != nil {
+		return 0, err
+	}
+	channel.UpdateBalance(balance)
+	return balance, nil
+}
+
+func parseBasicRouterBalance(body []byte) (float64, error) {
+	var resp basicRouterBalanceResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return 0, err
+	}
+	if credit, err := parseJSONFloat(resp.TotalCredit); err == nil {
+		return credit, nil
+	}
+	if len(resp.Data) > 0 {
+		var inner basicRouterBalanceResponse
+		if err := json.Unmarshal(resp.Data, &inner); err == nil {
+			if credit, err := parseJSONFloat(inner.TotalCredit); err == nil {
+				return credit, nil
+			}
+		}
+	}
+	if msg := strings.TrimSpace(resp.Message); msg != "" && msg != "success" && msg != "ok" {
+		return 0, errors.New(msg)
+	}
+	return 0, fmt.Errorf("missing totalCredit in balance response: %s", truncateForError(body, 256))
+}
+
+func parseJSONFloat(raw json.RawMessage) (float64, error) {
+	trimmed := strings.TrimSpace(string(raw))
+	if trimmed == "" || trimmed == "null" {
+		return 0, errors.New("empty number")
+	}
+	var n float64
+	if err := json.Unmarshal(raw, &n); err == nil {
+		return n, nil
+	}
+	var s string
+	if err := json.Unmarshal(raw, &s); err != nil {
+		return 0, err
+	}
+	return strconv.ParseFloat(strings.TrimSpace(s), 64)
+}
+
+func truncateForError(body []byte, n int) string {
+	s := strings.TrimSpace(string(body))
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
+}
+
 func updateChannelBalance(channel *model.Channel) (float64, error) {
 	baseURL := constant.ChannelBaseURLs[channel.Type]
 	if channel.GetBaseURL() == "" {
@@ -386,6 +461,8 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		return updateChannelOpenRouterBalance(channel)
 	case constant.ChannelTypeMoonshot:
 		return updateChannelMoonshotBalance(channel)
+	case constant.ChannelTypeBasicRouter:
+		return updateChannelBasicRouterBalance(channel)
 	default:
 		return 0, errors.New("尚未实现")
 	}

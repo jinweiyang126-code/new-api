@@ -428,6 +428,17 @@ func updateRelayUsedQuota(relayInfo *relaycommon.RelayInfo, quota int) {
 	}
 	if relayInfo.WorkspaceId > 0 {
 		model.UpdateWorkspaceUsedQuota(relayInfo.WorkspaceId, quota)
+		customerId := relayInfo.CustomerId
+		if customerId <= 0 {
+			if ws, err := model.GetWorkspaceById(relayInfo.WorkspaceId); err == nil && ws != nil {
+				customerId = ws.CustomerId
+			}
+		}
+		model.UpdateCustomerUsedQuota(customerId, quota)
+		return
+	}
+	if relayInfo.CustomerId > 0 {
+		model.UpdateCustomerUsedQuota(relayInfo.CustomerId, quota)
 		return
 	}
 	model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
