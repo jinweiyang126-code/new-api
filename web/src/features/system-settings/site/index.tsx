@@ -26,12 +26,12 @@ import {
 
 const defaultSiteSettings: SiteSettings = {
   Notice: '',
-  SystemName: 'New API',
+  SystemName: 'Token API',
   Logo: '',
   Footer: '',
   About: '',
   HomePageContent: '',
-  ServerAddress: '',
+  ServerAddress: 'https://token.abcyjw.me',
   'legal.user_agreement': '',
   'legal.privacy_policy': '',
   HeaderNavModules: '',
