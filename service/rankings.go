@@ -18,6 +18,7 @@ const (
 	rankingMoverLimit       = 6
 	rankingOthersLabel      = "Others"
 	rankingUnknownVendor    = "Unknown"
+	rankingByokVendor       = "BYOK"
 )
 
 type RankingsResponse struct {
@@ -254,10 +255,14 @@ func buildRankingModelMeta() map[string]rankingModelMeta {
 }
 
 func modelMeta(modelName string, meta map[string]rankingModelMeta) rankingModelMeta {
-	if item, ok := meta[modelName]; ok && item.vendor != "" {
+	if item, ok := meta[modelName]; ok && item.vendor != "" && item.vendor != rankingUnknownVendor {
 		return item
 	}
-	return rankingModelMeta{vendor: rankingUnknownVendor}
+	vendor, icon := model.InferDefaultVendor(modelName)
+	if vendor != "" {
+		return rankingModelMeta{vendor: vendor, vendorIcon: icon}
+	}
+	return rankingModelMeta{vendor: rankingByokVendor}
 }
 
 func buildRankedModels(totals []model.RankingQuotaTotal, totalTokens int64, previousRanks map[string]int, previousTokens map[string]int64, meta map[string]rankingModelMeta, showGrowth bool) []RankedModel {

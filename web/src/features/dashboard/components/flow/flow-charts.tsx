@@ -356,6 +356,9 @@ export function FlowCharts(props: FlowChartsProps) {
         overflowMode,
         maskSensitive,
         deletedTokenLabel: (tokenId) => t('Deleted ({{id}})', { id: tokenId }),
+        playgroundTokenLabel: t('Experience Center'),
+        byokChannelFallbackLabel: (credentialId) =>
+          t('BYOK ({{id}})', { id: credentialId }),
         otherNodeLabel: (kind) => t(FLOW_OTHER_NODE_LABEL_KEYS[kind]),
       }),
     [

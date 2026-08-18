@@ -11,6 +11,7 @@ var defaultVendorRules = map[string]string{
 	"whisper":  "OpenAI",
 	"o1":       "OpenAI",
 	"o3":       "OpenAI",
+	"o4":       "OpenAI",
 	"claude":   "Anthropic",
 	"gemini":   "Google",
 	"moonshot": "Moonshot",
@@ -19,6 +20,8 @@ var defaultVendorRules = map[string]string{
 	"glm-":     "智谱",
 	"qwen":     "阿里巴巴",
 	"deepseek": "DeepSeek",
+	"seedream": "字节跳动",
+	"seedance": "字节跳动",
 	"abab":     "MiniMax",
 	"minimax":  "MiniMax",
 	"ernie":    "百度",
@@ -126,4 +129,39 @@ func getDefaultVendorIcon(vendorName string) string {
 		return icon
 	}
 	return ""
+}
+
+// InferDefaultVendor maps a model name to a built-in vendor and icon without
+// writing model/vendor catalog rows (BYOK / unregistered models stay off plaza).
+func InferDefaultVendor(modelName string) (vendorName, vendorIcon string) {
+	name := strings.ToLower(strings.TrimSpace(modelName))
+	if i := strings.LastIndex(name, "/"); i >= 0 {
+		name = name[i+1:]
+	}
+	if name == "" {
+		return "", ""
+	}
+	bestLen := 0
+	bestVendor := ""
+	for pattern, vendor := range defaultVendorRules {
+		if !modelMatchesVendorPattern(name, pattern) {
+			continue
+		}
+		if len(pattern) > bestLen {
+			bestLen = len(pattern)
+			bestVendor = vendor
+		}
+	}
+	if bestVendor == "" {
+		return "", ""
+	}
+	return bestVendor, getDefaultVendorIcon(bestVendor)
+}
+
+func modelMatchesVendorPattern(modelLower, pattern string) bool {
+	p := strings.ToLower(pattern)
+	if strings.ContainsAny(p, "/@") {
+		return strings.Contains(modelLower, p)
+	}
+	return strings.HasPrefix(modelLower, p)
 }

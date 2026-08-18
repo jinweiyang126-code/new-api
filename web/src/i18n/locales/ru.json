@@ -1317,6 +1317,7 @@
     "Deleted": "Удалён",
     "Deleted \"{{name}}\"": "\"{{name}}\" удалено",
     "Deleted ({{id}})": "Удалён ({{id}})",
+    "BYOK ({{id}})": "BYOK ({{id}})",
     "Deleted {{count}} failed models": "Удалено неуспешных моделей: {{count}}",
     "Deleted {{count}} stale instances": "Удалено устаревших экземпляров: {{count}}",
     "Deleted a custom OAuth provider": "Удалён пользовательский провайдер OAuth",

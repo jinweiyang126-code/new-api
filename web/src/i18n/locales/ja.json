@@ -1317,6 +1317,7 @@
     "Deleted": "削除済み",
     "Deleted \"{{name}}\"": "\"{{name}}\" を削除しました",
     "Deleted ({{id}})": "削除済み ({{id}})",
+    "BYOK ({{id}})": "BYOK ({{id}})",
     "Deleted {{count}} failed models": "失敗したモデルを {{count}} 個削除しました",
     "Deleted {{count}} stale instances": "期限切れインスタンスを {{count}} 件削除しました",
     "Deleted a custom OAuth provider": "カスタム OAuth プロバイダーを削除しました",

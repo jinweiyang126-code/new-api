@@ -191,3 +191,52 @@ func TestLogQuotaDataSplitsRowsByUseGroupTokenChannelAndNode(t *testing.T) {
 	require.Equal(t, "default", rows[1].UseGroup)
 	require.Equal(t, 25, rows[1].Quota)
 }
+
+func TestGetFlowQuotaDataResolvesByokChannelNames(t *testing.T) {
+	truncateTables(t)
+
+	require.NoError(t, DB.Create(&CustomerUpstreamCredential{
+		Id:            5,
+		CustomerId:    1,
+		Name:          "qwen-byok",
+		Type:          "openai",
+		KeyCiphertext: "dummy",
+		Status:        CustomerStatusEnabled,
+	}).Error)
+	seedFlowQuotaData(t, QuotaData{
+		UserID:    1,
+		Username:  "alice",
+		NodeName:  "node-a",
+		TokenID:   0,
+		UseGroup:  "default",
+		ModelName: "qwen3.7-max",
+		ChannelID: -5,
+		CreatedAt: 1000,
+		Count:     1,
+		Quota:     80,
+		TokenUsed: 48,
+	})
+	seedFlowQuotaData(t, QuotaData{
+		UserID:    1,
+		Username:  "alice",
+		NodeName:  "node-a",
+		TokenID:   0,
+		UseGroup:  "default",
+		ModelName: "custom-model",
+		ChannelID: -99,
+		CreatedAt: 1100,
+		Count:     1,
+		Quota:     10,
+		TokenUsed: 4,
+	})
+
+	rootRows, err := GetFlowQuotaData(900, 2000, "", 0, common.RoleRootUser)
+	require.NoError(t, err)
+	require.Len(t, rootRows, 2)
+	require.Equal(t, -5, rootRows[0].ChannelID)
+	require.Equal(t, "qwen-byok", rootRows[0].ChannelName)
+	require.Equal(t, 0, rootRows[0].TokenID)
+	require.Empty(t, rootRows[0].TokenName)
+	require.Equal(t, -99, rootRows[1].ChannelID)
+	require.Empty(t, rootRows[1].ChannelName)
+}

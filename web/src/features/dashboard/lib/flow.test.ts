@@ -812,4 +812,64 @@ describe('dashboard flow data', () => {
     assert.equal(linkOpacity(dimmedLink), 0.08)
     assert.equal(highlightedLink.zIndex > dimmedLink.zIndex, true)
   })
+
+  test('labels playground token_id 0 as Experience Center', () => {
+    const result = buildDashboardFlowData(
+      [
+        {
+          username: 'alice',
+          token_id: 0,
+          use_group: 'default',
+          model_name: 'seedream-5.0',
+          quota: 100,
+          token_used: 0,
+          count: 2,
+        },
+      ],
+      'quota',
+      { role: 'user', playgroundTokenLabel: '体验中心' }
+    )
+    const token = result.flow.nodes.find((node) => node.kind === 'token')
+    assert.equal(token?.id, 'token:playground')
+    assert.equal(token?.label, '体验中心')
+  })
+
+  test('labels BYOK negative channel ids with credential name or fallback', () => {
+    const result = buildDashboardFlowData(
+      [
+        {
+          username: 'alice',
+          use_group: 'default',
+          model_name: 'qwen3.7-max',
+          channel_id: -5,
+          channel_name: 'qwen-byok',
+          quota: 80,
+          token_used: 48,
+          count: 1,
+        },
+        {
+          username: 'alice',
+          use_group: 'default',
+          model_name: 'custom-model',
+          channel_id: -99,
+          quota: 10,
+          token_used: 4,
+          count: 1,
+        },
+      ],
+      'quota',
+      {
+        role: 'admin',
+        byokChannelFallbackLabel: (id) => `BYOK (${id})`,
+      }
+    )
+    const named = result.flow.nodes.find((node) => node.id === 'channel:-5')
+    const missing = result.flow.nodes.find((node) => node.id === 'channel:-99')
+    assert.equal(named?.label, 'qwen-byok')
+    assert.equal(missing?.label, 'BYOK (99)')
+    assert.equal(
+      result.flow.nodes.some((node) => node.label === 'Unknown'),
+      false
+    )
+  })
 })

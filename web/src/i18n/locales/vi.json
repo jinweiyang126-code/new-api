@@ -1317,6 +1317,7 @@
     "Deleted": "Đã xóa",
     "Deleted \"{{name}}\"": "Đã xóa \"{{name}}\"",
     "Deleted ({{id}})": "Đã xóa ({{id}})",
+    "BYOK ({{id}})": "BYOK ({{id}})",
     "Deleted {{count}} failed models": "Đã xóa {{count}} mô hình thất bại",
     "Deleted {{count}} stale instances": "Đã xóa {{count}} phiên bản mất kết nối",
     "Deleted a custom OAuth provider": "Đã xóa nhà cung cấp OAuth tùy chỉnh",

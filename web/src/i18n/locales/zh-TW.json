@@ -1317,6 +1317,7 @@
     "Deleted": "已註銷",
     "Deleted \"{{name}}\"": "已刪除「{{name}}」",
     "Deleted ({{id}})": "已刪除({{id}})",
+    "BYOK ({{id}})": "BYOK ({{id}})",
     "Deleted {{count}} failed models": "已刪除 {{count}} 個失敗模型",
     "Deleted {{count}} stale instances": "已刪除 {{count}} 個失聯實例",
     "Deleted a custom OAuth provider": "刪除了一個自訂 OAuth 提供方",

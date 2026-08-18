@@ -69,6 +69,8 @@ type FlowNodeRank = {
 
 type FlowPathContext = {
   deletedTokenLabel?: (tokenId: number) => string
+  playgroundTokenLabel?: string
+  byokChannelFallbackLabel?: (credentialId: number) => string
 }
 
 type FlowGraphOptions = {
@@ -187,9 +189,15 @@ function nodeNameNode(row: FlowQuotaDataItem): FlowPathNode {
 
 function tokenNode(row: FlowQuotaDataItem, ctx: FlowPathContext): FlowPathNode {
   const tokenID = numberValue(row.token_id)
+  if (tokenID <= 0) {
+    return {
+      id: 'token:playground',
+      label: ctx.playgroundTokenLabel || 'Experience Center',
+      kind: 'token',
+    }
+  }
   return {
-    id:
-      tokenID > 0 ? `token:${tokenID}` : `token:${row.token_name || 'unknown'}`,
+    id: `token:${tokenID}`,
     label: row.token_name || deletedTokenLabel(tokenID, ctx),
     kind: 'token',
   }
@@ -218,8 +226,22 @@ function modelNode(row: FlowQuotaDataItem): FlowPathNode {
   }
 }
 
-function channelNode(row: FlowQuotaDataItem): FlowPathNode {
+function channelNode(
+  row: FlowQuotaDataItem,
+  ctx: FlowPathContext = EMPTY_FLOW_PATH_CONTEXT
+): FlowPathNode {
   const channelID = numberValue(row.channel_id)
+  if (channelID < 0) {
+    const credentialId = Math.abs(channelID)
+    return {
+      id: `channel:${channelID}`,
+      label:
+        row.channel_name ||
+        ctx.byokChannelFallbackLabel?.(credentialId) ||
+        `BYOK (${credentialId})`,
+      kind: 'channel',
+    }
+  }
   return {
     id:
       channelID > 0
@@ -978,6 +1000,8 @@ export function buildDashboardFlowData(
   const palette = options.colorPalette
   const ctx = {
     deletedTokenLabel: options.deletedTokenLabel,
+    playgroundTokenLabel: options.playgroundTokenLabel,
+    byokChannelFallbackLabel: options.byokChannelFallbackLabel,
   }
   const stages = resolveVisibleStages(role, options.visibleStages)
   const userFilteredRows = filterRows(rows, options)

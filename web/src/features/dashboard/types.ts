@@ -89,6 +89,10 @@ export interface FlowBuildOptions {
   // Resolves the label for a token whose record no longer exists (deleted).
   // Lets the caller inject a localized string such as "Deleted (123)".
   deletedTokenLabel?: (tokenId: number) => string
+  // Label for playground / Experience Center rows (token_id = 0).
+  playgroundTokenLabel?: string
+  // Fallback label when a BYOK credential (negative channel_id) was deleted.
+  byokChannelFallbackLabel?: (credentialId: number) => string
   otherNodeLabel?: (kind: FlowNodeKind) => string
 }
 

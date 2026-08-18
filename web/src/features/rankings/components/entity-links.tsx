@@ -67,6 +67,11 @@ type VendorLinkProps = EntityLinkBaseProps & {
  * wraps.
  */
 export function VendorLink(props: VendorLinkProps) {
+  if (props.vendor === 'BYOK' || props.vendor === 'Unknown') {
+    return (
+      <span className={props.className}>{props.children ?? props.vendor}</span>
+    )
+  }
   return (
     <Link
       to='/pricing'

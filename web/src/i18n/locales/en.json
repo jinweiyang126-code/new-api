@@ -1317,6 +1317,7 @@
     "Deleted": "Deleted",
     "Deleted \"{{name}}\"": "Deleted \"{{name}}\"",
     "Deleted ({{id}})": "Deleted ({{id}})",
+    "BYOK ({{id}})": "BYOK ({{id}})",
     "Deleted {{count}} failed models": "Deleted {{count}} failed models",
     "Deleted {{count}} stale instances": "Deleted {{count}} stale instances",
     "Deleted a custom OAuth provider": "Deleted a custom OAuth provider",

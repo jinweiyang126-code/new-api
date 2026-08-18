@@ -132,38 +132,33 @@ func fillFlowTokenNames(rows []*FlowQuotaData) error {
 func fillFlowChannelNames(rows []*FlowQuotaData) error {
 	channelIDSet := make(map[int]struct{})
 	channelIDs := make([]int, 0)
+	byokCredIDSet := make(map[int]struct{})
+	byokCredIDs := make([]int, 0)
 	for _, row := range rows {
-		if row.ChannelID == 0 {
+		if row.ChannelID > 0 {
+			if _, ok := channelIDSet[row.ChannelID]; ok {
+				continue
+			}
+			channelIDSet[row.ChannelID] = struct{}{}
+			channelIDs = append(channelIDs, row.ChannelID)
 			continue
 		}
-		if _, ok := channelIDSet[row.ChannelID]; ok {
-			continue
+		if row.ChannelID < 0 {
+			credID := -row.ChannelID
+			if _, ok := byokCredIDSet[credID]; ok {
+				continue
+			}
+			byokCredIDSet[credID] = struct{}{}
+			byokCredIDs = append(byokCredIDs, credID)
 		}
-		channelIDSet[row.ChannelID] = struct{}{}
-		channelIDs = append(channelIDs, row.ChannelID)
-	}
-	if len(channelIDs) == 0 {
-		return nil
 	}
 
-	channelNameByID := make(map[int]string, len(channelIDs))
-	if common.MemoryCacheEnabled {
-		for _, channelID := range channelIDs {
-			if channel, err := CacheGetChannel(channelID); err == nil {
-				channelNameByID[channelID] = channel.Name
-			}
-		}
-	} else {
-		var channels []struct {
-			Id   int    `gorm:"column:id"`
-			Name string `gorm:"column:name"`
-		}
-		if err := DB.Table("channels").Select("id, name").Where("id IN ?", channelIDs).Find(&channels).Error; err != nil {
-			return err
-		}
-		for _, channel := range channels {
-			channelNameByID[channel.Id] = channel.Name
-		}
+	channelNameByID := make(map[int]string, len(channelIDs)+len(byokCredIDs))
+	if err := lookupPersistedChannelNames(channelIDs, channelNameByID); err != nil {
+		return err
+	}
+	if err := lookupByokCredentialChannelNames(byokCredIDs, channelNameByID); err != nil {
+		return err
 	}
 	for _, row := range rows {
 		if name := channelNameByID[row.ChannelID]; name != "" {
@@ -173,6 +168,53 @@ func fillFlowChannelNames(rows []*FlowQuotaData) error {
 		if row.ChannelID > 0 {
 			row.ChannelName = fmt.Sprintf("channel-%d", row.ChannelID)
 		}
+		// Negative (BYOK) IDs with no credential left keep ChannelName empty so
+		// the frontend can render a localized "BYOK (id)" label.
+	}
+	return nil
+}
+
+func lookupPersistedChannelNames(channelIDs []int, channelNameByID map[int]string) error {
+	if len(channelIDs) == 0 {
+		return nil
+	}
+	if common.MemoryCacheEnabled {
+		for _, channelID := range channelIDs {
+			if channel, err := CacheGetChannel(channelID); err == nil {
+				channelNameByID[channelID] = channel.Name
+			}
+		}
+		return nil
+	}
+	var channels []struct {
+		Id   int    `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	if err := DB.Table("channels").Select("id, name").Where("id IN ?", channelIDs).Find(&channels).Error; err != nil {
+		return err
+	}
+	for _, channel := range channels {
+		channelNameByID[channel.Id] = channel.Name
+	}
+	return nil
+}
+
+func lookupByokCredentialChannelNames(credIDs []int, channelNameByID map[int]string) error {
+	if len(credIDs) == 0 {
+		return nil
+	}
+	var creds []struct {
+		Id   int    `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	if err := DB.Model(&CustomerUpstreamCredential{}).Select("id, name").Where("id IN ?", credIDs).Find(&creds).Error; err != nil {
+		return err
+	}
+	for _, cred := range creds {
+		if cred.Name == "" {
+			continue
+		}
+		channelNameByID[-cred.Id] = cred.Name
 	}
 	return nil
 }
