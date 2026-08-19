@@ -33,7 +33,8 @@ func setupCustomerControllerTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(
 		&model.User{}, &model.Customer{}, &model.Workspace{},
-		&model.CustomerMember{}, &model.WorkspaceMember{}, &model.Log{},
+		&model.CustomerMember{}, &model.WorkspaceMember{}, &model.CustomerInvitation{},
+		&model.Log{},
 	))
 	model.DB, model.LOG_DB = db, db
 	t.Cleanup(func() {

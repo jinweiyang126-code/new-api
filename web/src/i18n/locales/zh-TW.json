@@ -166,6 +166,7 @@
     "Add a new vendor to the system": "向系統新增供應商",
     "Add an extra layer of security to your account": "為您的用戶添加額外的安全層",
     "Add and submit": "新增並提交",
+    "Add another email": "再新增一個電郵",
     "Add Announcement": "新增公告",
     "Add API": "新增 API",
     "Add API Shortcut": "新增 API 快捷方式",
@@ -335,6 +336,7 @@
     "Allow users to sign in with Telegram": "允許用戶使用 Telegram 登入",
     "Allow users to sign in with this provider": "允許用戶使用此供應商登入",
     "Allow users to sign in with WeChat": "允許用戶使用微信登入",
+    "Allow users to self-register an organization": "允許用戶在註冊時自助建立組織",
     "Allow using models without price configuration": "允許使用未設定價格的模型",
     "Allow wallet balance after quota used up": "額度用盡後允許使用錢包餘額",
     "Allowed": "允許",
@@ -1702,6 +1704,7 @@
     "Enter webhook secret": "輸入 webhook 金鑰",
     "Enter your authenticator code or a backup code": "輸入您的身份驗證器代碼或備份代碼",
     "Enter your email": "輸入您的電郵",
+    "Enter your organization name": "輸入組織名稱",
     "Enter your redemption code": "輸入您的兌換碼",
     "Enter your registered email and we will send you a link to reset your password.": "輸入您註冊的電郵，我們將向您發送一個重設密碼的連結。",
     "Enter your username": "輸入您的用戶名",
@@ -3416,6 +3419,7 @@
     "Please enter the verification code or backup code": "請輸入驗證碼或備用碼",
     "Please enter your current password": "請輸入目前密碼",
     "Please enter your email": "請輸入您的電郵",
+    "Please enter your organization name": "請輸入組織名稱",
     "Please enter your email first": "請先輸入您的電郵",
     "Please enter your password": "請輸入密碼",
     "Please enter your username": "請輸入用戶名",
@@ -4183,6 +4187,7 @@
     "Setting saved": "設定已儲存",
     "Setting up 2FA...": "正在設定 2FA...",
     "Setting updated successfully": "設定更新成功",
+    "Set up your organization": "設定你的組織",
     "Settings": "設定",
     "Settings & Preferences": "設定與偏好",
     "Settings updated successfully": "設定更新成功",
@@ -5255,6 +5260,11 @@
     "From key to first token": "從金鑰到首個 Token",
     "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.": "簽發令牌後，即可透過同一條 OpenAI 相容介面呼叫對話、圖片與影片，無需改客戶端。",
     "Key capabilities": "核心能力",
-    "Route anything. Bill anything. Ship on one protocol.": "統一路由、計量與結算，一套協定即可上線。"
+    "Route anything. Bill anything. Ship on one protocol.": "統一路由、計量與結算，一套協定即可上線。",
+    "Customer self-register": "客戶自助開戶",
+    "Organization": "組織",
+    "Organization created": "組織已建立",
+    "Organization name": "組織名稱",
+    "Invite teammates (optional)": "邀請成員（可選）"
   }
 }

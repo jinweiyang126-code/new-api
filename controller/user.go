@@ -203,6 +203,17 @@ func setupLoginAtAuthVersion(user *model.User, expectedAuthVersion int64, c *gin
 	})
 }
 
+type registerRequest struct {
+	Username         string   `json:"username"`
+	Password         string   `json:"password"`
+	Email            string   `json:"email"`
+	VerificationCode string   `json:"verification_code"`
+	AffCode          string   `json:"aff_code"`
+	AccountType      string   `json:"account_type"`
+	OrganizationName string   `json:"organization_name"`
+	InviteEmails     []string `json:"invite_emails"`
+}
+
 func Register(c *gin.Context) {
 	if !common.RegisterEnabled {
 		common.ApiErrorI18n(c, i18n.MsgUserRegisterDisabled)
@@ -212,17 +223,38 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserPasswordRegisterDisabled)
 		return
 	}
-	var user model.User
-	err := common.DecodeJson(c.Request.Body, &user)
+	var req registerRequest
+	err := common.DecodeJson(c.Request.Body, &req)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
+	}
+	user := model.User{
+		Username:         req.Username,
+		Password:         req.Password,
+		Email:            req.Email,
+		VerificationCode: req.VerificationCode,
+		AffCode:          req.AffCode,
 	}
 	user.Username = strings.TrimSpace(user.Username)
 	user.Email = model.NormalizeEmail(user.Email)
 	if user.Username == "" {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
+	}
+	isOrg := strings.EqualFold(strings.TrimSpace(req.AccountType), "organization")
+	orgName := ""
+	if isOrg {
+		if !common.CustomerSelfRegisterEnabled {
+			common.ApiErrorMsg(c, "customer self-register is disabled")
+			return
+		}
+		var nameErr error
+		orgName, nameErr = validateSelfRegisterOrgName(req.OrganizationName)
+		if nameErr != nil {
+			common.ApiErrorMsg(c, nameErr.Error())
+			return
+		}
 	}
 	if err := common.Validate.Struct(&user); err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
@@ -312,6 +344,13 @@ func Register(c *gin.Context) {
 		}
 		if err := token.Insert(); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgCreateDefaultTokenErr)
+			return
+		}
+	}
+
+	if isOrg {
+		if _, _, err := provisionSelfServiceCustomer(c, insertedUser.Id, orgName, req.InviteEmails); err != nil {
+			writeCustomerErr(c, err)
 			return
 		}
 	}

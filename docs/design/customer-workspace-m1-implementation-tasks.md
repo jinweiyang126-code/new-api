@@ -4,7 +4,8 @@
 > 汇报：[customer-workspace-executive-brief.md](./customer-workspace-executive-brief.md)  
 > 范围：**M1** = 客户 / 工作区 / 成员 / 邀请 / 额度划拨 / 工作区池扣费 / 隔离 / **独立上游·BYOK**  
 > 术语：客户=Customer，工作区=Workspace（旧称企业/项目已废弃）  
-> 不含：机构层、工作区模型白名单（M3）、支付直充客户池、SSO（M5）   
+> 不含：机构层、工作区模型白名单（M3）、支付直充客户池、SSO（M5）  
+> 自助开户（注册页个人/组织）：见 [`customer-self-register-design.md`](./customer-self-register-design.md)，不在本 M1 任务表内 
 
 **实现约定（设计开放项按建议落地，避免阻塞）：**
 

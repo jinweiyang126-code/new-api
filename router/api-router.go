@@ -388,6 +388,7 @@ func SetApiRouter(router *gin.Engine) {
 		customerRoute.Use(middleware.UserAuth())
 		{
 			customerRoute.GET("/", controller.GetCustomers)
+			customerRoute.POST("/self", controller.SelfCreateCustomer)
 			customerRoute.GET("/:id", middleware.CustomerMemberAuth(), controller.GetCustomer)
 			customerRoute.PUT("/:id", controller.UpdateCustomer)
 			customerRoute.GET("/:id/workspaces", middleware.CustomerMemberAuth(), controller.GetCustomerWorkspaces)

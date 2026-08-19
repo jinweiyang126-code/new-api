@@ -5,13 +5,15 @@
 > 术语：**客户 / 工作区**（Customer / Workspace）；旧称「企业 / 项目」已废弃  
 > 参考：[DogRouter 企业方案](https://dogrouter.ai/zh-CN/business)  
 > 实现任务：[`customer-workspace-m1-implementation-tasks.md`](./customer-workspace-m1-implementation-tasks.md)  
-> 汇报简版：[`customer-workspace-executive-brief.md`](./customer-workspace-executive-brief.md)
+> 汇报简版：[`customer-workspace-executive-brief.md`](./customer-workspace-executive-brief.md)  
+> 自助开户：[`customer-self-register-design.md`](./customer-self-register-design.md)（已实现）
 
 ## 阅读指南
 
 | 部分 | 内容 | 何时读 |
 | --- | --- | --- |
 | **Part A** | M1 主设计（组织、额度、表、接口、BYOK） | 开工 M1 必读 |
+| **自助开户** | 注册页个人 / 组织 | [`customer-self-register-design.md`](./customer-self-register-design.md) |
 | **Part B** | DogRouter 对照、M2–M5、深度项、机构草案 | 排后期 / 对齐竞品时读 |
 | **§16** | 独立上游 / BYOK 全文 | M1 必读（属 Part A 附录位置，紧接 Part A 正文） |
 
@@ -35,7 +37,7 @@
 - **机构层**（集团 / 代理商再挂多家客户）— 明确后置，先不考虑  
 - 用户同时属于多家客户  
 - 客户流量扣减 `User.Quota`（个人余额）  
-- 客户自助注册开户（由平台超管创建客户）  
+- 客户自助注册开户 — **已另文**：[customer-self-register-design.md](./customer-self-register-design.md)；超管开户仍保留
 - 在线支付直接充入客户池（一期可用超管充值；支付合规为产品外事项）  
 - 复杂部门树、多级审批、完整报表导出（可后续迭代）  
 - 模型白名单/限流（M3）、SSO（M5）等（见本文 Part B）  
@@ -50,7 +52,7 @@
 | 组织层级 | 平台 → 客户 → 工作区（**无机构层**） |
 | 客户数量 | 不设上限 |
 | 用户 ↔ 客户 | **一对一**：同一时刻不可属于多家客户 |
-| 注册加入 | 先注册个人，再 **邀请进客户** |
+| 注册加入 | 默认个人注册；可选组织自助开户（见自助开户文）；也可 **邀请进客户** |
 | 邀请权限 | **客户管理员可邀请成员**（超管可代管） |
 | 计费 | 客户令牌 **只扣工作区池**，**完全不碰** `User.Quota` |
 | 渠道 / BYOK | **M1 正式范围**：默认 `shared`；可按客户开通独立上游 / BYOK（设计见 **§16**） |

@@ -14,6 +14,14 @@ import type {
   WorkspaceMember,
 } from './types'
 
+export async function createSelfCustomer(data: {
+  organization_name: string
+  invite_emails?: string[]
+}): Promise<ApiResponse<{ customer_id: number; workspace_id: number }>> {
+  const res = await api.post('/api/customers/self', data)
+  return res.data
+}
+
 export async function getSelfCustomer(): Promise<
   ApiResponse<SelfCustomerContext>
 > {

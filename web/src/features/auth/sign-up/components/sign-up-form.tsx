@@ -7,7 +7,7 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
 
@@ -16,7 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -38,6 +40,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { register, wechatLoginByCode } from '@/features/auth/api'
 import { LegalConsent } from '@/features/auth/components/legal-consent'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
@@ -49,16 +52,47 @@ import {
   getAffiliateCode,
   saveAffiliateCode,
 } from '@/features/auth/lib/storage'
+import { setSignupOrgIntent } from '@/features/auth/lib/signup-org-intent'
+import { createSelfCustomer } from '@/features/customer-org/api'
 import { useStatus } from '@/hooks/use-status'
 import { isAuthBundle } from '@/lib/api'
 import { getServerErrorMessageKey } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+
+import { OrganizationSetupFields } from './organization-setup-fields'
+
+const INVITE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+type AccountType = 'personal' | 'organization'
+
+type InviteEmailField = {
+  key: string
+  value: string
+}
+
+function createInviteField(value = ''): InviteEmailField {
+  return {
+    key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    value,
+  }
+}
+
+type SignUpFormProps = React.HTMLAttributes<HTMLFormElement> & {
+  setup?: 'organization'
+  invite?: string
+}
 
 export function SignUpForm({
   className,
+  setup,
+  invite,
   ...props
-}: React.HTMLAttributes<HTMLFormElement>) {
+}: SignUpFormProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const user = useAuthStore((state) => state.auth.user)
+  const setUser = useAuthStore((state) => state.auth.setUser)
   const [isLoading, setIsLoading] = useState(false)
   const [verificationCode, setVerificationCode] = useState('')
   const [agreedToLegal, setAgreedToLegal] = useState(false)
@@ -66,6 +100,10 @@ export function SignUpForm({
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
+  const [accountType, setAccountType] = useState<AccountType>('personal')
+  const [step, setStep] = useState<1 | 2>(1)
+  const [organizationName, setOrganizationName] = useState('')
+  const [inviteEmails, setInviteEmails] = useState([createInviteField()])
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
   const { status } = useStatus()
@@ -108,6 +146,19 @@ export function SignUpForm({
     true
   const hasWeChatLogin = Boolean(status?.wechat_login)
   const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
+  const customerSelfRegisterEnabled = Boolean(
+    status?.customer_self_register_enabled ??
+      status?.data?.customer_self_register_enabled
+  )
+  const isInviteSignup = Boolean(invite?.trim())
+  const isLoggedInOrgSetup = Boolean(
+    user && setup === 'organization' && !user.customer_id
+  )
+  const showAccountTypeTabs =
+    customerSelfRegisterEnabled && !isInviteSignup && !isLoggedInOrgSetup
+  const isOrganizationFlow =
+    isLoggedInOrgSetup ||
+    (showAccountTypeTabs && accountType === 'organization')
 
   const wechatQrCodeUrl = useMemo(() => {
     return (
@@ -138,13 +189,66 @@ export function SignUpForm({
     }
   }, [])
 
+  useEffect(() => {
+    if (isLoggedInOrgSetup) {
+      setAccountType('organization')
+      setStep(2)
+      setSignupOrgIntent(false)
+      return
+    }
+    setSignupOrgIntent(isOrganizationFlow && step === 1)
+  }, [isLoggedInOrgSetup, isOrganizationFlow, step])
+
+  function collectInviteEmails(): string[] | null {
+    const cleaned = inviteEmails
+      .map((field) => field.value.trim())
+      .filter(Boolean)
+    for (const email of cleaned) {
+      if (!INVITE_EMAIL_RE.test(email)) {
+        toast.error(t('Invalid email'))
+        return null
+      }
+    }
+    return cleaned
+  }
+
+  async function submitExistingUserOrganization() {
+    const name = organizationName.trim()
+    if (!name) {
+      toast.error(t('Please enter your organization name'))
+      return
+    }
+    const emails = collectInviteEmails()
+    if (!emails) return
+
+    setIsLoading(true)
+    try {
+      const res = await createSelfCustomer({
+        organization_name: name,
+        invite_emails: emails,
+      })
+      if (!res?.success || !res.data?.customer_id) {
+        toast.error(res?.message || t('Failed to create account'))
+        return
+      }
+      if (user) {
+        setUser({ ...user, customer_id: res.data.customer_id })
+      }
+      toast.success(t('Organization created'))
+      void navigate({ to: '/dashboard', replace: true })
+    } catch {
+      // Errors are handled by global interceptor
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   async function onSubmit(data: z.infer<typeof registerFormSchema>) {
     if (requiresLegalConsent && !agreedToLegal) {
       toast.error(legalConsentErrorMessage)
       return
     }
 
-    // Validate email verification if required
     if (emailVerificationRequired) {
       if (!data.email) {
         toast.error(t('Please enter your email'))
@@ -156,10 +260,29 @@ export function SignUpForm({
       }
     }
 
+    if (isOrganizationFlow && step === 1) {
+      setStep(2)
+      return
+    }
+
+    if (isOrganizationFlow && step === 2) {
+      const name = organizationName.trim()
+      if (!name) {
+        toast.error(t('Please enter your organization name'))
+        return
+      }
+      if (!collectInviteEmails()) return
+    }
+
     if (!validateTurnstile()) return
 
     setIsLoading(true)
     try {
+      const emails = isOrganizationFlow ? collectInviteEmails() : []
+      if (isOrganizationFlow && emails === null) {
+        setIsLoading(false)
+        return
+      }
       const res = await register({
         username: data.username,
         password: data.password,
@@ -167,9 +290,17 @@ export function SignUpForm({
         verification_code: verificationCode || undefined,
         aff_code: getAffiliateCode(),
         turnstile: turnstileToken,
+        ...(isOrganizationFlow
+          ? {
+              account_type: 'organization' as const,
+              organization_name: organizationName.trim(),
+              invite_emails: emails ?? [],
+            }
+          : {}),
       })
 
       if (res?.success) {
+        setSignupOrgIntent(false)
         toast.success(t('Account created! Please sign in'))
         redirectToLogin()
       } else {
@@ -240,6 +371,52 @@ export function SignUpForm({
     verificationCodeAction = <Loader2 className='h-4 w-4 animate-spin' />
   }
 
+  const submitLabel =
+    isOrganizationFlow && step === 1 ? t('Next') : t('Create account')
+
+  if (isLoggedInOrgSetup) {
+    return (
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submitExistingUserOrganization()
+        }}
+        className={cn('grid gap-4', className)}
+        {...props}
+      >
+        <OrganizationSetupFields
+          organizationName={organizationName}
+          onOrganizationNameChange={setOrganizationName}
+          inviteEmails={inviteEmails}
+          onInviteEmailsChange={setInviteEmails}
+          disabled={isLoading}
+        />
+        <div className='mt-2 flex gap-2'>
+          <Button
+            type='button'
+            variant='outline'
+            className='flex-1'
+            disabled={isLoading}
+            onClick={() => {
+              setSignupOrgIntent(false)
+              void navigate({ to: '/dashboard', replace: true })
+            }}
+          >
+            {t('Back')}
+          </Button>
+          <Button
+            type='submit'
+            className='flex-1 justify-center gap-2'
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+            {t('Create account')}
+          </Button>
+        </div>
+      </form>
+    )
+  }
+
   return (
     <Form {...form}>
       <form
@@ -247,138 +424,181 @@ export function SignUpForm({
         className={cn('grid gap-4', className)}
         {...props}
       >
-        {/* Username Field */}
-        <FormField
-          control={form.control}
-          name='username'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Username')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('Enter your username')} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {showAccountTypeTabs && step === 1 ? (
+          <Tabs
+            value={accountType}
+            onValueChange={(value) => {
+              if (value === 'personal' || value === 'organization') {
+                setAccountType(value)
+                setStep(1)
+              }
+            }}
+          >
+            <TabsList className='grid h-9 w-full grid-cols-2'>
+              <TabsTrigger value='personal'>{t('Personal')}</TabsTrigger>
+              <TabsTrigger value='organization'>{t('Organization')}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : null}
 
-        {/* Password Field */}
-        <FormField
-          control={form.control}
-          name='password'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Password')}</FormLabel>
-              <FormControl>
-                <PasswordInput
-                  placeholder={t('Enter password (8-20 characters)')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className={step === 1 ? 'grid gap-4' : 'hidden'}>
+          <FormField
+            control={form.control}
+            name='username'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Username')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('Enter your username')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Confirm Password Field */}
-        <FormField
-          control={form.control}
-          name='confirmPassword'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Confirm password')}</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder={t('Confirm password')} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name='password'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Password')}</FormLabel>
+                <FormControl>
+                  <PasswordInput
+                    placeholder={t('Enter password (8-20 characters)')}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Email Verification Section */}
-        {emailVerificationRequired && (
-          <>
-            {/* Email Field */}
-            <FormField
-              control={form.control}
-              name='email'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t('Email (required for verification)')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('name@example.com')}
-                      type='email'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name='confirmPassword'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Confirm password')}</FormLabel>
+                <FormControl>
+                  <PasswordInput placeholder={t('Confirm password')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            {/* Verification Code Field */}
-            <div className='flex items-end gap-2'>
-              <div className='flex-1'>
-                <Input
-                  placeholder={t('Verification code')}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                />
+          {emailVerificationRequired && (
+            <>
+              <FormField
+                control={form.control}
+                name='email'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('Email (required for verification)')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('name@example.com')}
+                        type='email'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className='flex items-end gap-2'>
+                <div className='flex-1'>
+                  <Input
+                    placeholder={t('Verification code')}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                  />
+                </div>
+                <Button
+                  variant='outline'
+                  type='button'
+                  disabled={
+                    isLoading ||
+                    isSendingCode ||
+                    isActive ||
+                    !emailValue ||
+                    !turnstileReady
+                  }
+                  onClick={handleSendVerificationCode}
+                >
+                  {verificationCodeAction}
+                </Button>
               </div>
-              <Button
-                variant='outline'
-                type='button'
-                disabled={
-                  isLoading ||
-                  isSendingCode ||
-                  isActive ||
-                  !emailValue ||
-                  !turnstileReady
-                }
-                onClick={handleSendVerificationCode}
-              >
-                {verificationCodeAction}
-              </Button>
+            </>
+          )}
+
+          {isTurnstileEnabled && (
+            <div className='mt-2'>
+              <Turnstile
+                key={turnstileWidgetKey}
+                siteKey={turnstileSiteKey}
+                onVerify={setTurnstileToken}
+              />
             </div>
-          </>
-        )}
+          )}
 
-        {/* Turnstile */}
-        {isTurnstileEnabled && (
-          <div className='mt-2'>
-            <Turnstile
-              key={turnstileWidgetKey}
-              siteKey={turnstileSiteKey}
-              onVerify={setTurnstileToken}
-            />
+          <LegalConsent
+            status={status}
+            checked={agreedToLegal}
+            onCheckedChange={setAgreedToLegal}
+            className='mt-1'
+          />
+        </div>
+
+        {step === 2 ? (
+          <OrganizationSetupFields
+            organizationName={organizationName}
+            onOrganizationNameChange={setOrganizationName}
+            inviteEmails={inviteEmails}
+            onInviteEmailsChange={setInviteEmails}
+            disabled={isLoading}
+          />
+        ) : null}
+
+        {step === 2 ? (
+          <div className='mt-2 flex gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              className='flex-1'
+              disabled={isLoading}
+              onClick={() => setStep(1)}
+            >
+              {t('Back')}
+            </Button>
+            <Button
+              type='submit'
+              className='flex-1 justify-center gap-2'
+              disabled={isLoading || !turnstileReady}
+            >
+              {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+              {t('Create account')}
+            </Button>
           </div>
+        ) : (
+          <Button
+            type='submit'
+            className='mt-2 w-full justify-center gap-2'
+            disabled={
+              isLoading ||
+              (requiresLegalConsent && !agreedToLegal) ||
+              (!isOrganizationFlow && !turnstileReady)
+            }
+          >
+            {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+            {submitLabel}
+          </Button>
         )}
 
-        <LegalConsent
-          status={status}
-          checked={agreedToLegal}
-          onCheckedChange={setAgreedToLegal}
-          className='mt-1'
-        />
-
-        {/* Submit Button */}
-        <Button
-          type='submit'
-          className='mt-2 w-full justify-center gap-2'
-          disabled={
-            isLoading ||
-            (requiresLegalConsent && !agreedToLegal) ||
-            !turnstileReady
-          }
-        >
-          {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
-          {t('Create account')}
-        </Button>
-
-        {oauthRegisterEnabled && (
+        {oauthRegisterEnabled && step === 1 && (
           <OAuthProviders
             status={status}
             disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
