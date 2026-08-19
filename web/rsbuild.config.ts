@@ -64,6 +64,7 @@ export default defineConfig(({ envMode }) => {
     },
     html: {
       template: './index.html',
+      favicon: './public/favicon.e86aaa02.ico',
     },
     server: {
       host: '0.0.0.0',
