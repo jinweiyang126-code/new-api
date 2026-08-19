@@ -76,6 +76,11 @@ export function useSidebarData(): SidebarData {
         title: t('Experience Center'),
         items: [
           {
+            title: t('Text Generation'),
+            url: '/experience/text',
+            icon: MessageSquare,
+          },
+          {
             title: t('Image Generation'),
             url: '/experience/images',
             icon: Image,

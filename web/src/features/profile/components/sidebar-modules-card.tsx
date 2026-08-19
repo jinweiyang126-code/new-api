@@ -74,6 +74,30 @@ export function SidebarModulesCard() {
       ],
     },
     {
+      key: 'experience',
+      title: t('Experience Center area'),
+      description: t(
+        'Try text, image, and video generation without API keys.'
+      ),
+      modules: [
+        {
+          key: 'text',
+          title: t('Text Generation'),
+          description: t('Generate text from prompts with chat models.'),
+        },
+        {
+          key: 'images',
+          title: t('Image Generation'),
+          description: t('Generate images from text prompts.'),
+        },
+        {
+          key: 'videos',
+          title: t('Video Generation'),
+          description: t('Generate videos from text prompts.'),
+        },
+      ],
+    },
+    {
       key: 'console',
       title: t('Console Area'),
       description: t('Data management and log viewing'),

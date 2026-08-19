@@ -16,6 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { ExperienceImagesPage } from './images-page'
-export { ExperienceTextPage } from './text-page'
-export { ExperienceVideosPage } from './videos-page'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+
+import { ExperienceTextPage } from '@/features/experience'
+import { isSidebarModuleEnabled } from '@/lib/nav-modules'
+
+export const Route = createFileRoute('/_authenticated/experience/text')({
+  beforeLoad: () => {
+    if (!isSidebarModuleEnabled('experience', 'text')) {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
+  component: ExperienceTextPage,
+})

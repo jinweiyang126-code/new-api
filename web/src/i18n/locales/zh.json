@@ -5606,6 +5606,18 @@
     "From key to first token": "从密钥到首个 Token",
     "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.": "签发令牌后，即可通过同一条 OpenAI 兼容接口调用对话、图片与视频，无需改客户端。",
     "Key capabilities": "核心能力",
-    "Route anything. Bill anything. Ship on one protocol.": "统一路由、计量与结算，一套协议即可上线。"
+    "Route anything. Bill anything. Ship on one protocol.": "统一路由、计量与结算，一套协议即可上线。",
+    "Text Generation": "文本生成",
+    "New chat": "新建聊天",
+    "No matching sessions": "无匹配会话",
+    "Start your conversation": "开始你的对话",
+    "Enter a question, or paste text for the model to process": "输入问题，或粘贴一段文本让模型处理",
+    "Send a message": "发送消息",
+    "Chat history is kept for 7 days. Back up anything important.": "聊天记录保存 7 天，请及时整理或备份重要内容。",
+    "You can upload files, switch models, and test OpenAI-compatible text generation.": "可上传文件、切换模型，测试兼容 OpenAI 的文本生成接口。",
+    "Search sessions": "搜索会话",
+    "Delete session": "删除会话",
+    "Generate text from prompts with chat models.": "用对话模型根据提示生成文本。",
+    "Try text, image, and video generation without API keys.": "无需 API Key 即可试用文本、图片与视频生成。"
   }
 }

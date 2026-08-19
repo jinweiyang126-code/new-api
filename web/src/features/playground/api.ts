@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
+import { isTextChatModel } from '@/lib/chat-models'
 
 import { API_ENDPOINTS } from './constants'
 import type {
@@ -53,10 +54,12 @@ export async function getUserModels(group: string): Promise<ModelOption[]> {
     return []
   }
 
-  return data.data.map((model: string) => ({
-    label: model,
-    value: model,
-  }))
+  return data.data
+    .filter((model: string) => isTextChatModel(model))
+    .map((model: string) => ({
+      label: model,
+      value: model,
+    }))
 }
 
 /**

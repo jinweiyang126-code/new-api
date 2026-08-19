@@ -5606,6 +5606,18 @@
     "From key to first token": "From key to first token",
     "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.": "Issue a token, then call chat, image, and video through one OpenAI-compatible endpoint — without changing your client.",
     "Key capabilities": "Key capabilities",
-    "Route anything. Bill anything. Ship on one protocol.": "Route anything. Bill anything. Ship on one protocol."
+    "Route anything. Bill anything. Ship on one protocol.": "Route anything. Bill anything. Ship on one protocol.",
+    "Text Generation": "Text Generation",
+    "New chat": "New chat",
+    "No matching sessions": "No matching sessions",
+    "Start your conversation": "Start your conversation",
+    "Enter a question, or paste text for the model to process": "Enter a question, or paste text for the model to process",
+    "Send a message": "Send a message",
+    "Chat history is kept for 7 days. Back up anything important.": "Chat history is kept for 7 days. Back up anything important.",
+    "You can upload files, switch models, and test OpenAI-compatible text generation.": "You can upload files, switch models, and test OpenAI-compatible text generation.",
+    "Search sessions": "Search sessions",
+    "Delete session": "Delete session",
+    "Generate text from prompts with chat models.": "Generate text from prompts with chat models.",
+    "Try text, image, and video generation without API keys.": "Try text, image, and video generation without API keys."
   }
 }

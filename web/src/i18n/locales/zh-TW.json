@@ -5265,6 +5265,18 @@
     "Organization": "組織",
     "Organization created": "組織已建立",
     "Organization name": "組織名稱",
-    "Invite teammates (optional)": "邀請成員（可選）"
+    "Invite teammates (optional)": "邀請成員（可選）",
+    "Text Generation": "文本生成",
+    "New chat": "新建聊天",
+    "No matching sessions": "無匹配會話",
+    "Start your conversation": "開始你的對話",
+    "Enter a question, or paste text for the model to process": "輸入問題，或貼上一段文字讓模型處理",
+    "Send a message": "發送訊息",
+    "Chat history is kept for 7 days. Back up anything important.": "聊天記錄保存 7 天，請及時整理或備份重要內容。",
+    "You can upload files, switch models, and test OpenAI-compatible text generation.": "可上傳檔案、切換模型，測試相容 OpenAI 的文本生成介面。",
+    "Search sessions": "搜尋會話",
+    "Delete session": "刪除會話",
+    "Generate text from prompts with chat models.": "用對話模型根據提示生成文本。",
+    "Try text, image, and video generation without API keys.": "無需 API Key 即可試用文本、圖片與影片生成。"
   }
 }

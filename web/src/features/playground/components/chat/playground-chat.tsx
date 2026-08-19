@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -56,6 +56,7 @@ interface PlaygroundChatProps {
   isGenerating?: boolean
   isLoadingMessages?: boolean
   editingKey?: string | null
+  emptyState?: ReactNode
   onSaveEdit?: (newContent: string) => void
   onCancelEdit?: (open: boolean) => void
   onSaveEditAndSubmit?: (newContent: string) => void
@@ -71,6 +72,7 @@ export function PlaygroundChat({
   onSelectPrompt,
   isGenerating = false,
   isLoadingMessages = false,
+  emptyState,
   editingKey,
   onSaveEdit,
   onCancelEdit,
@@ -193,9 +195,14 @@ export function PlaygroundChat({
     )
   })
 
-  if (visibleMessages.length === 0 && onSelectPrompt) {
+  if (visibleMessages.length === 0) {
     chatContent = [
-      <PlaygroundEmptyState key='empty' onSelectPrompt={onSelectPrompt} />,
+      <div key='empty'>
+        {emptyState ??
+          (onSelectPrompt ? (
+            <PlaygroundEmptyState onSelectPrompt={onSelectPrompt} />
+          ) : null)}
+      </div>,
     ]
   }
 

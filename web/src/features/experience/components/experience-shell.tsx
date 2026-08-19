@@ -23,20 +23,21 @@ import { useTranslation } from 'react-i18next'
 import { Main } from '@/components/layout'
 import { cn } from '@/lib/utils'
 
-type ExperienceMode = 'images' | 'videos'
+type ExperienceMode = 'text' | 'images' | 'videos'
 
 type ExperienceShellProps = {
   mode: ExperienceMode
   logsLabel: string
   logsTo: string
-  form: ReactNode
+  form?: ReactNode
   formFooter?: ReactNode
-  canvas: ReactNode
+  canvas?: ReactNode
   wireframeHint?: string
+  children?: ReactNode
 }
 
 /**
- * Experience Center shell: Image/Video tabs, left composer, right canvas.
+ * Experience Center shell: text/image/video tabs, plus composer+canvas or a custom layout.
  */
 export function ExperienceShell({
   mode,
@@ -46,14 +47,27 @@ export function ExperienceShell({
   formFooter,
   canvas,
   wireframeHint,
+  children,
 }: ExperienceShellProps) {
   const { t } = useTranslation()
+  const logsIsExternal = logsTo.startsWith('http')
 
   return (
     <Main className='min-h-0 overflow-hidden p-0'>
       <div className='flex h-full min-h-0 flex-col'>
         <header className='border-border/70 flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3 sm:px-5'>
           <nav className='flex items-center gap-5 text-sm'>
+            <Link
+              to='/experience/text'
+              className={cn(
+                'border-b-2 pb-2 font-medium transition-colors',
+                mode === 'text'
+                  ? 'border-primary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground border-transparent'
+              )}
+            >
+              {t('Text Generation')}
+            </Link>
             <Link
               to='/experience/images'
               className={cn(
@@ -83,37 +97,51 @@ export function ExperienceShell({
                 {wireframeHint}
               </p>
             ) : null}
-            <a
-              href={logsTo}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-muted-foreground hover:text-foreground shrink-0 text-sm underline-offset-4 hover:underline'
-            >
-              {logsLabel}
-            </a>
+            {logsIsExternal ? (
+              <a
+                href={logsTo}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='text-muted-foreground hover:text-foreground shrink-0 text-sm underline-offset-4 hover:underline'
+              >
+                {logsLabel}
+              </a>
+            ) : (
+              <Link
+                to='/usage-logs/$section'
+                params={{ section: 'common' }}
+                className='text-muted-foreground hover:text-foreground shrink-0 text-sm underline-offset-4 hover:underline'
+              >
+                {logsLabel}
+              </Link>
+            )}
           </div>
         </header>
 
-        <div
-          className={cn(
-            'grid min-h-0 flex-1 grid-cols-1',
-            'lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]'
-          )}
-        >
-          <aside className='border-border/70 flex min-h-0 flex-col border-b lg:border-r lg:border-b-0'>
-            <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4 sm:p-5'>
-              {form}
-            </div>
-            {formFooter ? (
-              <div className='border-border/70 bg-background shrink-0 border-t p-4 sm:p-5'>
-                {formFooter}
+        {children ? (
+          <div className='flex min-h-0 flex-1 flex-col'>{children}</div>
+        ) : (
+          <div
+            className={cn(
+              'grid min-h-0 flex-1 grid-cols-1',
+              'lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]'
+            )}
+          >
+            <aside className='border-border/70 flex min-h-0 flex-col border-b lg:border-r lg:border-b-0'>
+              <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4 sm:p-5'>
+                {form}
               </div>
-            ) : null}
-          </aside>
-          <section className='bg-muted/20 flex min-h-0 flex-col overflow-hidden p-4 sm:p-5'>
-            {canvas}
-          </section>
-        </div>
+              {formFooter ? (
+                <div className='border-border/70 bg-background shrink-0 border-t p-4 sm:p-5'>
+                  {formFooter}
+                </div>
+              ) : null}
+            </aside>
+            <section className='bg-muted/20 flex min-h-0 flex-col overflow-hidden p-4 sm:p-5'>
+              {canvas}
+            </section>
+          </div>
+        )}
       </div>
     </Main>
   )

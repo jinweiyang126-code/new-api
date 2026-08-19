@@ -41,6 +41,7 @@ import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedDashboardSectionRouteImport } from './routes/_authenticated/dashboard/$section'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedExperienceImagesRouteImport } from './routes/_authenticated/experience/images'
+import { Route as AuthenticatedExperienceTextRouteImport } from './routes/_authenticated/experience/text'
 import { Route as AuthenticatedExperienceVideosRouteImport } from './routes/_authenticated/experience/videos'
 import { Route as AuthenticatedInvitationsAcceptRouteImport } from './routes/_authenticated/invitations/accept'
 import { Route as AuthenticatedKeysIndexRouteImport } from './routes/_authenticated/keys/index'
@@ -240,6 +241,12 @@ const AuthenticatedExperienceImagesRoute =
   AuthenticatedExperienceImagesRouteImport.update({
     id: '/experience/images',
     path: '/experience/images',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExperienceTextRoute =
+  AuthenticatedExperienceTextRouteImport.update({
+    id: '/experience/text',
+    path: '/experience/text',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedExperienceVideosRoute =
@@ -477,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/experience/images': typeof AuthenticatedExperienceImagesRoute
+  '/experience/text': typeof AuthenticatedExperienceTextRoute
   '/experience/videos': typeof AuthenticatedExperienceVideosRoute
   '/invitations/accept': typeof AuthenticatedInvitationsAcceptRoute
   '/members/$section': typeof AuthenticatedMembersSectionRoute
@@ -543,6 +551,7 @@ export interface FileRoutesByTo {
   '/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/experience/images': typeof AuthenticatedExperienceImagesRoute
+  '/experience/text': typeof AuthenticatedExperienceTextRoute
   '/experience/videos': typeof AuthenticatedExperienceVideosRoute
   '/invitations/accept': typeof AuthenticatedInvitationsAcceptRoute
   '/members/$section': typeof AuthenticatedMembersSectionRoute
@@ -613,6 +622,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/$section': typeof AuthenticatedDashboardSectionRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/experience/images': typeof AuthenticatedExperienceImagesRoute
+  '/_authenticated/experience/text': typeof AuthenticatedExperienceTextRoute
   '/_authenticated/experience/videos': typeof AuthenticatedExperienceVideosRoute
   '/_authenticated/invitations/accept': typeof AuthenticatedInvitationsAcceptRoute
   '/_authenticated/members/$section': typeof AuthenticatedMembersSectionRoute
@@ -682,6 +692,7 @@ export interface FileRouteTypes {
     | '/dashboard/$section'
     | '/errors/$error'
     | '/experience/images'
+    | '/experience/text'
     | '/experience/videos'
     | '/invitations/accept'
     | '/members/$section'
@@ -748,6 +759,7 @@ export interface FileRouteTypes {
     | '/dashboard/$section'
     | '/errors/$error'
     | '/experience/images'
+    | '/experience/text'
     | '/experience/videos'
     | '/invitations/accept'
     | '/members/$section'
@@ -817,6 +829,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/$section'
     | '/_authenticated/errors/$error'
     | '/_authenticated/experience/images'
+    | '/_authenticated/experience/text'
     | '/_authenticated/experience/videos'
     | '/_authenticated/invitations/accept'
     | '/_authenticated/members/$section'
@@ -1100,6 +1113,13 @@ declare module '@tanstack/react-router' {
       path: '/experience/images'
       fullPath: '/experience/images'
       preLoaderRoute: typeof AuthenticatedExperienceImagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/experience/text': {
+      id: '/_authenticated/experience/text'
+      path: '/experience/text'
+      fullPath: '/experience/text'
+      preLoaderRoute: typeof AuthenticatedExperienceTextRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/experience/videos': {
@@ -1440,6 +1460,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardSectionRoute: typeof AuthenticatedDashboardSectionRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedExperienceImagesRoute: typeof AuthenticatedExperienceImagesRoute
+  AuthenticatedExperienceTextRoute: typeof AuthenticatedExperienceTextRoute
   AuthenticatedExperienceVideosRoute: typeof AuthenticatedExperienceVideosRoute
   AuthenticatedInvitationsAcceptRoute: typeof AuthenticatedInvitationsAcceptRoute
   AuthenticatedMembersSectionRoute: typeof AuthenticatedMembersSectionRoute
@@ -1472,6 +1493,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardSectionRoute: AuthenticatedDashboardSectionRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedExperienceImagesRoute: AuthenticatedExperienceImagesRoute,
+  AuthenticatedExperienceTextRoute: AuthenticatedExperienceTextRoute,
   AuthenticatedExperienceVideosRoute: AuthenticatedExperienceVideosRoute,
   AuthenticatedInvitationsAcceptRoute: AuthenticatedInvitationsAcceptRoute,
   AuthenticatedMembersSectionRoute: AuthenticatedMembersSectionRoute,

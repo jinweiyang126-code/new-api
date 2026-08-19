@@ -61,6 +61,7 @@ export const SIDEBAR_MODULES_DEFAULT: SidebarModulesAdminConfig = {
   },
   experience: {
     enabled: true,
+    text: true,
     images: true,
     videos: true,
   },

@@ -71,7 +71,9 @@ export function SidebarModulesSection({
     },
     experience: {
       title: t('Experience Center area'),
-      description: t('Try image and video generation without API keys.'),
+      description: t(
+        'Try text, image, and video generation without API keys.'
+      ),
     },
     console: {
       title: t('Console area'),
@@ -102,6 +104,12 @@ export function SidebarModulesSection({
       },
     },
     experience: {
+      text: {
+        title: t('Text Generation'),
+        description: t(
+          'Generate text from prompts with chat models.'
+        ),
+      },
       images: {
         title: t('Image Generation'),
         description: t('Generate images from text prompts.'),
