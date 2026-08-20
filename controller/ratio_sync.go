@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 
 	"github.com/QuantumNous/new-api/model"
@@ -176,11 +178,18 @@ func FetchUpstreamRatios(c *gin.Context) {
 		}
 		for _, ch := range dbChannels {
 			if base := ch.GetBaseURL(); strings.HasPrefix(base, "http") {
+				endpoint := ""
+				switch ch.Type {
+				case constant.ChannelTypeOpenRouter:
+					endpoint = "openrouter"
+				case constant.ChannelTypeBasicRouter:
+					endpoint = "basicrouter"
+				}
 				upstreams = append(upstreams, dto.UpstreamDTO{
 					ID:       ch.Id,
 					Name:     ch.Name,
 					BaseURL:  strings.TrimRight(base, "/"),
-					Endpoint: "",
+					Endpoint: endpoint,
 				})
 			}
 		}
@@ -226,6 +235,45 @@ func FetchUpstreamRatios(c *gin.Context) {
 			defer func() { <-sem }()
 
 			isOpenRouter := chItem.Endpoint == "openrouter"
+			isBasicRouter := chItem.Endpoint == "basicrouter"
+
+			uniqueName := chItem.Name
+			if chItem.ID != 0 {
+				uniqueName = fmt.Sprintf("%s(%d)", chItem.Name, chItem.ID)
+			}
+
+			ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(req.Timeout)*time.Second)
+			defer cancel()
+
+			// BasicRouter exposes OpenAI-shaped /v1/*models catalogs (not /api/pricing).
+			if isBasicRouter {
+				if chItem.ID == 0 {
+					ch <- upstreamResult{Name: uniqueName, Err: "BasicRouter requires a valid channel with API key"}
+					return
+				}
+				dbCh, err := model.GetChannelById(chItem.ID, true)
+				if err != nil {
+					ch <- upstreamResult{Name: uniqueName, Err: "failed to get channel key: " + err.Error()}
+					return
+				}
+				key, _, apiErr := dbCh.GetNextEnabledKey()
+				if apiErr != nil {
+					ch <- upstreamResult{Name: uniqueName, Err: "failed to get enabled channel key: " + apiErr.Error()}
+					return
+				}
+				if strings.TrimSpace(key) == "" {
+					ch <- upstreamResult{Name: uniqueName, Err: "no API key configured for this channel"}
+					return
+				}
+				converted, err := fetchAndConvertBasicRouterRatios(ctx, client, chItem.BaseURL, strings.TrimSpace(key))
+				if err != nil {
+					logger.LogWarn(c.Request.Context(), "BasicRouter sync failed from "+chItem.Name+": "+err.Error())
+					ch <- upstreamResult{Name: uniqueName, Err: err.Error()}
+					return
+				}
+				ch <- upstreamResult{Name: uniqueName, Data: converted}
+				return
+			}
 
 			endpoint := chItem.Endpoint
 			var fullURL string
@@ -242,14 +290,6 @@ func FetchUpstreamRatios(c *gin.Context) {
 				fullURL = chItem.BaseURL + endpoint
 			}
 			isModelsDev := isModelsDevAPIEndpoint(fullURL)
-
-			uniqueName := chItem.Name
-			if chItem.ID != 0 {
-				uniqueName = fmt.Sprintf("%s(%d)", chItem.Name, chItem.ID)
-			}
-
-			ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(req.Timeout)*time.Second)
-			defer cancel()
 
 			httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
 			if err != nil {
@@ -714,47 +754,100 @@ func isModelsDevAPIEndpoint(rawURL string) bool {
 	return path == modelsDevPath
 }
 
-// convertOpenRouterToRatioData parses OpenRouter's /v1/models response and converts
-// per-token USD pricing into the local ratio format.
-// model_ratio = prompt_price_per_token * 1_000_000 * (USD / 1000)
-//
-//	since 1 ratio unit = $0.002/1K tokens and USD=500, the factor is 500_000
-//
-// completion_ratio = completion_price / prompt_price (output/input multiplier)
-func convertOpenRouterToRatioData(reader io.Reader) (map[string]any, error) {
-	var orResp struct {
-		Data []struct {
-			ID      string `json:"id"`
-			Pricing struct {
-				Prompt         string `json:"prompt"`
-				Completion     string `json:"completion"`
-				InputCacheRead string `json:"input_cache_read"`
-			} `json:"pricing"`
-		} `json:"data"`
+type openRouterStyleModel struct {
+	ID      string                 `json:"id"`
+	Pricing openRouterStylePricing `json:"pricing"`
+}
+
+type openRouterStylePricing struct {
+	Prompt         json.RawMessage `json:"prompt"`
+	Completion     json.RawMessage `json:"completion"`
+	InputCacheRead json.RawMessage `json:"input_cache_read"`
+	Request        json.RawMessage `json:"request"`
+	Image          json.RawMessage `json:"image"`
+}
+
+func parseRawPrice(raw json.RawMessage) (float64, bool) {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return 0, false
+	}
+	var number float64
+	if err := common.Unmarshal(trimmed, &number); err == nil {
+		return number, true
+	}
+	var text string
+	if err := common.Unmarshal(trimmed, &text); err != nil {
+		return 0, false
+	}
+	parsed, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
+	if err != nil {
+		return 0, false
+	}
+	return parsed, true
+}
+
+func extractOpenRouterStyleModels(body []byte) ([]openRouterStyleModel, error) {
+	var direct struct {
+		Data []openRouterStyleModel `json:"data"`
+	}
+	if err := common.Unmarshal(body, &direct); err == nil && len(direct.Data) > 0 {
+		return direct.Data, nil
 	}
 
-	if err := common.DecodeJson(reader, &orResp); err != nil {
-		return nil, fmt.Errorf("failed to decode OpenRouter response: %w", err)
+	var envelope struct {
+		Code    json.RawMessage     `json:"code"`
+		Message string              `json:"message"`
+		Data    json.RawMessage     `json:"data"`
+		Success *bool               `json:"success"`
+	}
+	if err := common.Unmarshal(body, &envelope); err == nil && len(envelope.Data) > 0 {
+		var nested []openRouterStyleModel
+		if err := common.Unmarshal(envelope.Data, &nested); err == nil && len(nested) > 0 {
+			return nested, nil
+		}
+		var nestedList struct {
+			Data []openRouterStyleModel `json:"data"`
+		}
+		if err := common.Unmarshal(envelope.Data, &nestedList); err == nil && len(nestedList.Data) > 0 {
+			return nestedList.Data, nil
+		}
+		if msg := strings.TrimSpace(envelope.Message); msg != "" && msg != "success" && msg != "ok" {
+			return nil, errors.New(msg)
+		}
 	}
 
+	var bare []openRouterStyleModel
+	if err := common.Unmarshal(body, &bare); err == nil && len(bare) > 0 {
+		return bare, nil
+	}
+	return nil, fmt.Errorf("unrecognized models response")
+}
+
+func convertOpenRouterStyleModelsToRatioData(models []openRouterStyleModel) map[string]any {
 	modelRatioMap := make(map[string]any)
 	completionRatioMap := make(map[string]any)
 	cacheRatioMap := make(map[string]any)
+	modelPriceMap := make(map[string]any)
 
-	for _, m := range orResp.Data {
-		promptPrice, promptErr := strconv.ParseFloat(m.Pricing.Prompt, 64)
-		completionPrice, compErr := strconv.ParseFloat(m.Pricing.Completion, 64)
-
-		if promptErr != nil && compErr != nil {
-			// Both unparseable — skip this model
+	for _, m := range models {
+		id := strings.TrimSpace(m.ID)
+		if id == "" {
 			continue
 		}
 
-		// Treat parse errors as 0
-		if promptErr != nil {
+		promptPrice, promptOK := parseRawPrice(m.Pricing.Prompt)
+		completionPrice, completionOK := parseRawPrice(m.Pricing.Completion)
+		requestPrice, requestOK := parseRawPrice(m.Pricing.Request)
+		imagePrice, imageOK := parseRawPrice(m.Pricing.Image)
+
+		if !promptOK && !completionOK && !requestOK && !imageOK {
+			continue
+		}
+		if !promptOK {
 			promptPrice = 0
 		}
-		if compErr != nil {
+		if !completionOK {
 			completionPrice = 0
 		}
 
@@ -762,33 +855,56 @@ func convertOpenRouterToRatioData(reader io.Reader) (map[string]any, error) {
 		if promptPrice < 0 || completionPrice < 0 {
 			continue
 		}
+		if requestOK && requestPrice < 0 {
+			continue
+		}
+		if imageOK && imagePrice < 0 {
+			continue
+		}
 
 		if promptPrice == 0 && completionPrice == 0 {
+			fixed := 0.0
+			if requestOK && requestPrice > 0 {
+				fixed = requestPrice
+			} else if imageOK && imagePrice > 0 {
+				fixed = imagePrice
+			}
+			if fixed > 0 {
+				modelPriceMap[id] = roundRatioValue(fixed)
+				continue
+			}
 			// Free model
-			modelRatioMap[m.ID] = 0.0
+			modelRatioMap[id] = 0.0
 			continue
 		}
 		if promptPrice <= 0 {
 			// No meaningful prompt baseline, cannot derive ratios safely.
+			fixed := 0.0
+			if requestOK && requestPrice > 0 {
+				fixed = requestPrice
+			} else if imageOK && imagePrice > 0 {
+				fixed = imagePrice
+			}
+			if fixed > 0 {
+				modelPriceMap[id] = roundRatioValue(fixed)
+			}
 			continue
 		}
 
 		// Normal case: promptPrice > 0
 		ratio := promptPrice * 1000 * ratio_setting.USD
 		ratio = roundRatioValue(ratio)
-		modelRatioMap[m.ID] = ratio
+		modelRatioMap[id] = ratio
 
 		compRatio := completionPrice / promptPrice
 		compRatio = roundRatioValue(compRatio)
-		completionRatioMap[m.ID] = compRatio
+		completionRatioMap[id] = compRatio
 
 		// Convert input_cache_read to cache_ratio (= cache_read_price / prompt_price)
-		if m.Pricing.InputCacheRead != "" {
-			if cachePrice, err := strconv.ParseFloat(m.Pricing.InputCacheRead, 64); err == nil && cachePrice >= 0 {
-				cacheRatio := cachePrice / promptPrice
-				cacheRatio = roundRatioValue(cacheRatio)
-				cacheRatioMap[m.ID] = cacheRatio
-			}
+		if cachePrice, ok := parseRawPrice(m.Pricing.InputCacheRead); ok && cachePrice >= 0 {
+			cacheRatio := cachePrice / promptPrice
+			cacheRatio = roundRatioValue(cacheRatio)
+			cacheRatioMap[id] = cacheRatio
 		}
 	}
 
@@ -802,7 +918,114 @@ func convertOpenRouterToRatioData(reader io.Reader) (map[string]any, error) {
 	if len(cacheRatioMap) > 0 {
 		converted["cache_ratio"] = cacheRatioMap
 	}
+	if len(modelPriceMap) > 0 {
+		converted["model_price"] = modelPriceMap
+	}
+	return converted
+}
 
+func fetchAndConvertBasicRouterRatios(
+	ctx context.Context,
+	client *http.Client,
+	baseURL string,
+	apiKey string,
+) (map[string]any, error) {
+	base := strings.TrimRight(baseURL, "/")
+	paths := []string{
+		"/v1/models",
+		"/v1/image-models",
+		"/v1/video-models",
+	}
+
+	seen := make(map[string]struct{})
+	var models []openRouterStyleModel
+	var lastErr error
+	for _, path := range paths {
+		fullURL := base + path
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+
+		var resp *http.Response
+		for attempt := 0; attempt < 3; attempt++ {
+			resp, err = client.Do(req)
+			if err == nil {
+				break
+			}
+			time.Sleep(time.Duration(200*(1<<attempt)) * time.Millisecond)
+		}
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		limited := io.LimitReader(resp.Body, maxRatioConfigBytes)
+		bodyBytes, readErr := io.ReadAll(limited)
+		resp.Body.Close()
+		if readErr != nil {
+			lastErr = readErr
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			lastErr = fmt.Errorf("%s: %s", path, resp.Status)
+			continue
+		}
+
+		parsed, parseErr := extractOpenRouterStyleModels(bodyBytes)
+		if parseErr != nil {
+			lastErr = parseErr
+			continue
+		}
+		for _, item := range parsed {
+			id := strings.TrimSpace(item.ID)
+			if id == "" {
+				continue
+			}
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			models = append(models, item)
+		}
+	}
+
+	if len(models) == 0 {
+		if lastErr != nil {
+			return nil, lastErr
+		}
+		return nil, fmt.Errorf("BasicRouter returned no models from /v1/models, /v1/image-models, /v1/video-models")
+	}
+
+	converted := convertOpenRouterStyleModelsToRatioData(models)
+	if len(converted) == 0 {
+		return nil, fmt.Errorf("BasicRouter 模型列表未包含可用单价（pricing.prompt / completion / request），请改用 models.dev 或官方倍率预设")
+	}
+	return converted, nil
+}
+
+// convertOpenRouterToRatioData parses OpenRouter's /v1/models response and converts
+// per-token USD pricing into the local ratio format.
+// model_ratio = prompt_price_per_token * 1_000_000 * (USD / 1000)
+//
+//	since 1 ratio unit = $0.002/1K tokens and USD=500, the factor is 500_000
+//
+// completion_ratio = completion_price / prompt_price (output/input multiplier)
+func convertOpenRouterToRatioData(reader io.Reader) (map[string]any, error) {
+	bodyBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read OpenRouter response: %w", err)
+	}
+	models, err := extractOpenRouterStyleModels(bodyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode OpenRouter response: %w", err)
+	}
+	converted := convertOpenRouterStyleModelsToRatioData(models)
+	if len(converted) == 0 {
+		return nil, fmt.Errorf("no valid OpenRouter pricing entries found")
+	}
 	return converted, nil
 }
 

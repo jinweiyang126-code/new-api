@@ -41,6 +41,8 @@ import {
   type ConflictItem,
 } from './conflict-confirm-dialog'
 import {
+  BASICROUTER_CHANNEL_TYPE,
+  BASICROUTER_ENDPOINT,
   DEFAULT_ENDPOINT,
   MODELS_DEV_PRESET_ENDPOINT,
   MODELS_DEV_PRESET_ID,
@@ -92,6 +94,7 @@ function getDefaultEndpointForChannel(channel: UpstreamChannel): string {
   if (channel.id === MODELS_DEV_PRESET_ID) return MODELS_DEV_PRESET_ENDPOINT
   if (channel.id === OFFICIAL_CHANNEL_ID) return OFFICIAL_CHANNEL_ENDPOINT
   if (channel.type === OPENROUTER_CHANNEL_TYPE) return OPENROUTER_ENDPOINT
+  if (channel.type === BASICROUTER_CHANNEL_TYPE) return BASICROUTER_ENDPOINT
   return DEFAULT_ENDPOINT
 }
 
