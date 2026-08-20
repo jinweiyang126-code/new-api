@@ -938,7 +938,7 @@ func fetchAndConvertBasicRouterRatios(
 	}
 
 	seen := make(map[string]struct{})
-	var models []openRouterStyleModel
+	var models []basicRouterModel
 	var lastErr error
 	for _, path := range paths {
 		fullURL := base + path
@@ -974,7 +974,7 @@ func fetchAndConvertBasicRouterRatios(
 			continue
 		}
 
-		parsed, parseErr := extractOpenRouterStyleModels(bodyBytes)
+		parsed, parseErr := extractBasicRouterModels(bodyBytes)
 		if parseErr != nil {
 			lastErr = parseErr
 			continue
@@ -999,11 +999,220 @@ func fetchAndConvertBasicRouterRatios(
 		return nil, fmt.Errorf("BasicRouter returned no models from /v1/models, /v1/image-models, /v1/video-models")
 	}
 
-	converted := convertOpenRouterStyleModelsToRatioData(models)
+	converted := convertBasicRouterModelsToRatioData(models)
 	if len(converted) == 0 {
-		return nil, fmt.Errorf("BasicRouter 模型列表未包含可用单价（pricing.prompt / completion / request），请改用 models.dev 或官方倍率预设")
+		return nil, fmt.Errorf("BasicRouter 模型列表未包含可用单价（price_tiers / priceTiers），请改用 models.dev 或官方倍率预设")
 	}
 	return converted, nil
+}
+
+type basicRouterPriceTier struct {
+	Region          *string         `json:"region"`
+	BandMin         json.RawMessage `json:"bandMin"`
+	BandMax         json.RawMessage `json:"bandMax"`
+	Resolution      *string         `json:"resolution"`
+	Clarity         *string         `json:"clarity"`
+	Unit            string          `json:"unit"`
+	Quantity        json.RawMessage `json:"quantity"`
+	Description     string          `json:"description"`
+	InputPrice      json.RawMessage `json:"inputPrice"`
+	OutputPrice     json.RawMessage `json:"outputPrice"`
+	CachePrice      json.RawMessage `json:"cachePrice"`
+	CacheReadPrice  json.RawMessage `json:"cacheReadPrice"`
+	CacheWritePrice json.RawMessage `json:"cacheWritePrice"`
+	Ratio           json.RawMessage `json:"ratio"`
+	Mode            string          `json:"mode"`
+	PlanID          *string         `json:"planId"`
+}
+
+type basicRouterModel struct {
+	ID          string                `json:"id"`
+	PriceTiers  []basicRouterPriceTier `json:"price_tiers"`
+	PriceTiers2 []basicRouterPriceTier `json:"priceTiers"`
+}
+
+func (m basicRouterModel) tiers() []basicRouterPriceTier {
+	if len(m.PriceTiers) > 0 {
+		return m.PriceTiers
+	}
+	return m.PriceTiers2
+}
+
+func extractBasicRouterModels(body []byte) ([]basicRouterModel, error) {
+	var direct struct {
+		Data []basicRouterModel `json:"data"`
+	}
+	if err := common.Unmarshal(body, &direct); err == nil && len(direct.Data) > 0 {
+		return direct.Data, nil
+	}
+
+	var envelope struct {
+		Message string          `json:"message"`
+		Data    json.RawMessage `json:"data"`
+	}
+	if err := common.Unmarshal(body, &envelope); err == nil && len(envelope.Data) > 0 {
+		var nested []basicRouterModel
+		if err := common.Unmarshal(envelope.Data, &nested); err == nil && len(nested) > 0 {
+			return nested, nil
+		}
+		var nestedList struct {
+			Data []basicRouterModel `json:"data"`
+		}
+		if err := common.Unmarshal(envelope.Data, &nestedList); err == nil && len(nestedList.Data) > 0 {
+			return nestedList.Data, nil
+		}
+		if msg := strings.TrimSpace(envelope.Message); msg != "" && msg != "success" && msg != "ok" {
+			return nil, errors.New(msg)
+		}
+	}
+
+	var bare []basicRouterModel
+	if err := common.Unmarshal(body, &bare); err == nil && len(bare) > 0 {
+		return bare, nil
+	}
+	return nil, fmt.Errorf("unrecognized BasicRouter models response")
+}
+
+func rawMessageIsNullOrEmpty(raw json.RawMessage) bool {
+	trimmed := bytes.TrimSpace(raw)
+	return len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null"))
+}
+
+func pickBasicRouterPriceTier(tiers []basicRouterPriceTier) (basicRouterPriceTier, bool) {
+	if len(tiers) == 0 {
+		return basicRouterPriceTier{}, false
+	}
+
+	score := func(tier basicRouterPriceTier) int {
+		s := 0
+		if strings.EqualFold(strings.TrimSpace(tier.Unit), "token") ||
+			strings.EqualFold(strings.TrimSpace(tier.Unit), "image") ||
+			strings.EqualFold(strings.TrimSpace(tier.Unit), "video") {
+			s += 10
+		}
+		if tier.Region != nil && strings.EqualFold(strings.TrimSpace(*tier.Region), "GLOBAL") {
+			s += 5
+		}
+		if rawMessageIsNullOrEmpty(tier.BandMin) && rawMessageIsNullOrEmpty(tier.BandMax) {
+			s += 3
+		}
+		if input, ok := parseRawPrice(tier.InputPrice); ok && input > 0 {
+			s += 2
+		}
+		if output, ok := parseRawPrice(tier.OutputPrice); ok && output > 0 {
+			s += 1
+		}
+		return s
+	}
+
+	bestIdx := 0
+	bestScore := score(tiers[0])
+	for i := 1; i < len(tiers); i++ {
+		if next := score(tiers[i]); next > bestScore {
+			bestIdx = i
+			bestScore = next
+		}
+	}
+	return tiers[bestIdx], true
+}
+
+// convertBasicRouterModelsToRatioData maps BasicRouter price_tiers into local pricing.
+// Token tiers: inputPrice/outputPrice are USD per `quantity` tokens (commonly 1000).
+//
+//	model_ratio = inputPrice * ratio * USD * (1000 / quantity)
+//	completion_ratio = outputPrice / inputPrice
+//
+// Image/video tiers: treat outputPrice * ratio as fixed model_price.
+func convertBasicRouterModelsToRatioData(models []basicRouterModel) map[string]any {
+	modelRatioMap := make(map[string]any)
+	completionRatioMap := make(map[string]any)
+	cacheRatioMap := make(map[string]any)
+	createCacheRatioMap := make(map[string]any)
+	modelPriceMap := make(map[string]any)
+
+	for _, m := range models {
+		id := strings.TrimSpace(m.ID)
+		if id == "" {
+			continue
+		}
+		tier, ok := pickBasicRouterPriceTier(m.tiers())
+		if !ok {
+			continue
+		}
+
+		unit := strings.ToLower(strings.TrimSpace(tier.Unit))
+		quantity, quantityOK := parseRawPrice(tier.Quantity)
+		if !quantityOK || quantity <= 0 {
+			quantity = 1
+		}
+		inputPrice, _ := parseRawPrice(tier.InputPrice)
+		outputPrice, _ := parseRawPrice(tier.OutputPrice)
+		cachePrice, _ := parseRawPrice(tier.CachePrice)
+		cacheReadPrice, _ := parseRawPrice(tier.CacheReadPrice)
+		cacheWritePrice, _ := parseRawPrice(tier.CacheWritePrice)
+		tierRatio, tierRatioOK := parseRawPrice(tier.Ratio)
+		if !tierRatioOK || tierRatio <= 0 {
+			tierRatio = 1
+		}
+		if inputPrice < 0 || outputPrice < 0 {
+			continue
+		}
+
+		switch unit {
+		case "image", "video":
+			fixed := outputPrice * tierRatio
+			if fixed <= 0 && inputPrice > 0 {
+				fixed = inputPrice * tierRatio
+			}
+			if fixed > 0 {
+				modelPriceMap[id] = roundRatioValue(fixed)
+			}
+		default: // token / unknown treated as token when input exists
+			if inputPrice <= 0 && outputPrice <= 0 {
+				continue
+			}
+			if inputPrice <= 0 {
+				// No prompt baseline for ratio billing; fall back to fixed output price.
+				if outputPrice > 0 {
+					modelPriceMap[id] = roundRatioValue(outputPrice * tierRatio)
+				}
+				continue
+			}
+
+			modelRatio := inputPrice * tierRatio * float64(ratio_setting.USD) * (1000.0 / quantity)
+			modelRatioMap[id] = roundRatioValue(modelRatio)
+			completionRatioMap[id] = roundRatioValue(outputPrice / inputPrice)
+
+			cacheBase := cacheReadPrice
+			if cacheBase <= 0 {
+				cacheBase = cachePrice
+			}
+			if cacheBase > 0 {
+				cacheRatioMap[id] = roundRatioValue(cacheBase / inputPrice)
+			}
+			if cacheWritePrice > 0 {
+				createCacheRatioMap[id] = roundRatioValue(cacheWritePrice / inputPrice)
+			}
+		}
+	}
+
+	converted := make(map[string]any)
+	if len(modelRatioMap) > 0 {
+		converted["model_ratio"] = modelRatioMap
+	}
+	if len(completionRatioMap) > 0 {
+		converted["completion_ratio"] = completionRatioMap
+	}
+	if len(cacheRatioMap) > 0 {
+		converted["cache_ratio"] = cacheRatioMap
+	}
+	if len(createCacheRatioMap) > 0 {
+		converted["create_cache_ratio"] = createCacheRatioMap
+	}
+	if len(modelPriceMap) > 0 {
+		converted["model_price"] = modelPriceMap
+	}
+	return converted
 }
 
 // convertOpenRouterToRatioData parses OpenRouter's /v1/models response and converts

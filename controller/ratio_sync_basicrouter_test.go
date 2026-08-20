@@ -64,7 +64,80 @@ func TestConvertOpenRouterStyleModelsToRatioData_NoPricing(t *testing.T) {
 	require.Empty(t, converted)
 }
 
-func TestFetchAndConvertBasicRouterRatios_UsesModelsEndpoints(t *testing.T) {
+func TestConvertBasicRouterModelsToRatioData_DocsFixtures(t *testing.T) {
+	textBody := []byte(`{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "price_tiers": [
+        {
+          "region": "GLOBAL",
+          "bandMin": null,
+          "bandMax": null,
+          "unit": "token",
+          "quantity": 1000,
+          "inputPrice": 0.0025,
+          "outputPrice": 0.01,
+          "cachePrice": 0.00125,
+          "cacheReadPrice": 0,
+          "cacheWritePrice": 0,
+          "ratio": 1,
+          "mode": "RATIO"
+        }
+      ]
+    }
+  ]
+}`)
+	imageBody := []byte(`{
+  "object": "list",
+  "data": [
+    {
+      "id": "dall-e-3",
+      "object": "image_model",
+      "priceTiers": [
+        {
+          "resolution": "1024x1024",
+          "clarity": "standard",
+          "unit": "image",
+          "quantity": 1,
+          "inputPrice": 0,
+          "outputPrice": 0.04,
+          "ratio": 1,
+          "mode": "RATIO"
+        }
+      ]
+    }
+  ]
+}`)
+
+	textModels, err := extractBasicRouterModels(textBody)
+	require.NoError(t, err)
+	imageModels, err := extractBasicRouterModels(imageBody)
+	require.NoError(t, err)
+
+	converted := convertBasicRouterModelsToRatioData(append(textModels, imageModels...))
+	ratios := converted["model_ratio"].(map[string]any)
+	comps := converted["completion_ratio"].(map[string]any)
+	caches := converted["cache_ratio"].(map[string]any)
+	prices := converted["model_price"].(map[string]any)
+
+	// inputPrice 0.0025 / 1K tokens → model_ratio = 0.0025 * 500 = 1.25
+	require.InDelta(t, 1.25, ratios["gpt-4o"].(float64), 1e-9)
+	require.InDelta(t, 4.0, comps["gpt-4o"].(float64), 1e-9)
+	require.InDelta(t, 0.5, caches["gpt-4o"].(float64), 1e-9)
+	require.InDelta(t, 0.04, prices["dall-e-3"].(float64), 1e-9)
+}
+
+func TestConvertBasicRouterModelsToRatioData_EmptyTiers(t *testing.T) {
+	converted := convertBasicRouterModelsToRatioData([]basicRouterModel{
+		{ID: "no-tier", PriceTiers: nil},
+	})
+	require.Empty(t, converted)
+}
+
+func TestFetchAndConvertBasicRouterRatios_UsesPriceTiers(t *testing.T) {
 	var sawAuth bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer test-key" {
@@ -72,11 +145,11 @@ func TestFetchAndConvertBasicRouterRatios_UsesModelsEndpoints(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/v1/models":
-			_, _ = w.Write([]byte(`{"data":[{"id":"gpt-4o","pricing":{"prompt":"0.000002","completion":"0.000008"}}]}`))
+			_, _ = w.Write([]byte(`{"data":[{"id":"gpt-4o","price_tiers":[{"unit":"token","quantity":1000,"inputPrice":0.0025,"outputPrice":0.01,"cachePrice":0.00125,"ratio":1}]}]}`))
 		case "/v1/image-models":
-			_, _ = w.Write([]byte(`{"code":0,"message":"success","data":[{"id":"seedream-4.5","pricing":{"request":0.04}}]}`))
+			_, _ = w.Write([]byte(`{"data":[{"id":"seedream-4.5","priceTiers":[{"unit":"image","quantity":1,"inputPrice":0,"outputPrice":0.04,"ratio":1}]}]}`))
 		case "/v1/video-models":
-			_, _ = w.Write([]byte(`{"data":[{"id":"seedance-2.0","pricing":{"request":"0.2"}}]}`))
+			_, _ = w.Write([]byte(`{"data":[{"id":"seedance-2.0","priceTiers":[{"unit":"video","quantity":1,"inputPrice":0,"outputPrice":0.2,"ratio":1}]}]}`))
 		case "/api/pricing":
 			http.NotFound(w, r)
 		default:
@@ -107,7 +180,7 @@ func TestFetchAndConvertBasicRouterRatios_NoPricingFields(t *testing.T) {
 
 	_, err := fetchAndConvertBasicRouterRatios(ctx, server.Client(), server.URL, "test-key")
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "未包含可用单价")
+	require.Contains(t, err.Error(), "price_tiers")
 }
 
 func TestConvertOpenRouterToRatioData_StillWorks(t *testing.T) {
