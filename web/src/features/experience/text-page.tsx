@@ -148,11 +148,7 @@ export function ExperienceTextPage() {
   }
 
   return (
-    <ExperienceShell
-      logsLabel={t('View in usage logs')}
-      logsTo='/usage-logs/common'
-      mode='text'
-    >
+    <ExperienceShell mode='text'>
       <div className='flex min-h-0 flex-1'>
         <aside className='border-border/70 hidden w-[272px] shrink-0 border-r lg:flex'>
           <TextSessionSidebar

@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
+import { ExternalLink } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -27,8 +28,8 @@ type ExperienceMode = 'text' | 'images' | 'videos'
 
 type ExperienceShellProps = {
   mode: ExperienceMode
-  logsLabel: string
-  logsTo: string
+  logsLabel?: string
+  logsTo?: string
   form?: ReactNode
   formFooter?: ReactNode
   canvas?: ReactNode
@@ -50,7 +51,8 @@ export function ExperienceShell({
   children,
 }: ExperienceShellProps) {
   const { t } = useTranslation()
-  const logsIsExternal = logsTo.startsWith('http')
+  const showLogsLink = Boolean(logsLabel && logsTo)
+  const logsIsExternal = Boolean(logsTo?.startsWith('http'))
 
   return (
     <Main className='min-h-0 overflow-hidden p-0'>
@@ -66,7 +68,7 @@ export function ExperienceShell({
                   : 'text-muted-foreground hover:text-foreground border-transparent'
               )}
             >
-              {t('Text Generation')}
+              {t('Text')}
             </Link>
             <Link
               to='/experience/images'
@@ -97,16 +99,18 @@ export function ExperienceShell({
                 {wireframeHint}
               </p>
             ) : null}
-            {logsIsExternal ? (
+            {showLogsLink && logsIsExternal ? (
               <a
                 href={logsTo}
                 target='_blank'
                 rel='noopener noreferrer'
-                className='text-muted-foreground hover:text-foreground shrink-0 text-sm underline-offset-4 hover:underline'
+                className='text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1.5 text-sm underline-offset-4 hover:underline'
               >
                 {logsLabel}
+                <ExternalLink className='size-3.5' aria-hidden='true' />
               </a>
-            ) : (
+            ) : null}
+            {showLogsLink && !logsIsExternal ? (
               <Link
                 to='/usage-logs/$section'
                 params={{ section: 'common' }}
@@ -114,7 +118,7 @@ export function ExperienceShell({
               >
                 {logsLabel}
               </Link>
-            )}
+            ) : null}
           </div>
         </header>
 
