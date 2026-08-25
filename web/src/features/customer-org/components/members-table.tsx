@@ -197,7 +197,7 @@ return (
       emptyTitle={t('No members')}
       emptyDescription={
         isPersonal
-          ? t('Switch to a workspace to see its members.')
+          ? t('Select a workspace filter to view its members, or keep All for the organization-wide list.')
           : t('Invite people to collaborate in this organization.')
       }
       skeletonKeyPrefix='members-skeleton'

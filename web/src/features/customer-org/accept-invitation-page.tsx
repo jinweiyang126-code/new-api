@@ -43,7 +43,12 @@ export function AcceptInvitationPage({ initialToken = '' }: Props) {
     },
     onError: (e: Error) => {
       const msg = e.message || t('Failed to accept invitation')
+      if (/already a member of this customer/i.test(msg) || /已是该客户成员/.test(msg)) {
+        toast.error(t('You are already a member of this organization.'))
+        return
+      }
       if (/already belongs to a customer/i.test(msg) || /已归属其他客户/.test(msg)) {
+        // Legacy single-customer error; should no longer occur for cross-customer invites.
         toast.error(
           t(
             'You already belong to a customer and cannot accept this invitation.'

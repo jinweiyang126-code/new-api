@@ -64,10 +64,12 @@ func (w *WalletFunding) Refund() error {
 }
 
 // ---------------------------------------------------------------------------
-// WorkspaceFunding — 工作区池资金来源（客户令牌；不碰 User.Quota / 订阅）
+// WorkspaceFunding — org-wallet funding for workspace-scoped tokens
+// (user_id + workspace_id). Does not touch User.Quota or workspaces.quota pool.
 // ---------------------------------------------------------------------------
 
 type WorkspaceFunding struct {
+	userId      int
 	workspaceId int
 	consumed    int
 }
@@ -78,7 +80,7 @@ func (w *WorkspaceFunding) PreConsume(amount int) error {
 	if amount <= 0 {
 		return nil
 	}
-	if err := model.DecreaseWorkspaceQuota(w.workspaceId, amount); err != nil {
+	if err := model.DecreaseOrgWalletBalance(w.userId, w.workspaceId, amount); err != nil {
 		return err
 	}
 	w.consumed = amount
@@ -90,16 +92,16 @@ func (w *WorkspaceFunding) Settle(delta int) error {
 		return nil
 	}
 	if delta > 0 {
-		return model.DecreaseWorkspaceQuotaForce(w.workspaceId, delta)
+		return model.DecreaseOrgWalletBalanceForce(w.userId, w.workspaceId, delta)
 	}
-	return model.IncreaseWorkspaceQuota(w.workspaceId, -delta)
+	return model.IncreaseOrgWalletBalance(w.userId, w.workspaceId, -delta)
 }
 
 func (w *WorkspaceFunding) Refund() error {
 	if w.consumed <= 0 {
 		return nil
 	}
-	return model.IncreaseWorkspaceQuota(w.workspaceId, w.consumed)
+	return model.IncreaseOrgWalletBalance(w.userId, w.workspaceId, w.consumed)
 }
 
 // ---------------------------------------------------------------------------

@@ -143,7 +143,7 @@ func TestDisabledWorkspaceRejectsTokenCreate(t *testing.T) {
 	extra, err := CreateWorkspace(customer.Id, "Tmp", "tmp", owner.Id)
 	require.NoError(t, err)
 	disabled := CustomerStatusDisabled
-	_, err = UpdateWorkspaceFields(extra.Id, nil, &disabled)
+	_, err = UpdateWorkspaceFields(extra.Id, nil, &disabled, nil)
 	require.NoError(t, err)
 
 	_, err = AssertCanCreateWorkspaceToken(owner.Id, extra.Id)

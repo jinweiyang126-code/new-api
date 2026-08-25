@@ -148,8 +148,16 @@ func CreateWorkspace(customerId int, name, slug string, creatorUserId int) (*Wor
 	return workspace, nil
 }
 
-// UpdateWorkspaceFields updates name and/or status.
-func UpdateWorkspaceFields(id int, name *string, status *int) (*Workspace, error) {
+// UpdateWorkspaceFields updates name, status and/or quota_limit.
+func UpdateWorkspaceFields(id int, name *string, status *int, quotaLimit *int) (*Workspace, error) {
+	if quotaLimit != nil {
+		if _, err := SetWorkspaceQuotaLimit(id, *quotaLimit); err != nil {
+			return nil, err
+		}
+		if name == nil && status == nil {
+			return GetWorkspaceById(id)
+		}
+	}
 	ws, err := GetWorkspaceById(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -179,7 +187,12 @@ func UpdateWorkspaceFields(id int, name *string, status *int) (*Workspace, error
 	if err := DB.Model(ws).Updates(updates).Error; err != nil {
 		return nil, err
 	}
-	return GetWorkspaceById(id)
+	ws, err = GetWorkspaceById(id)
+	if err != nil {
+		return nil, err
+	}
+	_ = AttachWorkspaceQuotaLimitView(ws)
+	return ws, nil
 }
 
 // TransferQuotaToWorkspace moves amount from customer pool to workspace pool.

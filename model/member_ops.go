@@ -89,6 +89,11 @@ func ListWorkspaceMembers(workspaceId int) ([]WorkspaceMemberView, error) {
 	return out, nil
 }
 
+// UsernamesByIDs returns a map of user id -> username for the given ids.
+func UsernamesByIDs(ids []int) (map[int]string, error) {
+	return usernamesByIDs(ids)
+}
+
 func usernamesByIDs(ids []int) (map[int]string, error) {
 	type row struct {
 		Id       int
@@ -149,11 +154,23 @@ func RemoveCustomerMember(customerId, targetUserId int) error {
 				Delete(&WorkspaceMember{}).Error; err != nil {
 				return err
 			}
+			if err := ZeroOrgWalletsForUserWorkspaces(tx, targetUserId, workspaceIDs); err != nil {
+				return err
+			}
 		}
 
 		if err := tx.Model(&User{}).
 			Where("id = ? AND customer_id = ?", targetUserId, customerId).
 			Updates(map[string]interface{}{"customer_id": 0}).Error; err != nil {
+			return err
+		}
+		// If that was the current customer, switch to another membership when available.
+		var nextMember CustomerMember
+		if err := tx.Where("user_id = ? AND status = ?", targetUserId, MemberStatusEnabled).
+			Order("id asc").First(&nextMember).Error; err == nil {
+			_ = tx.Model(&User{}).Where("id = ? AND customer_id = 0", targetUserId).
+				Update("customer_id", nextMember.CustomerId).Error
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
 
@@ -240,17 +257,34 @@ func AddWorkspaceMember(workspaceId, userId int, role string) (*WorkspaceMember,
 }
 
 // RemoveWorkspaceMember removes a user from a workspace (does not leave the customer).
+// Org-wallet balance is zeroed (returned to workspace allocatable) and workspace tokens disabled.
 func RemoveWorkspaceMember(workspaceId, userId int) error {
 	if workspaceId <= 0 || userId <= 0 {
 		return ErrMemberNotFound
 	}
-	result := DB.Where("workspace_id = ? AND user_id = ?", workspaceId, userId).
-		Delete(&WorkspaceMember{})
-	if result.Error != nil {
-		return result.Error
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Where("workspace_id = ? AND user_id = ?", workspaceId, userId).
+			Delete(&WorkspaceMember{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrMemberNotFound
+		}
+		if err := ZeroOrgWalletsForUserWorkspaces(tx, userId, []int{workspaceId}); err != nil {
+			return err
+		}
+		return tx.Model(&Token{}).
+			Where("user_id = ? AND workspace_id = ?", userId, workspaceId).
+			Updates(map[string]interface{}{
+				"status": common.TokenStatusDisabled,
+			}).Error
+	})
+	if err != nil {
+		return err
 	}
-	if result.RowsAffected == 0 {
-		return ErrMemberNotFound
+	if cacheErr := InvalidateUserTokensCache(userId); cacheErr != nil {
+		common.SysLog(fmt.Sprintf("InvalidateUserTokensCache after RemoveWorkspaceMember user=%d: %v", userId, cacheErr))
 	}
 	return nil
 }

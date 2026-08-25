@@ -1,4 +1,4 @@
-package model
+﻿package model
 
 import (
 	"testing"
@@ -42,7 +42,21 @@ func createInviteTestUser(t *testing.T, db *gorm.DB, name string) *User {
 	return u
 }
 
-func TestAcceptInvitationJoinsDefaultWorkspace(t *testing.T) {
+func TestCreateInvitationRequiresWorkspace(t *testing.T) {
+	db := setupInvitationTestDB(t)
+	owner := createInviteTestUser(t, db, "req-ws-owner")
+	customer := &Customer{Name: "Need WS"}
+	_, err := CreateCustomerWithOwner(customer, owner.Id)
+	require.NoError(t, err)
+
+	_, err = CreateInvitation(CreateInvitationInput{
+		CustomerId: customer.Id,
+		InvitedBy:  owner.Id,
+	})
+	require.ErrorIs(t, err, ErrInvitationWorkspaceRequired)
+}
+
+func TestAcceptInvitationJoinsSpecifiedWorkspace(t *testing.T) {
 	db := setupInvitationTestDB(t)
 	owner := createInviteTestUser(t, db, "inv-owner")
 	invitee := createInviteTestUser(t, db, "inv-invitee")
@@ -50,10 +64,12 @@ func TestAcceptInvitationJoinsDefaultWorkspace(t *testing.T) {
 	defaultWS, err := CreateCustomerWithOwner(customer, owner.Id)
 	require.NoError(t, err)
 
+	wsID := defaultWS.Id
 	inv, err := CreateInvitation(CreateInvitationInput{
-		CustomerId: customer.Id,
-		InvitedBy:  owner.Id,
-		Role:       CustomerRoleMember,
+		CustomerId:  customer.Id,
+		WorkspaceId: &wsID,
+		InvitedBy:   owner.Id,
+		Role:        CustomerRoleMember,
 	})
 	require.NoError(t, err)
 	require.Equal(t, InvitationStatusPending, inv.Status)
@@ -76,24 +92,59 @@ func TestAcceptInvitationJoinsDefaultWorkspace(t *testing.T) {
 	require.Equal(t, WorkspaceRoleMember, wm.Role)
 }
 
-func TestAcceptInvitationFailsWhenUserAlreadyHasCustomer(t *testing.T) {
+func TestAcceptInvitationAllowsUserFromOtherCustomer(t *testing.T) {
 	db := setupInvitationTestDB(t)
 	ownerA := createInviteTestUser(t, db, "own-a")
 	ownerB := createInviteTestUser(t, db, "own-b")
 	customerA := &Customer{Name: "A"}
 	customerB := &Customer{Name: "B"}
-	_, err := CreateCustomerWithOwner(customerA, ownerA.Id)
+	wsA, err := CreateCustomerWithOwner(customerA, ownerA.Id)
 	require.NoError(t, err)
 	_, err = CreateCustomerWithOwner(customerB, ownerB.Id)
 	require.NoError(t, err)
 
+	wsID := wsA.Id
 	inv, err := CreateInvitation(CreateInvitationInput{
-		CustomerId: customerA.Id, InvitedBy: ownerA.Id,
+		CustomerId:  customerA.Id,
+		WorkspaceId: &wsID,
+		InvitedBy:   ownerA.Id,
 	})
 	require.NoError(t, err)
 
 	_, err = AcceptInvitation(inv.Token, ownerB.Id)
-	require.ErrorIs(t, err, ErrUserAlreadyHasCustomer)
+	require.NoError(t, err)
+
+	memberships, err := ListUserCustomerMemberships(ownerB.Id)
+	require.NoError(t, err)
+	require.Len(t, memberships, 2)
+
+	var user User
+	require.NoError(t, db.Select("customer_id").Where("id = ?", ownerB.Id).First(&user).Error)
+	require.Equal(t, customerA.Id, user.CustomerId)
+}
+
+func TestAcceptInvitationRejectsAlreadyMemberOfSameCustomer(t *testing.T) {
+	db := setupInvitationTestDB(t)
+	owner := createInviteTestUser(t, db, "same-owner")
+	member := createInviteTestUser(t, db, "same-member")
+	customer := &Customer{Name: "Same"}
+	ws, err := CreateCustomerWithOwner(customer, owner.Id)
+	require.NoError(t, err)
+
+	wsID := ws.Id
+	first, err := CreateInvitation(CreateInvitationInput{
+		CustomerId: customer.Id, WorkspaceId: &wsID, InvitedBy: owner.Id,
+	})
+	require.NoError(t, err)
+	_, err = AcceptInvitation(first.Token, member.Id)
+	require.NoError(t, err)
+
+	second, err := CreateInvitation(CreateInvitationInput{
+		CustomerId: customer.Id, WorkspaceId: &wsID, InvitedBy: owner.Id,
+	})
+	require.NoError(t, err)
+	_, err = AcceptInvitation(second.Token, member.Id)
+	require.ErrorIs(t, err, ErrAlreadyCustomerMember)
 }
 
 func TestAcceptInvitationRejectsExpiredAndRevoked(t *testing.T) {
@@ -102,11 +153,12 @@ func TestAcceptInvitationRejectsExpiredAndRevoked(t *testing.T) {
 	invitee1 := createInviteTestUser(t, db, "exp-user1")
 	invitee2 := createInviteTestUser(t, db, "exp-user2")
 	customer := &Customer{Name: "Exp Co"}
-	_, err := CreateCustomerWithOwner(customer, owner.Id)
+	ws, err := CreateCustomerWithOwner(customer, owner.Id)
 	require.NoError(t, err)
+	wsID := ws.Id
 
 	expired, err := CreateInvitation(CreateInvitationInput{
-		CustomerId: customer.Id, InvitedBy: owner.Id,
+		CustomerId: customer.Id, WorkspaceId: &wsID, InvitedBy: owner.Id,
 		ExpiresAt: common.GetTimestamp() - 10,
 	})
 	require.NoError(t, err)
@@ -114,7 +166,7 @@ func TestAcceptInvitationRejectsExpiredAndRevoked(t *testing.T) {
 	require.ErrorIs(t, err, ErrInvitationExpired)
 
 	pending, err := CreateInvitation(CreateInvitationInput{
-		CustomerId: customer.Id, InvitedBy: owner.Id,
+		CustomerId: customer.Id, WorkspaceId: &wsID, InvitedBy: owner.Id,
 	})
 	require.NoError(t, err)
 	_, err = RevokeInvitation(pending.Id)

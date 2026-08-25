@@ -49,6 +49,7 @@ import { Route as AuthenticatedMembersIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedMembersSectionRouteImport } from './routes/_authenticated/members/$section'
 import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenticated/models/index'
 import { Route as AuthenticatedModelsSectionRouteImport } from './routes/_authenticated/models/$section'
+import { Route as AuthenticatedOrgWalletIndexRouteImport } from './routes/_authenticated/org-wallet/index'
 import { Route as AuthenticatedPlaygroundIndexRouteImport } from './routes/_authenticated/playground/index'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
 import { Route as AuthenticatedQuotaIndexRouteImport } from './routes/_authenticated/quota/index'
@@ -290,6 +291,12 @@ const AuthenticatedModelsSectionRoute =
     path: '/models/$section',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOrgWalletIndexRoute =
+  AuthenticatedOrgWalletIndexRouteImport.update({
+    id: '/org-wallet/',
+    path: '/org-wallet/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlaygroundIndexRoute =
   AuthenticatedPlaygroundIndexRouteImport.update({
     id: '/playground/',
@@ -496,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/keys/': typeof AuthenticatedKeysIndexRoute
   '/members/': typeof AuthenticatedMembersIndexRoute
   '/models/': typeof AuthenticatedModelsIndexRoute
+  '/org-wallet/': typeof AuthenticatedOrgWalletIndexRoute
   '/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
   '/quota/': typeof AuthenticatedQuotaIndexRoute
@@ -563,6 +571,7 @@ export interface FileRoutesByTo {
   '/keys': typeof AuthenticatedKeysIndexRoute
   '/members': typeof AuthenticatedMembersIndexRoute
   '/models': typeof AuthenticatedModelsIndexRoute
+  '/org-wallet': typeof AuthenticatedOrgWalletIndexRoute
   '/playground': typeof AuthenticatedPlaygroundIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
   '/quota': typeof AuthenticatedQuotaIndexRoute
@@ -634,6 +643,7 @@ export interface FileRoutesById {
   '/_authenticated/keys/': typeof AuthenticatedKeysIndexRoute
   '/_authenticated/members/': typeof AuthenticatedMembersIndexRoute
   '/_authenticated/models/': typeof AuthenticatedModelsIndexRoute
+  '/_authenticated/org-wallet/': typeof AuthenticatedOrgWalletIndexRoute
   '/_authenticated/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/quota/': typeof AuthenticatedQuotaIndexRoute
@@ -704,6 +714,7 @@ export interface FileRouteTypes {
     | '/keys/'
     | '/members/'
     | '/models/'
+    | '/org-wallet/'
     | '/playground/'
     | '/profile/'
     | '/quota/'
@@ -771,6 +782,7 @@ export interface FileRouteTypes {
     | '/keys'
     | '/members'
     | '/models'
+    | '/org-wallet'
     | '/playground'
     | '/profile'
     | '/quota'
@@ -841,6 +853,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keys/'
     | '/_authenticated/members/'
     | '/_authenticated/models/'
+    | '/_authenticated/org-wallet/'
     | '/_authenticated/playground/'
     | '/_authenticated/profile/'
     | '/_authenticated/quota/'
@@ -1171,6 +1184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModelsSectionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/org-wallet/': {
+      id: '/_authenticated/org-wallet/'
+      path: '/org-wallet'
+      fullPath: '/org-wallet/'
+      preLoaderRoute: typeof AuthenticatedOrgWalletIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/playground/': {
       id: '/_authenticated/playground/'
       path: '/playground'
@@ -1472,6 +1492,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKeysIndexRoute: typeof AuthenticatedKeysIndexRoute
   AuthenticatedMembersIndexRoute: typeof AuthenticatedMembersIndexRoute
   AuthenticatedModelsIndexRoute: typeof AuthenticatedModelsIndexRoute
+  AuthenticatedOrgWalletIndexRoute: typeof AuthenticatedOrgWalletIndexRoute
   AuthenticatedPlaygroundIndexRoute: typeof AuthenticatedPlaygroundIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedQuotaIndexRoute: typeof AuthenticatedQuotaIndexRoute
@@ -1505,6 +1526,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKeysIndexRoute: AuthenticatedKeysIndexRoute,
   AuthenticatedMembersIndexRoute: AuthenticatedMembersIndexRoute,
   AuthenticatedModelsIndexRoute: AuthenticatedModelsIndexRoute,
+  AuthenticatedOrgWalletIndexRoute: AuthenticatedOrgWalletIndexRoute,
   AuthenticatedPlaygroundIndexRoute: AuthenticatedPlaygroundIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedQuotaIndexRoute: AuthenticatedQuotaIndexRoute,

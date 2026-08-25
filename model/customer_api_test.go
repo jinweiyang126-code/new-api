@@ -63,7 +63,7 @@ func TestCreateCustomerWithOwnerCreatesDefaultWorkspace(t *testing.T) {
 	require.Equal(t, WorkspaceRoleAdmin, wsMember.Role)
 }
 
-func TestCreateCustomerFailsWhenOwnerAlreadyHasCustomer(t *testing.T) {
+func TestCreateCustomerWithOwnerAllowsMultipleCustomers(t *testing.T) {
 	db := setupCustomerAPITestDB(t)
 
 	owner := &User{
@@ -75,8 +75,17 @@ func TestCreateCustomerFailsWhenOwnerAlreadyHasCustomer(t *testing.T) {
 	_, err := CreateCustomerWithOwner(&Customer{Name: "First"}, owner.Id)
 	require.NoError(t, err)
 
-	_, err = CreateCustomerWithOwner(&Customer{Name: "Second"}, owner.Id)
-	require.ErrorIs(t, err, ErrOwnerAlreadyHasCustomer)
+	second, err := CreateCustomerWithOwner(&Customer{Name: "Second"}, owner.Id)
+	require.NoError(t, err)
+	require.NotNil(t, second)
+
+	memberships, err := ListUserCustomerMemberships(owner.Id)
+	require.NoError(t, err)
+	require.Len(t, memberships, 2)
+
+	var user User
+	require.NoError(t, db.Select("customer_id").Where("id = ?", owner.Id).First(&user).Error)
+	require.Equal(t, second.CustomerId, user.CustomerId)
 }
 
 func TestGetAllCustomersIncludesOwnerUsername(t *testing.T) {

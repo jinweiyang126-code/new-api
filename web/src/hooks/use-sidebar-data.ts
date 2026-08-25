@@ -141,8 +141,8 @@ export function useSidebarData(): SidebarData {
             activeUrls: ['/members/invitations'],
           },
           {
-            title: t('Quota'),
-            url: '/quota',
+            title: t('Wallet'),
+            url: '/org-wallet',
             icon: Wallet,
           },
           {

@@ -141,7 +141,7 @@ func TestSelfCreateCustomerRequiresName(t *testing.T) {
 	require.Equal(t, 0, user.CustomerId)
 }
 
-func TestSelfCreateCustomerRejectsExistingCustomer(t *testing.T) {
+func TestSelfCreateCustomerAllowsExistingCustomer(t *testing.T) {
 	db := setupCustomerControllerTestDB(t)
 	owner := createCustomerTestUser(t, db, "self-dup", common.RoleCommonUser)
 	_, err := model.CreateCustomerWithOwner(&model.Customer{Name: "Existing"}, owner.Id)
@@ -164,5 +164,9 @@ func TestSelfCreateCustomerRejectsExistingCustomer(t *testing.T) {
 
 	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, false, resp["success"])
+	require.Equal(t, true, resp["success"])
+
+	memberships, err := model.ListUserCustomerMemberships(owner.Id)
+	require.NoError(t, err)
+	require.Len(t, memberships, 2)
 }

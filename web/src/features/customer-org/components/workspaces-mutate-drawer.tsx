@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -34,16 +35,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { getCurrencyLabel } from '@/lib/currency'
+import { formatQuota, parseQuotaFromDollars, quotaUnitsToDollars } from '@/lib/format'
 
 import { createWorkspace, updateWorkspace } from '../api'
+import { useCustomerContext } from '../hooks/use-customer-context'
 import { apiErrorMessage } from '../lib/api-message'
 import type { Workspace } from '../types'
-import { useCustomerContext } from '../hooks/use-customer-context'
 import { useWorkspaces } from './workspaces-provider'
 
 type FormValues = {
   name: string
   slug?: string
+  quotaLimitDollars?: string
 }
 
 type Props = {
@@ -63,27 +67,35 @@ export function WorkspacesMutateDrawer({
   const { data: ctx } = useCustomerContext()
   const customerId = ctx?.customer?.id ?? 0
   const isUpdate = Boolean(currentRow)
+  const isAdmin = Boolean(ctx?.is_admin)
+  const currencyLabel = getCurrencyLabel()
   const schema = useMemo(
     () =>
       z.object({
         name: z.string().min(1, t('Workspace name is required')),
         slug: z.string().optional(),
+        quotaLimitDollars: z.string().optional(),
       }),
     [t]
   )
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', slug: '' },
+    defaultValues: { name: '', slug: '', quotaLimitDollars: '' },
   })
 
   useEffect(() => {
     if (!open) return
     if (currentRow) {
-      form.reset({ name: currentRow.name, slug: currentRow.slug })
+      const dollars = quotaUnitsToDollars(currentRow.quota_limit ?? 0)
+      form.reset({
+        name: currentRow.name,
+        slug: currentRow.slug,
+        quotaLimitDollars: dollars > 0 ? String(dollars) : '',
+      })
       return
     }
-    form.reset({ name: '', slug: '' })
+    form.reset({ name: '', slug: '', quotaLimitDollars: '' })
   }, [open, currentRow, form])
 
   const onSubmit = async (values: FormValues) => {
@@ -93,10 +105,38 @@ export function WorkspacesMutateDrawer({
       return
     }
 
+    let quotaLimit: number | undefined
+    if (
+      isAdmin &&
+      values.quotaLimitDollars != null &&
+      values.quotaLimitDollars !== ''
+    ) {
+      const dollars = parseFloat(values.quotaLimitDollars)
+      if (!Number.isFinite(dollars) || dollars < 0) {
+        toast.error(t('Invalid quota limit'))
+        return
+      }
+      quotaLimit = parseQuotaFromDollars(dollars)
+      const occupied = currentRow?.occupied_quota ?? 0
+      if (quotaLimit < occupied) {
+        toast.error(
+          t('Quota limit cannot be below occupied amount ({{min}})', {
+            min: formatQuota(occupied),
+          })
+        )
+        return
+      }
+    }
+
     if (isUpdate && currentRow) {
-      const res = await updateWorkspace(currentRow.id, { name: trimmed })
+      const res = await updateWorkspace(currentRow.id, {
+        name: trimmed,
+        ...(quotaLimit !== undefined ? { quota_limit: quotaLimit } : {}),
+      })
       if (!res.success) {
-        toast.error(apiErrorMessage(t, res.message, 'Failed to update workspace'))
+        toast.error(
+          apiErrorMessage(t, res.message, 'Failed to update workspace')
+        )
         return
       }
       toast.success(t('Workspace updated'))
@@ -106,10 +146,29 @@ export function WorkspacesMutateDrawer({
         slug: values.slug?.trim() || undefined,
       })
       if (!res.success) {
-        toast.error(apiErrorMessage(t, res.message, 'Failed to create workspace'))
+        toast.error(
+          apiErrorMessage(t, res.message, 'Failed to create workspace')
+        )
         return
       }
-      toast.success(t('Workspace created'))
+      if (quotaLimit !== undefined && res.data?.id) {
+        const limitRes = await updateWorkspace(res.data.id, {
+          quota_limit: quotaLimit,
+        })
+        if (!limitRes.success) {
+          toast.error(
+            apiErrorMessage(
+              t,
+              limitRes.message,
+              'Workspace created but failed to set quota limit'
+            )
+          )
+        } else {
+          toast.success(t('Workspace created'))
+        }
+      } else {
+        toast.success(t('Workspace created'))
+      }
     }
 
     form.reset()
@@ -133,7 +192,7 @@ export function WorkspacesMutateDrawer({
           </SheetTitle>
           <SheetDescription>
             {isUpdate
-              ? t('Update workspace name.')
+              ? t('Update workspace name and quota limit.')
               : t('Create a workspace to isolate tokens and quota.')}
             {isUpdate && currentRow?.id != null ? (
               <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
@@ -178,22 +237,53 @@ export function WorkspacesMutateDrawer({
                   </FormItem>
                 )}
               />
-            ) : (
-              <FormItem>
-                <FormLabel>{t('Slug')}</FormLabel>
-                <Input value={currentRow?.slug ?? ''} disabled />
-              </FormItem>
-            )}
-            <SheetFooter className={sideDrawerFooterClassName()}>
-              <SheetClose render={<Button type='button' variant='outline' />}>
-                {t('Cancel')}
-              </SheetClose>
-              <Button type='submit' disabled={form.formState.isSubmitting}>
-                {isUpdate ? t('Save') : t('Create')}
-              </Button>
-            </SheetFooter>
+            ) : null}
+            {isAdmin ? (
+              <FormField
+                control={form.control}
+                name='quotaLimitDollars'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('Quota limit')} ({currencyLabel})
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type='number'
+                        min={0}
+                        step='0.01'
+                        placeholder='0'
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Cannot be below occupied allocation. Customer remaining limit applies.'
+                      )}
+                      {currentRow ? (
+                        <span className='mt-1 block'>
+                          {t('Occupied')}:{' '}
+                          {formatQuota(currentRow.occupied_quota ?? 0)} ·{' '}
+                          {t('Allocatable')}:{' '}
+                          {formatQuota(currentRow.allocatable_quota ?? 0)}
+                        </span>
+                      ) : null}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
           </form>
         </Form>
+        <SheetFooter className={sideDrawerFooterClassName()}>
+          <SheetClose render={<Button type='button' variant='outline' />}>
+            {t('Cancel')}
+          </SheetClose>
+          <Button type='submit' form='workspace-form'>
+            {isUpdate ? t('Save') : t('Create')}
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   )

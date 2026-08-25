@@ -55,7 +55,8 @@ function CustomersContent() {
           open={open === 'topup'}
           onOpenChange={(isOpen) => !isOpen && setOpen(null)}
           customerId={currentRow.id}
-          currentQuota={currentRow.quota}
+          currentQuotaLimit={currentRow.quota_limit ?? currentRow.quota}
+          occupiedQuota={currentRow.occupied_quota ?? 0}
           onSuccess={triggerRefresh}
         />
       ) : null}

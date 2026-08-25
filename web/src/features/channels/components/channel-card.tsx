@@ -27,6 +27,9 @@ import { CHANNEL_STATUS } from '../constants'
 import { isTagAggregateRow, parseGroupsList } from '../lib'
 import type { Channel } from '../types'
 import { ChannelRowActionsLayoutContext } from './channel-row-actions-context'
+import { useChannels } from './channels-provider'
+
+const SENSITIVE_MASK = '••••'
 
 /**
  * Bespoke channel card for the card view. Reuses every column's existing cell
@@ -44,6 +47,7 @@ function ChannelCardComponent({
   isSelected: boolean
 }) {
   const { t } = useTranslation()
+  const { sensitiveVisible } = useChannels()
   const isTagRow = isTagAggregateRow(row.original)
   const cells = row.getAllCells()
 

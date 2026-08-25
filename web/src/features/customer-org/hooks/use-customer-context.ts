@@ -6,7 +6,11 @@ import { useEffect } from 'react'
 
 import { useAuthStore } from '@/stores/auth-store'
 
-import { getSelfCustomer, setCurrentWorkspace } from '../api'
+import {
+  getSelfCustomer,
+  setCurrentCustomer,
+  setCurrentWorkspace,
+} from '../api'
 import type { SelfCustomerContext } from '../types'
 
 export const SELF_CUSTOMER_QUERY_KEY = ['self-customer'] as const
@@ -25,6 +29,7 @@ export function useCustomerContext(enabled = true) {
         ...res.data,
         current_workspace_id: res.data.current_workspace_id ?? 0,
         workspaces: res.data.workspaces ?? [],
+        customers: res.data.customers ?? [],
       }
     },
     staleTime: 30_000,
@@ -66,6 +71,28 @@ export function useSetCurrentWorkspace() {
         setCustomerContext({ ...prev, current_workspace_id: workspaceId })
       }
       void queryClient.invalidateQueries({ queryKey: SELF_CUSTOMER_QUERY_KEY })
+    },
+  })
+}
+
+
+export function useSetCurrentCustomer() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (customerId: number) => {
+      const res = await setCurrentCustomer(customerId)
+      if (!res.success) {
+        throw new Error(res.message || 'Failed to switch customer')
+      }
+      return res.data?.customer_id ?? customerId
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SELF_CUSTOMER_QUERY_KEY })
+      void queryClient.invalidateQueries({ queryKey: ['customer-members'] })
+      void queryClient.invalidateQueries({ queryKey: ['customer-invitations'] })
+      void queryClient.invalidateQueries({ queryKey: ['customer-workspaces'] })
+      void queryClient.invalidateQueries({ queryKey: ['self-org-wallets'] })
     },
   })
 }

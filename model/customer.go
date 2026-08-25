@@ -49,8 +49,12 @@ type Customer struct {
 	Name                string `json:"name" gorm:"type:varchar(128);not null"`
 	Slug                string `json:"slug" gorm:"type:varchar(64);uniqueIndex"`
 	Status              int    `json:"status" gorm:"default:1"`
-	Quota               int    `json:"quota" gorm:"bigint;default:0"`
+	Quota               int    `json:"quota" gorm:"bigint;default:0"` // legacy pool; billing may still reference until org-wallet cutover
+	QuotaLimit          int    `json:"quota_limit" gorm:"bigint;default:0;column:quota_limit"`
 	UsedQuota           int    `json:"used_quota" gorm:"bigint;default:0;column:used_quota"`
+	// OccupiedQuota / AllocatableQuota are computed for API responses (not persisted).
+	OccupiedQuota    int `json:"occupied_quota" gorm:"-"`
+	AllocatableQuota int `json:"allocatable_quota" gorm:"-"`
 	OwnerUserId         int    `json:"owner_user_id" gorm:"index;column:owner_user_id"`
 	Remark              string `json:"remark" gorm:"type:varchar(255)"`
 	UpstreamMode        string `json:"upstream_mode" gorm:"type:varchar(32);not null;default:shared"`
@@ -123,6 +127,9 @@ func GetAllCustomers(startIdx, pageSize int, keyword string, status int, sortBy,
 	if err := OverlayCustomerViewUsedQuota(views); err != nil {
 		return nil, 0, err
 	}
+	for _, v := range views {
+		_ = AttachCustomerQuotaLimitView(&v.Customer)
+	}
 	return views, total, nil
 }
 
@@ -186,6 +193,7 @@ func GetCustomerViewById(id int) (*CustomerView, error) {
 	if err := OverlayCustomerViewUsedQuota(views); err != nil {
 		return nil, err
 	}
+	_ = AttachCustomerQuotaLimitView(&views[0].Customer)
 	return views[0], nil
 }
 
@@ -196,11 +204,16 @@ func GetWorkspacesByCustomerId(customerId int) ([]*Workspace, error) {
 	}
 	var workspaces []*Workspace
 	err := DB.Where("customer_id = ?", customerId).Order("is_default desc, id asc").Find(&workspaces).Error
-	return workspaces, err
+	if err != nil {
+		return nil, err
+	}
+	_ = AttachWorkspaceQuotaLimitViews(workspaces)
+	return workspaces, nil
 }
 
 // CreateCustomerWithOwner creates customer + default workspace + owner membership
-// and sets users.customer_id. Fails if the owner already belongs to a customer.
+// and sets users.customer_id to the new customer (current context).
+// P3: owner may already belong to other customers (multi-customer).
 func CreateCustomerWithOwner(customer *Customer, ownerUserId int) (*Workspace, error) {
 	if customer == nil {
 		return nil, errors.New("customer is nil")
@@ -226,9 +239,6 @@ func CreateCustomerWithOwner(customer *Customer, ownerUserId int) (*Workspace, e
 		}
 		if owner.Status != common.UserStatusEnabled {
 			return errors.New("owner user is disabled")
-		}
-		if owner.CustomerId > 0 {
-			return ErrOwnerAlreadyHasCustomer
 		}
 
 		if customer.Slug != "" {
@@ -299,13 +309,10 @@ func CreateCustomerWithOwner(customer *Customer, ownerUserId int) (*Workspace, e
 		}
 
 		result := tx.Model(&User{}).
-			Where("id = ? AND (customer_id = 0 OR customer_id IS NULL)", ownerUserId).
+			Where("id = ?", ownerUserId).
 			Update("customer_id", customer.Id)
 		if result.Error != nil {
 			return result.Error
-		}
-		if result.RowsAffected == 0 {
-			return ErrOwnerAlreadyHasCustomer
 		}
 		return nil
 	})

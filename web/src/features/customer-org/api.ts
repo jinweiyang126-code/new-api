@@ -40,6 +40,19 @@ export async function setCurrentWorkspace(
   return res.data
 }
 
+export async function setCurrentCustomer(
+  customerId: number
+): Promise<
+  ApiResponse<{ customer_id: number; current_workspace_id: number }>
+> {
+  const res = await api.post(
+    '/api/user/self/current-customer',
+    { customer_id: customerId },
+    { skipBusinessError: true }
+  )
+  return res.data
+}
+
 export async function getCustomerWorkspaces(
   customerId: number
 ): Promise<ApiResponse<Workspace[]>> {
@@ -73,7 +86,7 @@ export async function createWorkspace(
 
 export async function updateWorkspace(
   workspaceId: number,
-  data: { name?: string; status?: number }
+  data: { name?: string; status?: number; quota_limit?: number }
 ): Promise<ApiResponse<Workspace>> {
   const res = await api.put(`/api/workspaces/${workspaceId}`, data, {
     skipBusinessError: true,
@@ -272,5 +285,58 @@ export async function getCustomer(
   customerId: number
 ): Promise<ApiResponse<Customer>> {
   const res = await api.get(`/api/customers/${customerId}`)
+  return res.data
+}
+
+export type OrgWallet = {
+  id: number
+  user_id: number
+  customer_id: number
+  workspace_id: number
+  balance: number
+  created_at: number
+  updated_at: number
+  customer_name?: string
+  workspace_name?: string
+  username?: string
+}
+
+export async function getSelfOrgWallets(
+  customerId?: number
+): Promise<ApiResponse<OrgWallet[]>> {
+  const res = await api.get('/api/user/self/org-wallets', {
+    params: customerId ? { customer_id: customerId } : undefined,
+  })
+  return res.data
+}
+
+export async function getWorkspaceOrgWallets(
+  workspaceId: number
+): Promise<ApiResponse<OrgWallet[]>> {
+  const res = await api.get(`/api/workspaces/${workspaceId}/org-wallets`)
+  return res.data
+}
+
+export async function allocateOrgWallet(
+  workspaceId: number,
+  data: { user_id: number; amount: number }
+): Promise<ApiResponse<OrgWallet>> {
+  const res = await api.post(
+    `/api/workspaces/${workspaceId}/org-wallets/allocate`,
+    data,
+    { skipBusinessError: true }
+  )
+  return res.data
+}
+
+export async function revokeOrgWallet(
+  workspaceId: number,
+  data: { user_id: number; amount: number }
+): Promise<ApiResponse<OrgWallet>> {
+  const res = await api.post(
+    `/api/workspaces/${workspaceId}/org-wallets/revoke`,
+    data,
+    { skipBusinessError: true }
+  )
   return res.data
 }

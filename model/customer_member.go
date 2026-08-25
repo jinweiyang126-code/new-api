@@ -77,3 +77,67 @@ func GetUserCustomerRole(userId int) (role string, customerId int, err error) {
 	}
 	return member.Role, user.CustomerId, nil
 }
+
+// UserCustomerMembership is a compact membership row for multi-customer UX.
+type UserCustomerMembership struct {
+	CustomerId   int    `json:"customer_id"`
+	CustomerName string `json:"customer_name"`
+	CustomerSlug string `json:"customer_slug"`
+	Role         string `json:"role"`
+	Status       int    `json:"status"`
+}
+
+// ListUserCustomerMemberships lists all enabled customer memberships for a user.
+func ListUserCustomerMemberships(userId int) ([]UserCustomerMembership, error) {
+	if userId <= 0 {
+		return nil, nil
+	}
+	type row struct {
+		CustomerId   int
+		CustomerName string
+		CustomerSlug string
+		Role         string
+		Status       int
+	}
+	var rows []row
+	err := DB.Table("customer_members AS m").
+		Select("m.customer_id, c.name AS customer_name, c.slug AS customer_slug, m.role, m.status").
+		Joins("JOIN customers AS c ON c.id = m.customer_id").
+		Where("m.user_id = ? AND m.status = ?", userId, MemberStatusEnabled).
+		Order("m.id asc").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make([]UserCustomerMembership, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, UserCustomerMembership{
+			CustomerId:   r.CustomerId,
+			CustomerName: r.CustomerName,
+			CustomerSlug: r.CustomerSlug,
+			Role:         r.Role,
+			Status:       r.Status,
+		})
+	}
+	return out, nil
+}
+
+// SetUserCurrentCustomer switches users.customer_id to a customer the user belongs to.
+func SetUserCurrentCustomer(userId, customerId int) error {
+	if userId <= 0 {
+		return errors.New("invalid user id")
+	}
+	if customerId <= 0 {
+		return DB.Model(&User{}).Where("id = ?", userId).Update("customer_id", 0).Error
+	}
+	if _, err := GetCustomerMember(customerId, userId); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrCustomerForbiddenMembership
+		}
+		return err
+	}
+	return DB.Model(&User{}).Where("id = ?", userId).Update("customer_id", customerId).Error
+}
+
+// ErrCustomerForbiddenMembership is returned when switching to a non-member customer.
+var ErrCustomerForbiddenMembership = errors.New("not a member of this customer")

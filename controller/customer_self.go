@@ -23,7 +23,7 @@ type selfCreateCustomerRequest struct {
 	InviteEmails     []string `json:"invite_emails"`
 }
 
-// SelfCreateCustomer lets a logged-in user with no customer create one (OAuth org path).
+// SelfCreateCustomer lets a logged-in user create an organization (P3: may already own/join others).
 func SelfCreateCustomer(c *gin.Context) {
 	if !common.CustomerSelfRegisterEnabled {
 		common.ApiErrorMsg(c, "customer self-register is disabled")
@@ -128,15 +128,36 @@ func createSelfRegisterInvitations(c *gin.Context, customer *model.Customer, own
 	if owner, err := model.GetUserById(ownerUserId, false); err == nil && owner != nil {
 		ownerEmail = model.NormalizeEmail(owner.Email)
 	}
+	var defaultWS *model.Workspace
+	if wsList, err := model.GetWorkspacesByCustomerId(customer.Id); err == nil {
+		for _, ws := range wsList {
+			if ws != nil && ws.IsDefault {
+				defaultWS = ws
+				break
+			}
+		}
+		if defaultWS == nil && len(wsList) > 0 {
+			defaultWS = wsList[0]
+		}
+	}
+	if defaultWS == nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf(
+			"self-register invitations skipped: no workspace for customer_id=%d", customer.Id,
+		))
+		return
+	}
+	wsID := defaultWS.Id
+
 	for _, email := range emails {
 		if ownerEmail != "" && email == ownerEmail {
 			continue
 		}
 		inv, err := model.CreateInvitation(model.CreateInvitationInput{
-			CustomerId: customer.Id,
-			Email:      email,
-			Role:       model.CustomerRoleMember,
-			InvitedBy:  ownerUserId,
+			CustomerId:  customer.Id,
+			WorkspaceId: &wsID,
+			Email:       email,
+			Role:        model.CustomerRoleMember,
+			InvitedBy:   ownerUserId,
 		})
 		if err != nil {
 			logger.LogError(c.Request.Context(), fmt.Sprintf(

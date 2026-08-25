@@ -1,11 +1,12 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
 
-import { WorkspaceContextBanner } from './components/workspace-context-banner'
+import { CreateOrganizationDrawer } from './components/create-organization-drawer'
 import { WorkspacesMutateDrawer } from './components/workspaces-mutate-drawer'
 import { WorkspacesPrimaryButtons } from './components/workspaces-primary-buttons'
 import {
@@ -21,6 +22,7 @@ function WorkspacesContent() {
   const { t } = useTranslation()
   const { data: ctx, isLoading } = useCustomerContext()
   const { open, setOpen, currentRow } = useWorkspaces()
+  const [createOrgOpen, setCreateOrgOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -30,14 +32,25 @@ function WorkspacesContent() {
 
   if (!ctx?.customer) {
     return (
-      <SectionPageLayout>
-        <SectionPageLayout.Title>{t('Workspaces')}</SectionPageLayout.Title>
-        <SectionPageLayout.Content>
-          <p className='text-muted-foreground text-sm'>
-            {t('You are not a member of any customer.')}
-          </p>
-        </SectionPageLayout.Content>
-      </SectionPageLayout>
+      <>
+        <SectionPageLayout>
+          <SectionPageLayout.Title>{t('Workspaces')}</SectionPageLayout.Title>
+          <SectionPageLayout.Actions>
+            <WorkspacesPrimaryButtons
+              onCreateOrganization={() => setCreateOrgOpen(true)}
+            />
+          </SectionPageLayout.Actions>
+          <SectionPageLayout.Content>
+            <p className='text-muted-foreground text-sm'>
+              {t('You are not a member of any customer.')}
+            </p>
+          </SectionPageLayout.Content>
+        </SectionPageLayout>
+        <CreateOrganizationDrawer
+          open={createOrgOpen}
+          onOpenChange={setCreateOrgOpen}
+        />
+      </>
     )
   }
 
@@ -46,11 +59,10 @@ function WorkspacesContent() {
       <SectionPageLayout fixedContent>
         <SectionPageLayout.Title>{t('Workspaces')}</SectionPageLayout.Title>
         <SectionPageLayout.Actions>
-          <WorkspacesPrimaryButtons />
+          <WorkspacesPrimaryButtons onCreateOrganization={() => setCreateOrgOpen(true)} />
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
           <div className='flex min-h-0 flex-1 flex-col gap-3'>
-            <WorkspaceContextBanner ctx={ctx} />
             <div className='min-h-0 flex-1'>
               <WorkspacesTable />
             </div>
@@ -64,6 +76,10 @@ function WorkspacesContent() {
         currentRow={open === 'update' ? currentRow : null}
       />
       <WorkspacesStatusDialog />
+      <CreateOrganizationDrawer
+        open={createOrgOpen}
+        onOpenChange={setCreateOrgOpen}
+      />
     </>
   )
 }

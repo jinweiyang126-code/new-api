@@ -13,7 +13,10 @@ export type Customer = {
   slug: string
   status: number
   quota: number
+  quota_limit: number
   used_quota: number
+  occupied_quota?: number
+  allocatable_quota?: number
   owner_user_id: number
   remark?: string
   upstream_mode: string
@@ -30,7 +33,10 @@ export type Workspace = {
   slug: string
   status: number
   quota: number
+  quota_limit: number
   used_quota: number
+  occupied_quota?: number
+  allocatable_quota?: number
   is_default: boolean
   created_at: number
   updated_at: number
@@ -91,10 +97,20 @@ export type UpstreamCredential = {
   updated_at: number
 }
 
+export type UserCustomerMembership = {
+  customer_id: number
+  customer_name: string
+  customer_slug: string
+  role: string
+  status: number
+}
+
 export type SelfCustomerContext = {
   customer: Customer | null
   role: string
   workspaces: Workspace[]
   is_admin: boolean
   current_workspace_id: number
+  /** All customer memberships for multi-customer switching (P3). */
+  customers?: UserCustomerMembership[]
 }

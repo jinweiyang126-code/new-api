@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
 
-import { WorkspaceContextBanner } from './components/workspace-context-banner'
 import { UpstreamDeleteDialog } from './components/upstream-delete-dialog'
 import { UpstreamMutateDrawer } from './components/upstream-mutate-drawer'
 import { UpstreamPrimaryButtons } from './components/upstream-primary-buttons'
@@ -79,7 +78,6 @@ function UpstreamContent() {
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
           <div className='flex min-h-0 flex-1 flex-col gap-3'>
-            <WorkspaceContextBanner ctx={ctx} />
             <UpstreamPriorityOrder />
             <div className='min-h-0 flex-1'>
               <UpstreamTable />

@@ -19,10 +19,21 @@ type setCurrentWorkspaceRequest struct {
 	WorkspaceId int `json:"workspace_id"`
 }
 
+type setCurrentCustomerRequest struct {
+	CustomerId int `json:"customer_id"`
+}
+
 // GetSelfCustomer returns the caller's customer context for dashboard gating (T11/T12).
+// P3: also returns `customers` — all memberships for multi-customer switching.
 func GetSelfCustomer(c *gin.Context) {
 	userId := c.GetInt("id")
 	systemRole := c.GetInt("role")
+
+	memberships, err := model.ListUserCustomerMemberships(userId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
 
 	role, customerId, err := service.GetUserCustomerRole(userId)
 	if err != nil {
@@ -30,12 +41,24 @@ func GetSelfCustomer(c *gin.Context) {
 		return
 	}
 
+	// If current pointer is empty but memberships exist, auto-select the first.
+	if customerId <= 0 && len(memberships) > 0 {
+		customerId = memberships[0].CustomerId
+		_ = model.SetUserCurrentCustomer(userId, customerId)
+		role, customerId, err = service.GetUserCustomerRole(userId)
+		if err != nil {
+			common.ApiError(c, err)
+			return
+		}
+	}
+
 	empty := gin.H{
-		"customer":              nil,
-		"role":                  "",
-		"workspaces":            []*model.Workspace{},
-		"is_admin":              false,
-		"current_workspace_id":  0,
+		"customer":             nil,
+		"role":                 "",
+		"workspaces":           []*model.Workspace{},
+		"is_admin":             false,
+		"current_workspace_id": 0,
+		"customers":            memberships,
 	}
 
 	if customerId <= 0 {
@@ -76,7 +99,28 @@ func GetSelfCustomer(c *gin.Context) {
 		"workspaces":           workspaces,
 		"is_admin":             isAdmin,
 		"current_workspace_id": currentWorkspaceId,
+		"customers":            memberships,
 	})
+}
+
+// SetCurrentCustomer switches the caller's current customer context (P3 multi-customer).
+func SetCurrentCustomer(c *gin.Context) {
+	userId := c.GetInt("id")
+	var req setCurrentCustomerRequest
+	if err := common.DecodeJson(c.Request.Body, &req); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if err := model.SetUserCurrentCustomer(userId, req.CustomerId); err != nil {
+		if errors.Is(err, model.ErrCustomerForbiddenMembership) {
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": "not a member of this customer"})
+			return
+		}
+		common.ApiError(c, err)
+		return
+	}
+	_ = model.UpdateUserCurrentWorkspaceId(userId, 0)
+	common.ApiSuccess(c, gin.H{"customer_id": req.CustomerId, "current_workspace_id": 0})
 }
 
 // SetCurrentWorkspace updates the caller's UX current workspace (T12).

@@ -98,6 +98,7 @@ import {
 } from './api-key-group-combobox'
 import { useApiKeys } from './api-keys-provider'
 import { AutoGroupOrderEditor } from './auto-group-order-editor'
+import { formatWorkspaceTokenScopeLabel } from '../lib/token-scope-label'
 
 type ApiKeyMutateDrawerProps = {
   open: boolean
@@ -125,10 +126,15 @@ export function ApiKeysMutateDrawer({
   const customerCtx = useAuthStore((s) => s.auth.customerContext)
   useCustomerContext(Boolean(user))
   const preferredWorkspaceId = customerCtx?.current_workspace_id ?? 0
+  const customerName = customerCtx?.customer?.name ?? ''
   const workspaces = (customerCtx?.workspaces ?? []).filter(
     (w) => w.status === WORKSPACE_STATUS.ENABLED
   )
   const hasCustomer = Boolean(customerCtx?.customer)
+  const workspaceScopeOptions = workspaces.map((ws) => ({
+    value: String(ws.id),
+    label: formatWorkspaceTokenScopeLabel(customerName, ws.name, ws.id),
+  }))
 
   // Fetch models
   const { data: modelsData } = useQuery({
@@ -446,10 +452,7 @@ export function ApiKeysMutateDrawer({
                         disabled={isUpdate}
                         items={[
                           { value: 'personal', label: t('Personal') },
-                          ...workspaces.map((ws) => ({
-                            value: String(ws.id),
-                            label: ws.name,
-                          })),
+                          ...workspaceScopeOptions,
                         ]}
                         onValueChange={(v) => field.onChange(v ?? 'personal')}
                       >
@@ -462,9 +465,9 @@ export function ApiKeysMutateDrawer({
                           <SelectItem value='personal'>
                             {t('Personal')}
                           </SelectItem>
-                          {workspaces.map((ws) => (
-                            <SelectItem key={ws.id} value={String(ws.id)}>
-                              {ws.name}
+                          {workspaceScopeOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -473,7 +476,7 @@ export function ApiKeysMutateDrawer({
                         {isUpdate
                           ? t('Token scope cannot be changed after creation.')
                           : t(
-                              'Personal tokens use your user quota. Workspace tokens debit the workspace pool.'
+                              'Personal tokens use your personal wallet. Workspace-scoped tokens (Customer-Workspace) debit your organization wallet for that workspace.'
                             )}
                       </FormDescription>
                       <FormMessage />

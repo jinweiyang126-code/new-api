@@ -67,7 +67,6 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
   const { data: ctx } = useCustomerContext()
   const {
     customerId,
-    isPersonal,
     currentWorkspaceId,
     currentWorkspaceName,
     triggerRefresh,
@@ -89,7 +88,7 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
       email: '',
       role: CUSTOMER_ROLES.MEMBER,
       workspace_role: WORKSPACE_ROLES.MEMBER,
-      workspace_id: 'default',
+      workspace_id: '',
     },
   })
 
@@ -100,25 +99,25 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
       role: CUSTOMER_ROLES.MEMBER,
       workspace_role: WORKSPACE_ROLES.MEMBER,
       workspace_id:
-        !isPersonal && currentWorkspaceId > 0
+        currentWorkspaceId > 0
           ? String(currentWorkspaceId)
-          : 'default',
+          : ctx?.workspaces?.[0]
+            ? String(ctx.workspaces[0].id)
+            : '',
     })
-  }, [open, isPersonal, currentWorkspaceId, form])
+  }, [open, currentWorkspaceId, ctx?.workspaces, form])
 
   const onSubmit = async (values: FormValues) => {
-    const payload: {
-      email: string
-      role: string
-      workspace_role: string
-      workspace_id?: number
-    } = {
+    const workspaceId = Number(values.workspace_id)
+    if (!workspaceId) {
+      toast.error(t('Workspace is required'))
+      return
+    }
+    const payload = {
       email: values.email.trim(),
       role: values.role,
       workspace_role: values.workspace_role,
-    }
-    if (values.workspace_id !== 'default') {
-      payload.workspace_id = Number(values.workspace_id)
+      workspace_id: workspaceId,
     }
     const res = await createCustomerInvitation(customerId, payload)
     if (!res.success || !res.data) {
@@ -221,29 +220,25 @@ export function MembersInviteDrawer({ open, onOpenChange }: Props) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('Workspace')}</FormLabel>
-                  {!isPersonal && currentWorkspaceId > 0 ? (
+                  {currentWorkspaceId > 0 ? (
                     <div className='border-input bg-muted/40 flex h-8 items-center rounded-md border px-3 text-sm font-medium'>
                       {currentWorkspaceName || `#${currentWorkspaceId}`}
                     </div>
                   ) : (
                     <Select
                       value={field.value}
-                      items={[
-                        { value: 'default', label: t('default') },
-                        ...(ctx?.workspaces ?? []).map((ws: Workspace) => ({
-                          value: String(ws.id),
-                          label: ws.name,
-                        })),
-                      ]}
-                      onValueChange={(v) => field.onChange(v ?? 'default')}
+                      items={(ctx?.workspaces ?? []).map((ws: Workspace) => ({
+                        value: String(ws.id),
+                        label: ws.name,
+                      }))}
+                      onValueChange={(v) => field.onChange(v ?? '')}
                     >
                       <FormControl>
                         <SelectTrigger className='w-full'>
-                          <SelectValue />
+                          <SelectValue placeholder={t('Select workspace')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value='default'>{t('default')}</SelectItem>
                         {(ctx?.workspaces ?? []).map((ws: Workspace) => (
                           <SelectItem key={ws.id} value={String(ws.id)}>
                             {ws.name}

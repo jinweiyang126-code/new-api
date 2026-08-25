@@ -47,6 +47,7 @@ import {
   UnlimitedQuotaBadge,
 } from './api-keys-cells'
 import { DataTableRowActions } from './data-table-row-actions'
+import { formatWorkspaceTokenScopeLabel } from '../lib/token-scope-label'
 import { useAuthStore } from '@/stores/auth-store'
 
 function getQuotaProgressColor(percentage: number): string {
@@ -83,6 +84,9 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
   const justNowLabel = t('Just now')
   const staleAccessThreshold = dayjs(now).subtract(3, 'month').valueOf()
   const workspaces = useAuthStore((s) => s.auth.customerContext?.workspaces)
+  const customerName = useAuthStore(
+    (s) => s.auth.customerContext?.customer?.name
+  )
   const workspaceNameById = useMemo(() => {
     const map = new Map<number, string>()
     for (const ws of workspaces ?? []) {
@@ -137,7 +141,8 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
         const name = workspaceNameById.get(wsId)
         return (
           <span className='text-xs' title={`#${wsId}`}>
-            {name || `${t('Workspace')} #${wsId}`}
+            {formatWorkspaceTokenScopeLabel(customerName, name, wsId) ||
+              `${t('Workspace')} #${wsId}`}
           </span>
         )
       },

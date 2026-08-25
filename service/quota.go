@@ -136,12 +136,12 @@ func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usag
 	noteQuotaClamp(relayInfo, clamp)
 
 	if relayInfo.WorkspaceId > 0 {
-		wsQuota, wsErr := model.GetWorkspaceQuota(relayInfo.WorkspaceId)
+		orgBalance, wsErr := model.GetOrgWalletBalance(relayInfo.UserId, relayInfo.WorkspaceId)
 		if wsErr != nil {
 			return wsErr
 		}
-		if wsQuota < quota {
-			return fmt.Errorf("工作区额度不足, 剩余额度: %s, 需要额度: %s", logger.FormatQuota(wsQuota), logger.FormatQuota(quota))
+		if orgBalance < quota {
+			return fmt.Errorf("组织钱包余额不足, 剩余额度: %s, 需要额度: %s", logger.FormatQuota(orgBalance), logger.FormatQuota(quota))
 		}
 	} else {
 		userQuota, uErr := model.GetUserQuota(relayInfo.UserId, false)
@@ -460,9 +460,9 @@ func PostConsumeQuota(relayInfo *relaycommon.RelayInfo, quota int, preConsumedQu
 		}
 	} else if relayInfo != nil && (relayInfo.BillingSource == BillingSourceWorkspace || relayInfo.WorkspaceId > 0) {
 		if quota > 0 {
-			err = model.DecreaseWorkspaceQuotaForce(relayInfo.WorkspaceId, quota)
+			err = model.DecreaseOrgWalletBalanceForce(relayInfo.UserId, relayInfo.WorkspaceId, quota)
 		} else {
-			err = model.IncreaseWorkspaceQuota(relayInfo.WorkspaceId, -quota)
+			err = model.IncreaseOrgWalletBalance(relayInfo.UserId, relayInfo.WorkspaceId, -quota)
 		}
 		if err != nil {
 			return err

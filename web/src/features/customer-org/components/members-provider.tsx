@@ -7,7 +7,12 @@ import useDialogState from '@/hooks/use-dialog'
 
 import type { Invitation } from '../types'
 
-export type MembersDialogType = 'invite' | 'remove-member' | 'revoke-invite'
+export type MembersDialogType =
+  | 'invite'
+  | 'remove-member'
+  | 'revoke-invite'
+  | 'allocate-wallet'
+  | 'revoke-wallet'
 
 export type MemberRow = {
   id: number

@@ -59,12 +59,22 @@ export async function updateCustomer(
   return res.data
 }
 
+export async function setCustomerQuotaLimit(
+  id: number,
+  quotaLimit: number
+): Promise<ApiResponse<Customer>> {
+  const res = await api.post(`/api/customers/${id}/quota-limit`, {
+    quota_limit: quotaLimit,
+  })
+  return res.data
+}
+
+/** @deprecated use setCustomerQuotaLimit */
 export async function topupCustomer(
   id: number,
   amount: number
 ): Promise<ApiResponse<Customer>> {
-  const res = await api.post(`/api/customers/${id}/topup`, { amount })
-  return res.data
+  return setCustomerQuotaLimit(id, amount)
 }
 
 export async function getCustomerWorkspaces(

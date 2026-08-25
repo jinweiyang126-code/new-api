@@ -75,7 +75,7 @@ const DEFAULT_SIDEBAR_MODULES: SidebarModulesAdminConfig = {
     enabled: true,
     workspaces: true,
     members: true,
-    quota: true,
+    wallet: true,
     upstream: true,
   },
 }
@@ -134,7 +134,7 @@ const URL_TO_CONFIG_MAP: Record<string, { section: string; module: string }> = {
   '/members': { section: 'organization', module: 'members' },
   '/members/members': { section: 'organization', module: 'members' },
   '/members/invitations': { section: 'organization', module: 'members' },
-  '/quota': { section: 'organization', module: 'quota' },
+  '/org-wallet': { section: 'organization', module: 'wallet' },
   '/upstream': { section: 'organization', module: 'upstream' },
   '/redemption-codes': { section: 'admin', module: 'redemption' },
   '/subscriptions': { section: 'admin', module: 'subscription' },

@@ -15,6 +15,7 @@ import {
 } from '../api'
 import { apiErrorMessage } from '../lib/api-message'
 import { useMembers } from './members-provider'
+import { MembersWalletDialog } from './members-wallet-dialog'
 
 export function MembersConfirmDialogs() {
   const { t } = useTranslation()
@@ -65,7 +66,9 @@ export function MembersConfirmDialogs() {
     try {
       const res = await revokeInvitation(currentInvitation.id)
       if (!res.success) {
-        toast.error(apiErrorMessage(t, res.message, 'Failed to revoke invitation'))
+        toast.error(
+          apiErrorMessage(t, res.message, 'Failed to revoke invitation')
+        )
         return
       }
       toast.success(t('Invitation revoked'))
@@ -126,6 +129,7 @@ export function MembersConfirmDialogs() {
         isLoading={pending}
         handleConfirm={() => void handleRevoke()}
       />
+      <MembersWalletDialog />
     </>
   )
 }

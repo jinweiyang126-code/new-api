@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
+import { Building2, Loader2, User } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -40,7 +40,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { register, wechatLoginByCode } from '@/features/auth/api'
 import { LegalConsent } from '@/features/auth/components/legal-consent'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
@@ -101,6 +100,7 @@ export function SignUpForm({
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const [accountType, setAccountType] = useState<AccountType>('personal')
+  const [hasChosenAccountType, setHasChosenAccountType] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
   const [organizationName, setOrganizationName] = useState('')
   const [inviteEmails, setInviteEmails] = useState([createInviteField()])
@@ -154,11 +154,17 @@ export function SignUpForm({
   const isLoggedInOrgSetup = Boolean(
     user && setup === 'organization' && !user.customer_id
   )
-  const showAccountTypeTabs =
+  const showAccountTypeChooser =
     customerSelfRegisterEnabled && !isInviteSignup && !isLoggedInOrgSetup
   const isOrganizationFlow =
     isLoggedInOrgSetup ||
-    (showAccountTypeTabs && accountType === 'organization')
+    (showAccountTypeChooser && accountType === 'organization')
+
+  useEffect(() => {
+    if (!showAccountTypeChooser) {
+      setHasChosenAccountType(true)
+    }
+  }, [showAccountTypeChooser])
 
   const wechatQrCodeUrl = useMemo(() => {
     return (
@@ -192,6 +198,7 @@ export function SignUpForm({
   useEffect(() => {
     if (isLoggedInOrgSetup) {
       setAccountType('organization')
+      setHasChosenAccountType(true)
       setStep(2)
       setSignupOrgIntent(false)
       return
@@ -424,23 +431,67 @@ export function SignUpForm({
         className={cn('grid gap-4', className)}
         {...props}
       >
-        {showAccountTypeTabs && step === 1 ? (
-          <Tabs
-            value={accountType}
-            onValueChange={(value) => {
-              if (value === 'personal' || value === 'organization') {
-                setAccountType(value)
+        {showAccountTypeChooser && !hasChosenAccountType ? (
+          <div className='grid gap-3'>
+            <p className='text-muted-foreground text-sm'>
+              {t('Choose the type of account you want to create')}
+            </p>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-auto w-full justify-start gap-3 rounded-lg px-4 py-4 text-left'
+              onClick={() => {
+                setAccountType('personal')
+                setHasChosenAccountType(true)
                 setStep(1)
-              }
-            }}
-          >
-            <TabsList className='grid h-9 w-full grid-cols-2'>
-              <TabsTrigger value='personal'>{t('Personal')}</TabsTrigger>
-              <TabsTrigger value='organization'>{t('Organization')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+              }}
+            >
+              <User className='text-muted-foreground h-5 w-5 shrink-0' />
+              <span className='flex flex-col gap-0.5'>
+                <span className='font-medium'>{t('Personal account')}</span>
+                <span className='text-muted-foreground text-xs font-normal'>
+                  {t('Use your personal wallet for API usage')}
+                </span>
+              </span>
+            </Button>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-auto w-full justify-start gap-3 rounded-lg px-4 py-4 text-left'
+              onClick={() => {
+                setAccountType('organization')
+                setHasChosenAccountType(true)
+                setStep(1)
+              }}
+            >
+              <Building2 className='text-muted-foreground h-5 w-5 shrink-0' />
+              <span className='flex flex-col gap-0.5'>
+                <span className='font-medium'>{t('Organization account')}</span>
+                <span className='text-muted-foreground text-xs font-normal'>
+                  {t('Create an organization and invite teammates')}
+                </span>
+              </span>
+            </Button>
+          </div>
         ) : null}
 
+        {(!showAccountTypeChooser || hasChosenAccountType) &&
+        step === 1 &&
+        showAccountTypeChooser ? (
+          <button
+            type='button'
+            className='text-muted-foreground hover:text-foreground text-left text-sm underline-offset-4 hover:underline'
+            onClick={() => {
+              setHasChosenAccountType(false)
+              setStep(1)
+            }}
+          >
+            {t('Change account type')}
+          </button>
+        ) : null}
+
+        {(!showAccountTypeChooser || hasChosenAccountType) && (
+          <>
         <div className={step === 1 ? 'grid gap-4' : 'hidden'}>
           <FormField
             control={form.control}
@@ -606,6 +657,8 @@ export function SignUpForm({
             isWeChatLoading={isWeChatSubmitting}
             className='pt-2'
           />
+        )}
+          </>
         )}
       </form>
 

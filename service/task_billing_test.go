@@ -52,6 +52,7 @@ func TestMain(m *testing.M) {
 		&model.SystemTaskLock{},
 		&model.Customer{},
 		&model.Workspace{},
+		&model.OrganizationWallet{},
 	); err != nil {
 		panic("failed to migrate: " + err.Error())
 	}
@@ -75,6 +76,7 @@ func truncate(t *testing.T) {
 		model.DB.Exec("DELETE FROM user_subscriptions")
 		model.DB.Exec("DELETE FROM system_task_locks")
 		model.DB.Exec("DELETE FROM system_tasks")
+		model.DB.Exec("DELETE FROM organization_wallets")
 		model.DB.Exec("DELETE FROM workspaces")
 		model.DB.Exec("DELETE FROM customers")
 	})

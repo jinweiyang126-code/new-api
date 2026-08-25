@@ -88,6 +88,8 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.GET("/self/groups", controller.GetUserGroups)
 				selfRoute.GET("/self", controller.GetSelf)
 				selfRoute.GET("/self/customer", controller.GetSelfCustomer)
+				selfRoute.GET("/self/org-wallets", controller.GetSelfOrgWallets)
+				selfRoute.POST("/self/current-customer", controller.SetCurrentCustomer)
 				selfRoute.POST("/self/current-workspace", controller.SetCurrentWorkspace)
 				selfRoute.GET("/models", controller.GetUserModels)
 				selfRoute.PUT("/self", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.UpdateSelf)
@@ -409,6 +411,7 @@ func SetApiRouter(router *gin.Engine) {
 		customerRootRoute.Use(middleware.RootAuth())
 		{
 			customerRootRoute.POST("/", controller.CreateCustomer)
+			customerRootRoute.POST("/:id/quota-limit", controller.SetCustomerQuotaLimit)
 			customerRootRoute.POST("/:id/topup", controller.TopUpCustomer)
 			customerRootRoute.PUT("/:id/upstream-settings", controller.UpdateCustomerUpstreamSettings)
 			customerRootRoute.GET("/:id/channel-bindings", controller.GetCustomerChannelBindings)
@@ -426,6 +429,9 @@ func SetApiRouter(router *gin.Engine) {
 			workspaceRoute.GET("/:id/members", middleware.WorkspaceMemberAuth(), controller.GetWorkspaceMembers)
 			workspaceRoute.POST("/:id/members", middleware.WorkspaceAdminAuth(), controller.AddWorkspaceMember)
 			workspaceRoute.DELETE("/:id/members/:userId", middleware.WorkspaceAdminAuth(), controller.DeleteWorkspaceMember)
+			workspaceRoute.GET("/:id/org-wallets", controller.GetWorkspaceOrgWallets)
+			workspaceRoute.POST("/:id/org-wallets/allocate", controller.AllocateOrgWallet)
+			workspaceRoute.POST("/:id/org-wallets/revoke", controller.RevokeOrgWallet)
 		}
 
 		invitationRoute := apiRouter.Group("/invitations")

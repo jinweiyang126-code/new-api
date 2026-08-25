@@ -60,7 +60,7 @@ export function DataTableRowActions({ row }: { row: Row<Customer> }) {
           </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => openWith('topup')}>
-          {t('Top Up')}
+          {t('Set Quota Limit')}
           <DropdownMenuShortcut>
             <Wallet size={16} />
           </DropdownMenuShortcut>

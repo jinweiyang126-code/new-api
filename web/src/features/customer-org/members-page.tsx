@@ -1,9 +1,10 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { SectionPageLayout } from '@/components/layout'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,9 +18,14 @@ import {
   useMembers,
 } from './components/members-provider'
 import { MembersTable } from './components/members-table'
-import { WorkspaceContextBanner } from './components/workspace-context-banner'
-import { useCustomerContext } from './hooks/use-customer-context'
-import { resolveCurrentWorkspace } from './lib/resolve-current-workspace'
+import {
+  ORG_FILTER_ALL,
+  OrgScopeFilters,
+} from './components/org-scope-filters'
+import {
+  useCustomerContext,
+  useSetCurrentCustomer,
+} from './hooks/use-customer-context'
 import {
   type MembersSectionId,
   MEMBERS_DEFAULT_SECTION,
@@ -33,10 +39,17 @@ const SECTION_META: Record<MembersSectionId, { titleKey: string }> = {
   invitations: { titleKey: 'Invitations' },
 }
 
-function MembersContent() {
+function MembersContent({
+  workspaceFilter,
+  onWorkspaceFilterChange,
+}: {
+  workspaceFilter: string
+  onWorkspaceFilterChange: (value: string) => void
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: ctx, isLoading } = useCustomerContext()
+  const setCurrentCustomer = useSetCurrentCustomer()
   const { open, setOpen, isAdmin } = useMembers()
   const params = route.useParams()
   const activeSection = (params.section ??
@@ -58,6 +71,40 @@ function MembersContent() {
       })
     },
     [navigate]
+  )
+
+
+  const customers = useMemo(
+    () =>
+      (ctx?.customers ?? []).map((c) => ({
+        id: c.customer_id,
+        name: c.customer_name,
+      })),
+    [ctx?.customers]
+  )
+
+  const showCustomerFilter = customers.length > 1
+  const selectedCustomerId = showCustomerFilter
+    ? String(ctx?.customer?.id ?? ORG_FILTER_ALL)
+    : ORG_FILTER_ALL
+
+  const handleCustomerChange = (value: string) => {
+    const id = Number(value)
+    if (!id || id === ctx?.customer?.id) return
+    setCurrentCustomer.mutate(id, {
+      onError: (e: Error) => {
+        toast.error(e.message)
+      },
+    })
+  }
+
+  const workspaces = useMemo(
+    () =>
+      (ctx?.workspaces ?? []).map((ws) => ({
+        id: ws.id,
+        name: ws.name,
+      })),
+    [ctx?.workspaces]
   )
 
   if (isLoading) {
@@ -92,7 +139,16 @@ function MembersContent() {
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
           <div className='flex h-full min-h-0 flex-col gap-4'>
-            <WorkspaceContextBanner ctx={ctx} />
+            <OrgScopeFilters
+              customers={customers}
+              workspaces={workspaces}
+              customerId={selectedCustomerId}
+              workspaceId={workspaceFilter}
+              onCustomerChange={handleCustomerChange}
+              onWorkspaceChange={onWorkspaceFilterChange}
+              showCustomerFilter={showCustomerFilter}
+              customerIncludeAll={false}
+            />
             {visibleSections.length > 1 ? (
               <Tabs value={activeSection} onValueChange={handleSectionChange}>
                 <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
@@ -126,8 +182,11 @@ function MembersContent() {
 
 export function MembersPage() {
   const { data: ctx } = useCustomerContext()
-  const { currentWorkspaceId, currentWorkspace, isPersonal } =
-    resolveCurrentWorkspace(ctx)
+  const [workspaceFilter, setWorkspaceFilter] = useState(ORG_FILTER_ALL)
+  const isPersonal = workspaceFilter === ORG_FILTER_ALL
+  const currentWorkspaceId = isPersonal ? 0 : Number(workspaceFilter) || 0
+  const currentWorkspaceName =
+    ctx?.workspaces?.find((ws) => ws.id === currentWorkspaceId)?.name ?? ''
 
   return (
     <MembersProvider
@@ -135,9 +194,12 @@ export function MembersPage() {
       isAdmin={Boolean(ctx?.is_admin)}
       isPersonal={isPersonal}
       currentWorkspaceId={currentWorkspaceId}
-      currentWorkspaceName={currentWorkspace?.name ?? ''}
+      currentWorkspaceName={currentWorkspaceName}
     >
-      <MembersContent />
+      <MembersContent
+        workspaceFilter={workspaceFilter}
+        onWorkspaceFilterChange={setWorkspaceFilter}
+      />
     </MembersProvider>
   )
 }

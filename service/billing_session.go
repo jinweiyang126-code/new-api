@@ -219,8 +219,8 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 		if strings.Contains(errMsg, "no active subscription") || strings.Contains(errMsg, "subscription quota insufficient") {
 			return types.NewErrorWithStatusCode(fmt.Errorf("订阅额度不足或未配置订阅: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
-		if strings.Contains(errMsg, "workspace quota insufficient") {
-			return types.NewErrorWithStatusCode(fmt.Errorf("工作区额度不足: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		if strings.Contains(errMsg, "organization wallet") || strings.Contains(errMsg, "insufficient organization wallet") {
+			return types.NewErrorWithStatusCode(fmt.Errorf("组织钱包余额不足: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
 		return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 	}
@@ -246,7 +246,7 @@ func (s *BillingSession) reserveFunding(delta int) error {
 		funding.consumed += delta
 		return nil
 	case *WorkspaceFunding:
-		if err := model.DecreaseWorkspaceQuotaForce(funding.workspaceId, delta); err != nil {
+		if err := model.DecreaseOrgWalletBalanceForce(funding.userId, funding.workspaceId, delta); err != nil {
 			return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 		}
 		funding.consumed += delta
@@ -276,8 +276,8 @@ func (s *BillingSession) rollbackFundingReserve(delta int) {
 			funding.consumed -= delta
 		}
 	case *WorkspaceFunding:
-		if err := model.IncreaseWorkspaceQuota(funding.workspaceId, delta); err != nil {
-			common.SysLog("error rolling back workspace funding reserve: " + err.Error())
+		if err := model.IncreaseOrgWalletBalance(funding.userId, funding.workspaceId, delta); err != nil {
+			common.SysLog("error rolling back org-wallet funding reserve: " + err.Error())
 		} else {
 			funding.consumed -= delta
 		}
@@ -483,33 +483,36 @@ func tryWorkspaceFunding(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCo
 		return nil, types.NewErrorWithStatusCode(fmt.Errorf("%s", msg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 	}
-	wsQuota, err := model.GetWorkspaceQuota(relayInfo.WorkspaceId)
+	orgBalance, err := model.GetOrgWalletBalance(relayInfo.UserId, relayInfo.WorkspaceId)
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
 	}
-	if wsQuota <= 0 {
+	if orgBalance <= 0 {
 		return nil, types.NewErrorWithStatusCode(
-			fmt.Errorf("工作区额度不足, 剩余额度: %s", logger.FormatQuota(wsQuota)),
+			fmt.Errorf("组织钱包余额不足, 剩余额度: %s", logger.FormatQuota(orgBalance)),
 			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 	}
-	if wsQuota-preConsumedQuota < 0 {
+	if orgBalance-preConsumedQuota < 0 {
 		return nil, types.NewErrorWithStatusCode(
-			fmt.Errorf("预扣费额度失败, 工作区剩余额度: %s, 需要预扣费额度: %s", logger.FormatQuota(wsQuota), logger.FormatQuota(preConsumedQuota)),
+			fmt.Errorf("预扣费额度失败, 组织钱包剩余额度: %s, 需要预扣费额度: %s", logger.FormatQuota(orgBalance), logger.FormatQuota(preConsumedQuota)),
 			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 	}
-	relayInfo.WorkspaceQuota = wsQuota
+	relayInfo.WorkspaceQuota = orgBalance
 
 	session := &BillingSession{
 		relayInfo: relayInfo,
-		funding:   &WorkspaceFunding{workspaceId: relayInfo.WorkspaceId},
+		funding: &WorkspaceFunding{
+			userId:      relayInfo.UserId,
+			workspaceId: relayInfo.WorkspaceId,
+		},
 	}
 	if apiErr := session.preConsume(c, preConsumedQuota); apiErr != nil {
 		errMsg := apiErr.Error()
-		if strings.Contains(errMsg, "workspace quota insufficient") {
+		if strings.Contains(errMsg, "insufficient") || strings.Contains(errMsg, "organization wallet") {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("工作区额度不足: %s", errMsg),
+				fmt.Errorf("组织钱包余额不足: %s", errMsg),
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}

@@ -21,7 +21,6 @@ import { formatQuota, parseQuotaFromDollars } from '@/lib/format'
 import { getCurrencyLabel } from '@/lib/currency'
 
 import { getCustomer, getWorkspace, transferQuota } from './api'
-import { WorkspaceContextBanner } from './components/workspace-context-banner'
 import { WORKSPACE_STATUS } from './constants'
 import { useCustomerContext } from './hooks/use-customer-context'
 import { apiErrorMessage } from './lib/api-message'
@@ -144,8 +143,6 @@ export function QuotaPage() {
       <SectionPageLayout.Title>{t('Quota')}</SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <div className='max-w-lg space-y-6'>
-          <WorkspaceContextBanner ctx={ctx} />
-
           <div className='rounded-md border px-4 py-3 text-sm'>
             <div className='text-muted-foreground'>{t('Customer balance')}</div>
             <div className='text-lg font-medium'>

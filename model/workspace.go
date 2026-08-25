@@ -9,11 +9,15 @@ type Workspace struct {
 	Name       string `json:"name" gorm:"type:varchar(128);not null"`
 	Slug       string `json:"slug" gorm:"type:varchar(64);not null;uniqueIndex:uk_workspace_customer_slug"`
 	Status     int    `json:"status" gorm:"default:1"`
-	Quota      int    `json:"quota" gorm:"bigint;default:0"`
+	Quota      int    `json:"quota" gorm:"bigint;default:0"` // legacy workspace pool
+	QuotaLimit int    `json:"quota_limit" gorm:"bigint;default:0;column:quota_limit"`
 	UsedQuota  int    `json:"used_quota" gorm:"bigint;default:0;column:used_quota"`
 	IsDefault  bool   `json:"is_default" gorm:"default:false"`
 	CreatedAt  int64  `json:"created_at" gorm:"bigint"`
 	UpdatedAt  int64  `json:"updated_at" gorm:"bigint"`
+	// OccupiedQuota / AllocatableQuota are computed for API responses (not persisted).
+	OccupiedQuota    int `json:"occupied_quota" gorm:"-"`
+	AllocatableQuota int `json:"allocatable_quota" gorm:"-"`
 }
 
 func (Workspace) TableName() string {

@@ -30,8 +30,8 @@ type updateCustomerRequest struct {
 	Status *int    `json:"status"`
 }
 
-type topupCustomerRequest struct {
-	Amount int `json:"amount"`
+type setCustomerQuotaLimitRequest struct {
+	QuotaLimit int `json:"quota_limit"`
 }
 
 // GetCustomers lists customers. Root sees all (paginated); others see only their own.
@@ -197,33 +197,33 @@ func UpdateCustomer(c *gin.Context) {
 	common.ApiSuccess(c, customer)
 }
 
-// TopUpCustomer adds quota to the customer pool (root only).
-func TopUpCustomer(c *gin.Context) {
+// SetCustomerQuotaLimit sets the customer quota ceiling (root only).
+// Replaces the old pool "topup" semantics.
+func SetCustomerQuotaLimit(c *gin.Context) {
 	customerId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	var req topupCustomerRequest
+	var req setCustomerQuotaLimitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	customer, err := model.TopUpCustomerQuota(customerId, req.Amount)
+	customer, err := model.SetCustomerQuotaLimit(customerId, req.QuotaLimit)
 	if err != nil {
 		writeCustomerErr(c, err)
 		return
 	}
 
 	operatorId := c.GetInt("id")
-	content := fmt.Sprintf("customer topup id=%d amount=%s balance=%s",
-		customerId, logger.LogQuota(req.Amount), logger.LogQuota(customer.Quota))
-	model.RecordLog(operatorId, model.LogTypeTopup, content)
-	model.RecordOperationAuditLog(operatorId, content, c.ClientIP(), "customer.topup",
+	content := fmt.Sprintf("customer set quota_limit id=%d limit=%s",
+		customerId, logger.LogQuota(req.QuotaLimit))
+	model.RecordLog(operatorId, model.LogTypeManage, content)
+	model.RecordOperationAuditLog(operatorId, content, c.ClientIP(), "customer.set_quota_limit",
 		map[string]interface{}{
 			"customer_id": customerId,
-			"amount":      req.Amount,
-			"quota":       customer.Quota,
+			"quota_limit": req.QuotaLimit,
 		},
 		map[string]interface{}{
 			"operator_id": operatorId,
@@ -234,6 +234,11 @@ func TopUpCustomer(c *gin.Context) {
 	common.SetContextKey(c, constant.ContextKeyAuditLogged, true)
 
 	common.ApiSuccess(c, customer)
+}
+
+// TopUpCustomer is kept as a compatibility alias that rejects incremental topup.
+func TopUpCustomer(c *gin.Context) {
+	common.ApiErrorMsg(c, "topup is deprecated; use POST /api/customers/:id/quota-limit with {quota_limit}")
 }
 
 // GetCustomerWorkspaces lists workspaces under a customer. Membership via middleware.
@@ -265,6 +270,12 @@ func writeCustomerErr(c *gin.Context, err error) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "customer not found"})
 	case errors.Is(err, model.ErrInvalidTopupAmount):
 		common.ApiErrorMsg(c, "topup amount must be positive")
+	case errors.Is(err, model.ErrInvalidQuotaLimit):
+		common.ApiErrorMsg(c, "quota limit must be non-negative")
+	case errors.Is(err, model.ErrQuotaLimitBelowOccupied):
+		common.ApiErrorMsg(c, err.Error())
+	case errors.Is(err, model.ErrCustomerQuotaLimitExceeded):
+		common.ApiErrorMsg(c, "workspace limits would exceed customer quota limit")
 	case errors.Is(err, service.ErrCustomerNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "customer not found"})
 	case errors.Is(err, service.ErrCustomerForbidden):

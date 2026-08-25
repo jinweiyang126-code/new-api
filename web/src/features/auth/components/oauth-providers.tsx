@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 import { useOAuthLogin } from '../hooks/use-oauth-login'
+import { renderOAuthProviderIcon } from '../lib/oauth-provider-icon'
 import type { SystemStatus } from '../types'
 import { TelegramLoginDialog } from './telegram-login-dialog'
 
@@ -135,7 +136,7 @@ export function OAuthProviders({
     })
   }
 
-  // Custom OAuth providers
+  // Custom OAuth providers (https icon URL or letter avatar)
   const customProviders = status?.custom_oauth_providers
   if (customProviders && customProviders.length > 0) {
     for (const provider of customProviders) {
@@ -143,6 +144,7 @@ export function OAuthProviders({
         key: `custom-${provider.slug}`,
         label: t('Continue with {{name}}', { name: provider.name }),
         onClick: () => handleCustomOAuthLogin(provider),
+        icon: renderOAuthProviderIcon(provider.name, provider.icon),
       })
     }
   }

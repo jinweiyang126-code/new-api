@@ -305,9 +305,13 @@ func migrateDB() error {
 		&CustomerInvitation{},
 		&CustomerChannelBinding{},
 		&CustomerUpstreamCredential{},
+		&OrganizationWallet{},
 	)
 	if err != nil {
 		return err
+	}
+	if err := SyncLegacyQuotaLimitsOnce(); err != nil {
+		common.SysLog("sync legacy quota limits: " + err.Error())
 	}
 	if err := InitializeUserAuthVersions(); err != nil {
 		return err
@@ -373,6 +377,7 @@ func migrateDBFast() error {
 		{&CustomerInvitation{}, "CustomerInvitation"},
 		{&CustomerChannelBinding{}, "CustomerChannelBinding"},
 		{&CustomerUpstreamCredential{}, "CustomerUpstreamCredential"},
+		{&OrganizationWallet{}, "OrganizationWallet"},
 	}
 	// 动态计算migration数量，确保errChan缓冲区足够大
 	errChan := make(chan error, len(migrations))

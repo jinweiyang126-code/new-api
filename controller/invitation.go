@@ -191,6 +191,10 @@ func writeInvitationErr(c *gin.Context, err error) {
 		common.ApiErrorMsg(c, "invitation is not pending")
 	case errors.Is(err, model.ErrUserAlreadyHasCustomer):
 		common.ApiErrorMsg(c, "user already belongs to a customer")
+	case errors.Is(err, model.ErrAlreadyCustomerMember):
+		common.ApiErrorMsg(c, "user is already a member of this customer")
+	case errors.Is(err, model.ErrInvitationWorkspaceRequired):
+		common.ApiErrorMsg(c, "workspace_id is required")
 	case errors.Is(err, model.ErrInvitationWorkspaceInvalid):
 		common.ApiErrorMsg(c, "workspace does not belong to this customer")
 	case errors.Is(err, model.ErrInvalidMemberRole):

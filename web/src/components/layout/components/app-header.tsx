@@ -29,7 +29,6 @@ import { type TopNavLink } from '../types'
 import { Header } from './header'
 import { SystemBrand } from './system-brand'
 import { TopNav } from './top-nav'
-import { WorkspaceContextSwitcher } from './workspace-context-switcher'
 
 /**
  * General application Header component
@@ -115,7 +114,6 @@ export function AppHeader({
     <>
       <Header>
         <SystemBrand variant='inline' />
-        <WorkspaceContextSwitcher />
 
         {leftContent ? (
           <div className='ms-2 flex items-center'>{leftContent}</div>

@@ -13,7 +13,10 @@ export type Customer = {
   slug: string
   status: CustomerStatus
   quota: number
+  quota_limit: number
   used_quota: number
+  occupied_quota?: number
+  allocatable_quota?: number
   owner_user_id: number
   owner_username?: string
   remark?: string
@@ -31,7 +34,10 @@ export type Workspace = {
   slug: string
   status: number
   quota: number
+  quota_limit: number
   used_quota: number
+  occupied_quota?: number
+  allocatable_quota?: number
   is_default: boolean
   created_at: number
   updated_at: number

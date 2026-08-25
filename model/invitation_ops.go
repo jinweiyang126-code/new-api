@@ -16,11 +16,13 @@ const (
 )
 
 var (
-	ErrInvitationNotFound       = errors.New("invitation not found")
-	ErrInvitationNotPending     = errors.New("invitation is not pending")
-	ErrInvitationExpired        = errors.New("invitation has expired")
-	ErrInvitationRevoked        = errors.New("invitation has been revoked")
-	ErrUserAlreadyHasCustomer   = errors.New("user already belongs to a customer")
+	ErrInvitationNotFound         = errors.New("invitation not found")
+	ErrInvitationNotPending       = errors.New("invitation is not pending")
+	ErrInvitationExpired          = errors.New("invitation has expired")
+	ErrInvitationRevoked          = errors.New("invitation has been revoked")
+	ErrUserAlreadyHasCustomer     = errors.New("user already belongs to a customer") // legacy; unused for cross-customer
+	ErrAlreadyCustomerMember      = errors.New("user is already a member of this customer")
+	ErrInvitationWorkspaceRequired = errors.New("invitation workspace_id is required")
 	ErrInvitationWorkspaceInvalid = errors.New("workspace does not belong to this customer")
 )
 
@@ -68,17 +70,18 @@ func CreateInvitation(in CreateInvitationInput) (*CustomerInvitation, error) {
 			return errors.New("customer is disabled")
 		}
 
-		if in.WorkspaceId != nil && *in.WorkspaceId > 0 {
-			var ws Workspace
-			if err := tx.Where("id = ? AND customer_id = ?", *in.WorkspaceId, in.CustomerId).First(&ws).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return ErrInvitationWorkspaceInvalid
-				}
-				return err
+		if in.WorkspaceId == nil || *in.WorkspaceId <= 0 {
+			return ErrInvitationWorkspaceRequired
+		}
+		var ws Workspace
+		if err := tx.Where("id = ? AND customer_id = ?", *in.WorkspaceId, in.CustomerId).First(&ws).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrInvitationWorkspaceInvalid
 			}
-			if ws.Status != CustomerStatusEnabled {
-				return ErrWorkspaceDisabled
-			}
+			return err
+		}
+		if ws.Status != CustomerStatusEnabled {
+			return ErrWorkspaceDisabled
 		}
 
 		expiresAt := in.ExpiresAt
@@ -225,9 +228,6 @@ func AcceptInvitation(token string, userId int) (*CustomerInvitation, error) {
 		if user.Status != common.UserStatusEnabled {
 			return errors.New("user is disabled")
 		}
-		if user.CustomerId > 0 && user.CustomerId != inv.CustomerId {
-			return ErrUserAlreadyHasCustomer
-		}
 
 		var customer Customer
 		if err := tx.Where("id = ?", inv.CustomerId).First(&customer).Error; err != nil {
@@ -235,6 +235,17 @@ func AcceptInvitation(token string, userId int) (*CustomerInvitation, error) {
 		}
 		if customer.Status != CustomerStatusEnabled {
 			return errors.New("customer is disabled")
+		}
+
+		// Same customer membership already exists → reject (P3).
+		var existingMember CustomerMember
+		err := tx.Where("customer_id = ? AND user_id = ? AND status = ?",
+			inv.CustomerId, userId, MemberStatusEnabled).First(&existingMember).Error
+		if err == nil {
+			return ErrAlreadyCustomerMember
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
 		}
 
 		workspaceId, err := resolveInvitationWorkspaceID(tx, &inv)
@@ -248,6 +259,7 @@ func AcceptInvitation(token string, userId int) (*CustomerInvitation, error) {
 		if err := upsertWorkspaceMemberTx(tx, workspaceId, userId, inv.WorkspaceRole, now); err != nil {
 			return err
 		}
+		// Switch current customer pointer to the newly joined customer (multi-customer OK).
 		if err := tx.Model(&User{}).Where("id = ?", userId).
 			Update("customer_id", inv.CustomerId).Error; err != nil {
 			return err
@@ -267,28 +279,18 @@ func AcceptInvitation(token string, userId int) (*CustomerInvitation, error) {
 }
 
 func resolveInvitationWorkspaceID(tx *gorm.DB, inv *CustomerInvitation) (int, error) {
-	if inv.WorkspaceId != nil && *inv.WorkspaceId > 0 {
-		var ws Workspace
-		if err := tx.Where("id = ? AND customer_id = ?", *inv.WorkspaceId, inv.CustomerId).First(&ws).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return 0, ErrInvitationWorkspaceInvalid
-			}
-			return 0, err
-		}
-		return ws.Id, nil
+	if inv.WorkspaceId == nil || *inv.WorkspaceId <= 0 {
+		return 0, ErrInvitationWorkspaceRequired
 	}
 	var ws Workspace
-	err := tx.Where("customer_id = ? AND is_default = ? AND slug = ?",
-		inv.CustomerId, true, WorkspaceSlugDefault).First(&ws).Error
-	if err != nil {
-		// Fallback: any default flag or slug=default
-		err = tx.Where("customer_id = ? AND slug = ?", inv.CustomerId, WorkspaceSlugDefault).First(&ws).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return 0, ErrWorkspaceNotFound
-			}
-			return 0, err
+	if err := tx.Where("id = ? AND customer_id = ?", *inv.WorkspaceId, inv.CustomerId).First(&ws).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, ErrInvitationWorkspaceInvalid
 		}
+		return 0, err
+	}
+	if ws.Status != CustomerStatusEnabled {
+		return 0, ErrWorkspaceDisabled
 	}
 	return ws.Id, nil
 }

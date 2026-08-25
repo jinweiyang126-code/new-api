@@ -8,7 +8,6 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
-	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 
@@ -22,8 +21,9 @@ type createWorkspaceRequest struct {
 }
 
 type updateWorkspaceRequest struct {
-	Name   *string `json:"name"`
-	Status *int    `json:"status"`
+	Name       *string `json:"name"`
+	Status     *int    `json:"status"`
+	QuotaLimit *int    `json:"quota_limit"`
 }
 
 type transferQuotaRequest struct {
@@ -87,6 +87,7 @@ func GetWorkspace(c *gin.Context) {
 		writeWorkspaceErr(c, err)
 		return
 	}
+	_ = model.AttachWorkspaceQuotaLimitView(ws)
 	common.ApiSuccess(c, ws)
 }
 
@@ -102,11 +103,11 @@ func UpdateWorkspace(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	if req.Name == nil && req.Status == nil {
+	if req.Name == nil && req.Status == nil && req.QuotaLimit == nil {
 		common.ApiErrorMsg(c, "no fields to update")
 		return
 	}
-	ws, err := model.UpdateWorkspaceFields(workspaceId, req.Name, req.Status)
+	ws, err := model.UpdateWorkspaceFields(workspaceId, req.Name, req.Status, req.QuotaLimit)
 	if err != nil {
 		writeWorkspaceErr(c, err)
 		return
@@ -114,61 +115,9 @@ func UpdateWorkspace(c *gin.Context) {
 	common.ApiSuccess(c, ws)
 }
 
-// TransferWorkspaceQuota moves quota from customer pool to workspace (customer admin+ / root).
+// TransferWorkspaceQuota is deprecated under the limit + allocatable model.
 func TransferWorkspaceQuota(c *gin.Context) {
-	workspaceId, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	var req transferQuotaRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiError(c, err)
-		return
-	}
-
-	ws, err := model.GetWorkspaceById(workspaceId)
-	if err != nil {
-		writeWorkspaceErr(c, err)
-		return
-	}
-	userId := c.GetInt("id")
-	systemRole := c.GetInt("role")
-	if _, err := service.RequireCustomerAdmin(userId, systemRole, ws.CustomerId); err != nil {
-		if errors.Is(err, service.ErrCustomerForbidden) {
-			c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "forbidden"})
-			return
-		}
-		writeWorkspaceErr(c, err)
-		return
-	}
-
-	customer, workspace, err := model.TransferQuotaToWorkspace(workspaceId, req.Amount)
-	if err != nil {
-		writeWorkspaceErr(c, err)
-		return
-	}
-
-	operatorId := userId
-	content := fmt.Sprintf("transfer quota workspace=%d amount=%s customer_balance=%s workspace_balance=%s",
-		workspaceId, logger.LogQuota(req.Amount), logger.LogQuota(customer.Quota), logger.LogQuota(workspace.Quota))
-	model.RecordOperationAuditLog(operatorId, content, c.ClientIP(), "workspace.transfer_quota",
-		map[string]interface{}{
-			"workspace_id":     workspaceId,
-			"customer_id":      customer.Id,
-			"amount":           req.Amount,
-			"customer_quota":   customer.Quota,
-			"workspace_quota":  workspace.Quota,
-		},
-		map[string]interface{}{"operator_id": operatorId, "node_name": common.NodeName},
-		nil,
-	)
-	common.SetContextKey(c, constant.ContextKeyAuditLogged, true)
-
-	common.ApiSuccess(c, gin.H{
-		"customer":  customer,
-		"workspace": workspace,
-	})
+	common.ApiErrorMsg(c, "transfer-quota is deprecated; set workspace quota_limit via PUT /api/workspaces/:id")
 }
 
 func writeWorkspaceErr(c *gin.Context, err error) {
@@ -185,6 +134,12 @@ func writeWorkspaceErr(c *gin.Context, err error) {
 		common.ApiErrorMsg(c, "insufficient customer quota")
 	case errors.Is(err, model.ErrInvalidTransferQuotaAmount):
 		common.ApiErrorMsg(c, "transfer amount must be positive")
+	case errors.Is(err, model.ErrInvalidQuotaLimit):
+		common.ApiErrorMsg(c, "quota limit must be non-negative")
+	case errors.Is(err, model.ErrQuotaLimitBelowOccupied):
+		common.ApiErrorMsg(c, err.Error())
+	case errors.Is(err, model.ErrCustomerQuotaLimitExceeded):
+		common.ApiErrorMsg(c, "workspace limits would exceed customer quota limit")
 	case errors.Is(err, model.ErrCannotDisableDefaultWorkspace):
 		common.ApiErrorMsg(c, "cannot disable the default workspace")
 	case errors.Is(err, model.ErrWorkspaceNameRequired):

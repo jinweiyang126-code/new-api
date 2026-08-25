@@ -97,7 +97,7 @@ func TestTransferQuotaRejectsDisabledWorkspace(t *testing.T) {
 	extra, err := CreateWorkspace(customerID, "Team A", "team-a", ownerID)
 	require.NoError(t, err)
 	disabled := CustomerStatusDisabled
-	_, err = UpdateWorkspaceFields(extra.Id, nil, &disabled)
+	_, err = UpdateWorkspaceFields(extra.Id, nil, &disabled, nil)
 	require.NoError(t, err)
 
 	_, _, err = TransferQuotaToWorkspace(extra.Id, 100)
@@ -153,7 +153,7 @@ func TestCreateWorkspaceAndCannotDisableDefault(t *testing.T) {
 	require.Equal(t, WorkspaceRoleAdmin, member.Role)
 
 	disabled := CustomerStatusDisabled
-	_, err = UpdateWorkspaceFields(defaultID, nil, &disabled)
+	_, err = UpdateWorkspaceFields(defaultID, nil, &disabled, nil)
 	require.ErrorIs(t, err, ErrCannotDisableDefaultWorkspace)
 }
 
