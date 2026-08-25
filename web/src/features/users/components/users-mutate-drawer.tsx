@@ -233,6 +233,11 @@ export function UsersMutateDrawer({
               {isUpdate
                 ? t('Update the user by providing necessary info.')
                 : t('Add a new user by providing necessary info.')}
+              {isUpdate && currentRow?.id != null ? (
+                <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                  {t('ID')}: {currentRow.id}
+                </span>
+              ) : null}
             </SheetDescription>
           </SheetHeader>
           <Form {...form}>

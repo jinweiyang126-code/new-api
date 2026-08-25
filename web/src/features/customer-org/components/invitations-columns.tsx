@@ -62,18 +62,30 @@ export function useInvitationsColumns(): ColumnDef<Invitation>[] {
       size: 40,
     },
     {
+      id: 'index',
+      header: t('No.'),
+      size: 64,
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row, table }) => {
+        const { pageIndex, pageSize } = table.getState().pagination
+        return <TableId value={pageIndex * pageSize + row.index + 1} />
+      },
+      meta: { mobileOrder: 1 },
+    },
+    {
       accessorKey: 'id',
       header: t('ID'),
       size: 72,
       cell: ({ row }) => <TableId value={row.original.id} />,
-      meta: { mobileOrder: 1, mobileTitle: true },
+      meta: { mobileOrder: 9, mobileHidden: true },
     },
     {
       accessorKey: 'email',
       header: t('Email'),
       size: 200,
       cell: ({ row }) => row.original.email || t('Open invite'),
-      meta: { mobileOrder: 2 },
+      meta: { mobileOrder: 2, mobileTitle: true },
     },
     {
       accessorKey: 'role',

@@ -166,6 +166,8 @@ export function UpstreamTable() {
     manualSorting: true,
     totalCount: filtered.length,
     ensurePageInRange,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'upstream-column-visibility',
   })
 
   return (

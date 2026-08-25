@@ -62,6 +62,23 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
       size: 40,
     },
     {
+      id: 'index',
+      header: t('No.'),
+      size: 64,
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row, table }) => {
+        const { pageIndex, pageSize } = table.getState().pagination
+        return (
+          <TableId
+            value={pageIndex * pageSize + row.index + 1}
+            className='w-[60px]'
+          />
+        )
+      },
+      meta: { mobileOrder: 1 },
+    },
+    {
       accessorKey: 'id',
       header: t('ID'),
       meta: { mobileHidden: true },

@@ -47,6 +47,8 @@ export function SubscriptionsTable() {
     columns,
     withFilteredRowModel: false,
     withFacetedRowModel: false,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'subscriptions-column-visibility',
   })
 
   return (

@@ -5286,6 +5286,7 @@
     "owner user is disabled": "所有者用户已禁用",
     "Failed to load customers": "加载客户失败",
     "No Customers Found": "暂无客户",
+    "No.": "序号",
     "Create a customer to get started.": "创建客户以开始使用。",
     "Upstream Mode": "上游模式",
     "Upstream Source": "上游来源",

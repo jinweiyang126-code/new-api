@@ -160,6 +160,8 @@ export function WorkspacesTable() {
     manualSorting: true,
     totalCount: filtered.length,
     ensurePageInRange,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'workspaces-column-visibility',
   })
 
   return (

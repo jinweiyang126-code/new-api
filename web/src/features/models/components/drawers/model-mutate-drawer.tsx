@@ -738,6 +738,11 @@ export function ModelMutateDrawer({
               : t(
                   'Add a new model to the system by providing the necessary information.'
                 )}
+            {isEditing && currentModelId != null ? (
+              <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                {t('ID')}: {currentModelId}
+              </span>
+            ) : null}
           </SheetDescription>
         </SheetHeader>
 

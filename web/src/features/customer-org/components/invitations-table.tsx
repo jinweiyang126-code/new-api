@@ -174,6 +174,8 @@ export function InvitationsTable() {
     manualSorting: true,
     totalCount: filtered.length,
     ensurePageInRange,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'invitations-column-visibility',
   })
 
   if (!isAdmin) return null

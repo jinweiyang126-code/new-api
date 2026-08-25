@@ -13,6 +13,7 @@ import {
   sideDrawerHeaderClassName,
 } from '@/components/drawer-layout'
 import { StatusBadge } from '@/components/status-badge'
+import { TableId } from '@/components/table-id'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -101,6 +102,9 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
           <SideDrawerSection>
             <SideDrawerSectionHeader title={t('Overview')} />
             <div className='mt-3 space-y-3'>
+              <InfoRow label={t('ID')}>
+                <TableId value={current.id} />
+              </InfoRow>
               <InfoRow label={t('Slug')}>{current.slug}</InfoRow>
               <InfoRow label={t('Status')}>
                 {enabled ? (

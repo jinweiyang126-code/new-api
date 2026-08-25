@@ -91,6 +91,11 @@ export function MembersConfirmDialogs() {
                 (currentMember ? `User #${currentMember.user_id}` : '')}
             </span>
             ?
+            {currentMember?.id != null ? (
+              <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                {t('ID')}: {currentMember.id}
+              </span>
+            ) : null}
           </>
         }
         confirmText={t('Remove')}
@@ -109,6 +114,11 @@ export function MembersConfirmDialogs() {
               {currentInvitation?.email || t('Open invite')}
             </span>
             ?
+            {currentInvitation?.id != null ? (
+              <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                {t('ID')}: {currentInvitation.id}
+              </span>
+            ) : null}
           </>
         }
         confirmText={t('Revoke')}

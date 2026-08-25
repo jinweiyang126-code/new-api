@@ -200,6 +200,8 @@ export function UsersTable() {
     manualSorting: true,
     totalCount: data?.total || 0,
     ensurePageInRange,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'users-column-visibility',
   })
 
   return (

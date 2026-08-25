@@ -316,6 +316,7 @@ export function ChannelsTable() {
     initialColumnVisibility: {
       models: false,
       tag: false,
+      id: false,
     },
     columnVisibilityStorageKey: CHANNELS_COLUMN_VISIBILITY_STORAGE_KEY,
     columnSizingStorageKey: isMobile

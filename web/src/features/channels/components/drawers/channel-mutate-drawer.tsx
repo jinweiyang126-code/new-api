@@ -1882,6 +1882,11 @@ export function ChannelMutateDrawer({
                     : t(
                         'Add a new channel by providing the necessary information.'
                       )}
+                  {isEditing && channelId != null ? (
+                    <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                      {t('ID')}: {channelId}
+                    </span>
+                  ) : null}
                 </SheetDescription>
               </div>
               {!isEditing && (

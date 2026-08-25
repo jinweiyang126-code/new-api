@@ -36,6 +36,20 @@ export function useSubscriptionsColumns(): ColumnDef<PlanRecord>[] {
   return useMemo(
     (): ColumnDef<PlanRecord>[] => [
       {
+        id: 'index',
+        header: t('No.'),
+        size: 64,
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row, table }) => {
+          const { pageIndex, pageSize } = table.getState().pagination
+          return (
+            <TableId value={pageIndex * pageSize + row.index + 1} />
+          )
+        },
+        meta: { mobileOrder: 1 },
+      },
+      {
         accessorFn: (row) => row.plan.id,
         id: 'id',
         header: t('ID'),

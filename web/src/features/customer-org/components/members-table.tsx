@@ -184,6 +184,8 @@ export function MembersTable() {
     manualSorting: true,
     totalCount: filtered.length,
     ensurePageInRange,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'members-column-visibility',
   })
 
 return (

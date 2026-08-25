@@ -255,6 +255,11 @@ export function RedemptionsMutateDrawer({
                   'Add new redemption code(s) by providing necessary info.'
                 )}{' '}
             {t('Click save when you&apos;re done.')}
+            {isUpdate && redemptionId != null ? (
+              <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                {t('ID')}: {redemptionId}
+              </span>
+            ) : null}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>

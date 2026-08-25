@@ -27,14 +27,11 @@ import { CHANNEL_STATUS } from '../constants'
 import { isTagAggregateRow, parseGroupsList } from '../lib'
 import type { Channel } from '../types'
 import { ChannelRowActionsLayoutContext } from './channel-row-actions-context'
-import { useChannels } from './channels-provider'
-
-const SENSITIVE_MASK = '••••'
 
 /**
  * Bespoke channel card for the card view. Reuses every column's existing cell
  * renderer via `flexRender`, so the table's information and interactions are
- * preserved: row selection, provider/multi-key/IO.NET type badge, id,
+ * preserved: row selection, provider/multi-key/IO.NET type badge, serial no.,
  * name/remark + warning icons, status (with tooltips), groups, inline
  * priority/weight spinners, balance refresh, response/test times, tag
  * expand-collapse, and the per-row (or per-tag) actions menu.
@@ -47,7 +44,6 @@ function ChannelCardComponent({
   isSelected: boolean
 }) {
   const { t } = useTranslation()
-  const { sensitiveVisible } = useChannels()
   const isTagRow = isTagAggregateRow(row.original)
   const cells = row.getAllCells()
 
@@ -69,6 +65,7 @@ function ChannelCardComponent({
 
   const selectCell = renderCell('select')
   const typeCell = renderCell('type')
+  const indexCell = renderCell('index')
   const nameCell = renderCell('name')
   const statusCell = renderCell('status')
   const actionsCell = renderCell('actions')
@@ -77,6 +74,11 @@ function ChannelCardComponent({
   const balanceCell = renderCell('balance')
   const responseCell = renderCell('response_time')
   const testCell = renderCell('test_time')
+
+  const idColumnVisible = row
+    .getAllCells()
+    .some((cell) => cell.column.id === 'id' && cell.column.getIsVisible())
+  const idCell = idColumnVisible ? renderCell('id') : null
 
   const labelClass = 'text-muted-foreground text-[11px] font-medium select-none'
 
@@ -115,8 +117,9 @@ function ChannelCardComponent({
           <div className='flex min-w-0 flex-1 flex-col gap-3 overflow-hidden'>
             <div className='min-w-0 text-sm'>
               {!isTagRow && (
-                <div className={labelClass}>
-                  #{sensitiveVisible ? row.original.id : SENSITIVE_MASK}
+                <div className={cn('mb-0.5 flex items-center gap-2', labelClass)}>
+                  {indexCell}
+                  {idCell}
                 </div>
               )}
               {nameCell}

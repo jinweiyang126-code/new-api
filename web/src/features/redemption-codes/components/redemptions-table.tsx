@@ -150,6 +150,8 @@ export function RedemptionsTable() {
     manualFiltering: true,
     totalCount: data?.total || 0,
     ensurePageInRange,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'redemptions-column-visibility',
   })
 
   const redemptionStatusOptions = useMemo(

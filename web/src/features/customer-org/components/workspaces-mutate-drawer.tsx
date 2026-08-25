@@ -135,6 +135,11 @@ export function WorkspacesMutateDrawer({
             {isUpdate
               ? t('Update workspace name.')
               : t('Create a workspace to isolate tokens and quota.')}
+            {isUpdate && currentRow?.id != null ? (
+              <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                {t('ID')}: {currentRow.id}
+              </span>
+            ) : null}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>

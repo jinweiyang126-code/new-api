@@ -44,6 +44,11 @@ export function UpstreamDeleteDialog() {
           {t('This will permanently delete credential')}{' '}
           <span className='font-semibold'>{currentRow?.name}</span>
           {t('. This action cannot be undone.')}
+          {currentRow?.id != null ? (
+            <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+              {t('ID')}: {currentRow.id}
+            </span>
+          ) : null}
         </>
       }
       confirmText={pending ? t('Deleting...') : t('Delete')}

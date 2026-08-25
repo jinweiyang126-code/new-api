@@ -69,6 +69,23 @@ export function useUsersColumns(): ColumnDef<User>[] {
       size: 40,
     },
     {
+      id: 'index',
+      header: t('No.'),
+      size: 64,
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row, table }) => {
+        const { pageIndex, pageSize } = table.getState().pagination
+        return (
+          <TableId
+            value={pageIndex * pageSize + row.index + 1}
+            className='w-[60px] text-sm'
+          />
+        )
+      },
+      meta: { mobileOrder: 1 },
+    },
+    {
       accessorKey: 'id',
       header: t('ID'),
       cell: ({ row }) => {
@@ -80,7 +97,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
         )
       },
       size: 80,
-      meta: { mobileOrder: 10 },
+      meta: { mobileOrder: 10, mobileHidden: true },
     },
     {
       accessorKey: 'username',

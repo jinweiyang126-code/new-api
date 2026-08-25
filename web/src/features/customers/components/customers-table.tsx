@@ -138,6 +138,8 @@ export function CustomersTable() {
     manualSorting: true,
     totalCount: data?.total ?? 0,
     ensurePageInRange,
+    initialColumnVisibility: { id: false },
+    columnVisibilityStorageKey: 'customers-column-visibility',
   })
 
   return (

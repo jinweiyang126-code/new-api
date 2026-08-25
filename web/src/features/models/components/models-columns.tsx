@@ -90,7 +90,20 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
       size: 40,
     },
 
-    // ID column
+    {
+      id: 'index',
+      header: t('No.'),
+      size: 64,
+      enableSorting: false,
+      enableHiding: false,
+      cell: ({ row, table }) => {
+        const { pageIndex, pageSize } = table.getState().pagination
+        return <TableId value={pageIndex * pageSize + row.index + 1} />
+      },
+      meta: { mobileOrder: 1 },
+    },
+
+    // ID column (hidden by default; toggle via View)
     {
       accessorKey: 'id',
       header: t('ID'),

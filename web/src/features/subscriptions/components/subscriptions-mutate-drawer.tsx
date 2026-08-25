@@ -269,6 +269,11 @@ export function SubscriptionsMutateDrawer({
               : t(
                   'Fill in the following info to create a new subscription plan'
                 )}
+            {isEdit && currentRow?.plan?.id != null ? (
+              <span className='text-muted-foreground mt-1 block font-mono text-xs tabular-nums'>
+                {t('ID')}: {currentRow.plan.id}
+              </span>
+            ) : null}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
