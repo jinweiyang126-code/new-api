@@ -3,6 +3,11 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import type { TFunction } from 'i18next'
 
+/** Backend errors that append dynamic details after a fixed prefix. */
+const ERROR_MESSAGE_PREFIX_KEYS = [
+  'quota limit cannot be below occupied amount',
+] as const
+
 /** Translate backend API message when a locale key exists; otherwise show as-is / fallback. */
 export function apiErrorMessage(
   t: TFunction,
@@ -11,7 +16,19 @@ export function apiErrorMessage(
 ): string {
   const msg = (message || '').trim()
   if (!msg) return t(fallbackKey)
-  return t(msg)
+
+  const exact = t(msg)
+  if (exact !== msg) return exact
+
+  for (const prefix of ERROR_MESSAGE_PREFIX_KEYS) {
+    if (!msg.startsWith(prefix)) continue
+    const translatedPrefix = t(prefix)
+    if (translatedPrefix !== prefix) {
+      return translatedPrefix + msg.slice(prefix.length)
+    }
+  }
+
+  return msg
 }
 
 export function roleLabel(t: TFunction, role: string): string {

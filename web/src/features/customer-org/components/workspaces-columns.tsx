@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
 import { Checkbox } from '@/components/ui/checkbox'
-import { formatQuota, formatTimestamp } from '@/lib/format'
+import { formatQuota, formatTimestamp, resolveQuotaLimit } from '@/lib/format'
 
 import { WORKSPACE_STATUS } from '../constants'
 import type { Workspace } from '../types'
@@ -16,7 +16,7 @@ import { useWorkspaces } from './workspaces-provider'
 
 export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
   const { t } = useTranslation()
-  const { currentWorkspaceId, customerName } = useWorkspaces()
+  const { customerName } = useWorkspaces()
 
   return [
     {
@@ -86,11 +86,6 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
                   ({t('default')})
                 </span>
               ) : null}
-              {ws.id === currentWorkspaceId ? (
-                <span className='text-primary ml-2 text-xs font-medium'>
-                  ({t('Current')})
-                </span>
-              ) : null}
             </span>
             <span className='text-muted-foreground truncate text-xs'>
               {ws.slug}
@@ -101,12 +96,12 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
       meta: { mobileOrder: 3, mobileTitle: true },
     },
     {
-      accessorKey: 'quota',
+      accessorKey: 'quota_limit',
       header: t('Quota'),
       size: 140,
       cell: ({ row }) => (
         <div className='flex flex-col gap-0.5 text-sm'>
-          <span>{formatQuota(row.original.quota)}</span>
+          <span>{formatQuota(resolveQuotaLimit(row.original))}</span>
           <span className='text-muted-foreground text-xs'>
             {t('Used')}: {formatQuota(row.original.used_quota)}
           </span>

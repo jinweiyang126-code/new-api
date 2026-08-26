@@ -129,9 +129,7 @@ export function OrgWalletPage() {
                 </div>
                 {filtered.length === 0 ? (
                   <p className='text-muted-foreground p-4 text-sm'>
-                    {t(
-                      'No organization wallet yet. Ask a customer admin to allocate quota.'
-                    )}
+                    {t('Ask a customer admin to allocate quota.')}
                   </p>
                 ) : (
                   <ul className='divide-y'>

@@ -214,12 +214,15 @@ function LedgerRecord({
           </Label>
           <div className='truncate text-sm font-medium'>{workspaceLabel}</div>
         </div>
-        {(record.operator_id ?? 0) > 0 ? (
+        {(record.operator_name || (record.operator_id ?? 0) > 0) ? (
           <div className='space-y-1'>
             <Label className='text-muted-foreground text-xs'>
-              {t('Operator ID')}
+              {t('Operator')}
             </Label>
-            <div className='text-sm font-medium'>{record.operator_id}</div>
+            <div className='truncate text-sm font-medium'>
+              {record.operator_name ||
+                `${t('User')} #${record.operator_id}`}
+            </div>
           </div>
         ) : null}
       </div>

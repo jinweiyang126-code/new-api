@@ -23,6 +23,7 @@ type OrgWalletLedgerEntry struct {
 	WorkspaceName string `json:"workspace_name,omitempty"`
 	CustomerId    int    `json:"customer_id"`
 	OperatorId    int    `json:"operator_id,omitempty"`
+	OperatorName  string `json:"operator_name,omitempty"`
 	CreatedAt     int64  `json:"created_at"`
 }
 
@@ -96,6 +97,11 @@ func ListOrgWalletLedgerForUser(
 		}
 		if ws, err := GetWorkspaceById(entry.WorkspaceId); err == nil && ws != nil {
 			entry.WorkspaceName = ws.Name
+		}
+		if entry.OperatorId > 0 {
+			if name, err := GetUsernameById(entry.OperatorId, false); err == nil && name != "" {
+				entry.OperatorName = name
+			}
 		}
 		out = append(out, entry)
 	}

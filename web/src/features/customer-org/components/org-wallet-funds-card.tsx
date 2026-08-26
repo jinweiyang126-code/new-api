@@ -19,7 +19,7 @@ export function OrgWalletFundsCard({ onOpenLedger }: OrgWalletFundsCardProps) {
     <TitledCard
       title={t('Add Funds')}
       description={t(
-        'Organization wallet balances are allocated by customer admins. This page is read-only.'
+        'Organization wallet balances are allocated by customer admins.'
       )}
       icon={<WalletCards className='h-4 w-4' />}
       iconTone='success'

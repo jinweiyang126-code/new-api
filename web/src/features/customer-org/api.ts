@@ -311,6 +311,7 @@ export type OrgWalletLedgerEntry = {
   workspace_name?: string
   customer_id: number
   operator_id?: number
+  operator_name?: string
   created_at: number
 }
 

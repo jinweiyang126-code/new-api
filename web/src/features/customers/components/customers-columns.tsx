@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
 import { Checkbox } from '@/components/ui/checkbox'
-import { formatQuota, formatTimestamp } from '@/lib/format'
+import { formatQuota, formatTimestamp, resolveQuotaLimit } from '@/lib/format'
 
 import { CUSTOMER_STATUS } from '../constants'
 import type { Customer } from '../types'
@@ -75,12 +75,12 @@ export function useCustomersColumns(): ColumnDef<Customer>[] {
       meta: { mobileOrder: 2 },
     },
     {
-      accessorKey: 'quota',
+      accessorKey: 'quota_limit',
       header: t('Quota'),
       size: 140,
       cell: ({ row }) => (
         <div className='flex flex-col gap-0.5 text-sm'>
-          <span>{formatQuota(row.original.quota)}</span>
+          <span>{formatQuota(resolveQuotaLimit(row.original))}</span>
           <span className='text-muted-foreground text-xs'>
             {t('Used')}: {formatQuota(row.original.used_quota)}
           </span>

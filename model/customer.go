@@ -136,7 +136,7 @@ func GetAllCustomers(startIdx, pageSize int, keyword string, status int, sortBy,
 func customerListOrder(sortBy, sortOrder string) string {
 	col := "id"
 	switch strings.TrimSpace(sortBy) {
-	case "id", "name", "quota", "status", "created_at", "upstream_mode", "owner_user_id", "used_quota":
+	case "id", "name", "quota", "quota_limit", "status", "created_at", "upstream_mode", "owner_user_id", "used_quota":
 		col = sortBy
 	case "owner_username":
 		col = "owner_user_id"

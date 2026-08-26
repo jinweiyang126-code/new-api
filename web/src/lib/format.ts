@@ -66,6 +66,14 @@ export function formatCurrencyUSD(value: number | null | undefined): string {
 // Quota Formatting (500,000 units = $1)
 // ============================================================================
 
+/** Prefer quota_limit (admin cap); fall back to legacy quota pool. */
+export function resolveQuotaLimit(
+  row: { quota_limit?: number; quota?: number } | null | undefined
+): number {
+  if (!row) return 0
+  return row.quota_limit ?? row.quota ?? 0
+}
+
 /**
  * Format quota into the configured display amount.
  * Quota is stored in units where `quotaPerUnit` equals 1 USD.

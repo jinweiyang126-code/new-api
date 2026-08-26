@@ -16,7 +16,6 @@ import {
 import { WorkspacesStatusDialog } from './components/workspaces-status-dialog'
 import { WorkspacesTable } from './components/workspaces-table'
 import { useCustomerContext } from './hooks/use-customer-context'
-import { resolveCurrentWorkspace } from './lib/resolve-current-workspace'
 
 function WorkspacesContent() {
   const { t } = useTranslation()
@@ -93,13 +92,11 @@ function WorkspacesContent() {
 
 export function WorkspacesPage() {
   const { data: ctx } = useCustomerContext()
-  const { currentWorkspaceId } = resolveCurrentWorkspace(ctx)
   const isAdmin = Boolean(ctx?.is_admin)
 
   return (
     <WorkspacesProvider
       isAdmin={isAdmin}
-      currentWorkspaceId={currentWorkspaceId}
       customerName={ctx?.customer?.name ?? ''}
     >
       <WorkspacesContent />

@@ -13,6 +13,7 @@ import { getCurrencyLabel } from '@/lib/currency'
 import { formatQuota, parseQuotaFromDollars } from '@/lib/format'
 
 import { setCustomerQuotaLimit } from '../api'
+import { apiErrorMessage } from '@/features/customer-org/lib/api-message'
 
 type Props = {
   open: boolean
@@ -61,7 +62,7 @@ export function CustomerTopupDialog({
     try {
       const res = await setCustomerQuotaLimit(customerId, quotaValue)
       if (!res.success) {
-        toast.error(res.message || t('Failed to set customer quota limit'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to set customer quota limit'))
         return
       }
       toast.success(t('Customer quota limit updated'))

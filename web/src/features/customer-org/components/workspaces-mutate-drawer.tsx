@@ -69,6 +69,13 @@ export function WorkspacesMutateDrawer({
   const isUpdate = Boolean(currentRow)
   const isAdmin = Boolean(ctx?.is_admin)
   const currencyLabel = getCurrencyLabel()
+  const orgAllocatableHeadroom = useMemo(() => {
+    const customer = ctx?.customer
+    if (!customer) return 0
+    const orgRemaining = customer.allocatable_quota ?? 0
+    if (!currentRow) return orgRemaining
+    return orgRemaining + (currentRow.quota_limit ?? 0)
+  }, [ctx?.customer, currentRow])
   const schema = useMemo(
     () =>
       z.object({
@@ -264,10 +271,15 @@ export function WorkspacesMutateDrawer({
                         <span className='mt-1 block'>
                           {t('Occupied')}:{' '}
                           {formatQuota(currentRow.occupied_quota ?? 0)} ·{' '}
-                          {t('Allocatable')}:{' '}
-                          {formatQuota(currentRow.allocatable_quota ?? 0)}
+                          {t('Organization allocatable')}:{' '}
+                          {formatQuota(orgAllocatableHeadroom)}
                         </span>
-                      ) : null}
+                      ) : (
+                        <span className='mt-1 block'>
+                          {t('Organization allocatable')}:{' '}
+                          {formatQuota(orgAllocatableHeadroom)}
+                        </span>
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

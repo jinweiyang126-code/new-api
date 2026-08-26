@@ -33,6 +33,7 @@ const CUSTOMER_SORTABLE_COLUMNS = new Set<CustomerSortBy>([
   'id',
   'name',
   'quota',
+  'quota_limit',
   'status',
   'created_at',
   'upstream_mode',

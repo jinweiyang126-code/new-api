@@ -71,6 +71,7 @@ func GetSelfCustomer(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "customer not found"})
 		return
 	}
+	_ = model.AttachCustomerQuotaLimitView(customer)
 	workspaces, err := model.GetWorkspacesByCustomerId(customerId)
 	if err != nil {
 		common.ApiError(c, err)

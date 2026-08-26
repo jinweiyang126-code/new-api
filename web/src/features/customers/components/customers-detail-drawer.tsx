@@ -24,7 +24,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { formatQuota, formatTimestamp } from '@/lib/format'
+import { formatQuota, formatTimestamp, resolveQuotaLimit } from '@/lib/format'
 
 import {
   getChannelBindings,
@@ -128,7 +128,7 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
                     : '—')}
               </InfoRow>
               <InfoRow label={t('Quota')}>
-                {formatQuota(current.quota)}
+                {formatQuota(resolveQuotaLimit(current))}
               </InfoRow>
               <InfoRow label={t('Used')}>
                 {formatQuota(current.used_quota)}
@@ -169,7 +169,7 @@ export function CustomersDetailDrawer({ open, onOpenChange, customer }: Props) {
                       </div>
                     </div>
                     <div className='text-right'>
-                      <div>{formatQuota(ws.quota)}</div>
+                      <div>{formatQuota(resolveQuotaLimit(ws))}</div>
                       <div className='text-muted-foreground text-xs'>
                         {t('Used')}: {formatQuota(ws.used_quota)}
                       </div>

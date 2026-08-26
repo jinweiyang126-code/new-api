@@ -16,6 +16,7 @@ import {
 } from '@/components/data-table'
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { resolveQuotaLimit } from '@/lib/format'
 
 import { getCustomerWorkspaces } from '../api'
 import { apiErrorMessage } from '../lib/api-message'
@@ -50,8 +51,14 @@ function compareWorkspaces(
     case 'status':
     case 'created_at':
     case 'used_quota': {
-      const av = Number(a[sortBy as keyof Workspace] ?? 0)
-      const bv = Number(b[sortBy as keyof Workspace] ?? 0)
+      const av =
+        sortBy === 'quota'
+          ? resolveQuotaLimit(a)
+          : Number(a[sortBy as keyof Workspace] ?? 0)
+      const bv =
+        sortBy === 'quota'
+          ? resolveQuotaLimit(b)
+          : Number(b[sortBy as keyof Workspace] ?? 0)
       return (av - bv) * dir
     }
     case 'name': {
@@ -65,7 +72,7 @@ function compareWorkspaces(
 export function WorkspacesTable() {
   const { t } = useTranslation()
   const columns = useWorkspacesColumns()
-  const { refreshTrigger, currentWorkspaceId, customerName } = useWorkspaces()
+  const { refreshTrigger, customerName } = useWorkspaces()
   const { data: ctx } = useCustomerContext()
   const customerId = ctx?.customer?.id ?? 0
   const isMobile = useMediaQuery('(max-width: 640px)')
@@ -196,9 +203,6 @@ export function WorkspacesTable() {
       getRowClassName={(row, { isMobile: mobile }) => {
         if (row.original.status === WORKSPACE_STATUS.DISABLED) {
           return mobile ? DISABLED_ROW_MOBILE : DISABLED_ROW_DESKTOP
-        }
-        if (row.original.id === currentWorkspaceId) {
-          return 'bg-primary/5'
         }
         return undefined
       }}
