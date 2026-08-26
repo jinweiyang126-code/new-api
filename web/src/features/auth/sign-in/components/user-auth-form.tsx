@@ -28,7 +28,7 @@ import type { z } from 'zod'
 
 import { Dialog } from '@/components/dialog'
 import { PasswordInput } from '@/components/password-input'
-import { Turnstile } from '@/components/turnstile'
+import { Turnstile, TurnstileLoadingPlaceholder } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -85,12 +85,13 @@ export function UserAuthForm({
       true) !== false
   const {
     isTurnstileEnabled,
+    showTurnstileSlot,
+    turnstileReady,
     turnstileSiteKey,
     turnstileToken,
     setTurnstileToken,
     validateTurnstile,
   } = useTurnstile()
-  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
   const { handleLoginSuccess, redirectTo2FA } = useAuthRedirect()
   const setPending2FAFlowToken = useAuthStore(
     (state) => state.auth.setPending2FAFlowToken
@@ -398,13 +399,17 @@ export function UserAuthForm({
             </Button>
 
             {/* Turnstile */}
-            {isTurnstileEnabled && (
+            {showTurnstileSlot && (
               <div className='mt-2'>
-                <Turnstile
-                  siteKey={turnstileSiteKey}
-                  onVerify={setTurnstileToken}
-                  onExpire={() => setTurnstileToken('')}
-                />
+                {isTurnstileEnabled ? (
+                  <Turnstile
+                    siteKey={turnstileSiteKey}
+                    onVerify={setTurnstileToken}
+                    onExpire={() => setTurnstileToken('')}
+                  />
+                ) : (
+                  <TurnstileLoadingPlaceholder />
+                )}
               </div>
             )}
           </>

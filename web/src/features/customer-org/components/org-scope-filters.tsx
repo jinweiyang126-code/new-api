@@ -1,6 +1,7 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -54,11 +55,32 @@ export function OrgScopeFilters({
 }: Props) {
   const { t } = useTranslation()
 
+  const customerItems = useMemo(() => {
+    const rows = customers.map((c) => ({
+      value: String(c.id),
+      label: c.name,
+    }))
+    if (!customerIncludeAll) return rows
+    return [{ value: ORG_FILTER_ALL, label: t('All') }, ...rows]
+  }, [customers, customerIncludeAll, t])
+
+  const workspaceItems = useMemo(
+    () => [
+      { value: ORG_FILTER_ALL, label: t('All') },
+      ...workspaces.map((ws) => ({
+        value: String(ws.id),
+        label: ws.name,
+      })),
+    ],
+    [t, workspaces]
+  )
+
   return (
     <div className='flex flex-wrap items-center gap-2'>
       {showCustomerFilter ? (
         <Select
           value={customerId}
+          items={customerItems}
           onValueChange={(value) => onCustomerChange(value ?? ORG_FILTER_ALL)}
         >
           <SelectTrigger className='w-[180px]'>
@@ -80,6 +102,7 @@ export function OrgScopeFilters({
       {showWorkspaceFilter ? (
         <Select
           value={workspaceId}
+          items={workspaceItems}
           onValueChange={(value) => onWorkspaceChange(value ?? ORG_FILTER_ALL)}
         >
           <SelectTrigger className='w-[180px]'>

@@ -27,7 +27,7 @@ import type { z } from 'zod'
 
 import { Dialog } from '@/components/dialog'
 import { PasswordInput } from '@/components/password-input'
-import { Turnstile } from '@/components/turnstile'
+import { Turnstile, TurnstileLoadingPlaceholder } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -78,6 +78,8 @@ export function SignUpForm({
   const { status } = useStatus()
   const {
     isTurnstileEnabled,
+    showTurnstileSlot,
+    turnstileReady,
     turnstileSiteKey,
     turnstileToken,
     setTurnstileToken,
@@ -114,7 +116,6 @@ export function SignUpForm({
     status?.data?.oauth_register_enabled ??
     true
   const hasWeChatLogin = Boolean(status?.wechat_login)
-  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
   const customerSelfRegisterEnabled = Boolean(
     status?.customer_self_register_enabled ??
       status?.data?.customer_self_register_enabled
@@ -380,14 +381,18 @@ export function SignUpForm({
           </>
         )}
 
-        {isTurnstileEnabled && (
+        {showTurnstileSlot && (
           <div className='mt-2'>
-            <Turnstile
-              key={turnstileWidgetKey}
-              siteKey={turnstileSiteKey}
-              onVerify={setTurnstileToken}
-              onExpire={() => setTurnstileToken('')}
-            />
+            {isTurnstileEnabled ? (
+              <Turnstile
+                key={turnstileWidgetKey}
+                siteKey={turnstileSiteKey}
+                onVerify={setTurnstileToken}
+                onExpire={() => setTurnstileToken('')}
+              />
+            ) : (
+              <TurnstileLoadingPlaceholder />
+            )}
           </div>
         )}
 

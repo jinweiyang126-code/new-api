@@ -26,19 +26,25 @@ import { useStatus } from '@/hooks/use-status'
  * Hook for managing Turnstile verification
  */
 export function useTurnstile() {
-  const { status } = useStatus()
+  const { status, loading: statusLoading } = useStatus()
   const [turnstileToken, setTurnstileToken] = useState('')
 
   const isTurnstileEnabled = !!(
     status?.turnstile_check && status?.turnstile_site_key
   )
   const turnstileSiteKey = status?.turnstile_site_key || ''
+  // Cold start with no cached status: reserve space + block submit until we know.
+  const isTurnstileStatusPending = statusLoading && !status
+  const showTurnstileSlot = isTurnstileEnabled || isTurnstileStatusPending
+  const turnstileReady =
+    !isTurnstileStatusPending &&
+    (!isTurnstileEnabled || Boolean(turnstileToken))
 
   /**
    * Validate if turnstile is ready when required
    */
   const validateTurnstile = (): boolean => {
-    if (isTurnstileEnabled && !turnstileToken) {
+    if (isTurnstileStatusPending || (isTurnstileEnabled && !turnstileToken)) {
       toast.info(
         i18next.t('Please wait a moment, human check is initializing...')
       )
@@ -49,6 +55,9 @@ export function useTurnstile() {
 
   return {
     isTurnstileEnabled,
+    isTurnstileStatusPending,
+    showTurnstileSlot,
+    turnstileReady,
     turnstileSiteKey,
     turnstileToken,
     setTurnstileToken,

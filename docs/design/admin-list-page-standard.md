@@ -1,6 +1,6 @@
 # 管理端列表页标准（对齐 Users）
 
-**适用范围**：后台管理 / 组织侧的**资源列表页**（如用户、客户、工作区、上游凭证等）  
+**适用范围**：后台管理 / 组织侧的**资源列表页**（如用户、组织、工作区、上游凭证等）  
 **对标实现**：`web/src/features/users/`（金标准）  
 **已对齐示例**：`customers/`、`customer-org/workspaces-*`、`customer-org/upstream-*`、`customer-org/members-*`（Tab 切列表，对齐 Models）  
 

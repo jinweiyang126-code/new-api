@@ -159,7 +159,10 @@ if (!rootElement) {
   }
 })()
 if (!rootElement.innerHTML) {
-  hideBootOAuthLoader()
+  // Keep the HTML boot loader on /oauth/* until OAuthCallbackScreen paints.
+  if (!window.location.pathname.startsWith('/oauth/')) {
+    hideBootOAuthLoader()
+  }
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>

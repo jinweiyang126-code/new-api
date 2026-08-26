@@ -43,7 +43,7 @@ var (
 	ErrInvalidTopupAmount      = errors.New("topup amount must be positive")
 )
 
-// Customer is the billing/tenant unit (签约客户).
+// Customer is the billing/tenant unit (签约组织).
 type Customer struct {
 	Id                  int    `json:"id"`
 	Name                string `json:"name" gorm:"type:varchar(128);not null"`

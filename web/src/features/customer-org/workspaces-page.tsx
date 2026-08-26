@@ -41,9 +41,16 @@ function WorkspacesContent() {
             />
           </SectionPageLayout.Actions>
           <SectionPageLayout.Content>
-            <p className='text-muted-foreground text-sm'>
-              {t('You are not a member of any customer.')}
-            </p>
+            <div className='flex max-w-lg flex-col gap-3'>
+              <p className='text-muted-foreground text-sm'>
+                {t('You are not a member of any customer.')}
+              </p>
+              <p className='text-muted-foreground text-sm'>
+                {t(
+                  'Create an organization to unlock workspaces, members, and organization wallets.'
+                )}
+              </p>
+            </div>
           </SectionPageLayout.Content>
         </SectionPageLayout>
         <CreateOrganizationDrawer
@@ -93,6 +100,7 @@ export function WorkspacesPage() {
     <WorkspacesProvider
       isAdmin={isAdmin}
       currentWorkspaceId={currentWorkspaceId}
+      customerName={ctx?.customer?.name ?? ''}
     >
       <WorkspacesContent />
     </WorkspacesProvider>

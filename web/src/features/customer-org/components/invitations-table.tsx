@@ -13,13 +13,13 @@ import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
 import { getCustomerInvitations } from '../api'
+import { filterInvitationsByWorkspace } from '../lib/filter-invitations'
 import { apiErrorMessage } from '../lib/api-message'
 import type { Invitation } from '../types'
 import { InvitationsBulkActions } from './invitations-bulk-actions'
 import { useInvitationsColumns } from './invitations-columns'
 import { useMembers } from './members-provider'
 import { useCustomerContext } from '../hooks/use-customer-context'
-import { resolveCurrentWorkspace } from '../lib/resolve-current-workspace'
 
 const route = getRouteApi('/_authenticated/members/$section')
 
@@ -63,15 +63,22 @@ export function InvitationsTable() {
   const { t } = useTranslation()
   const columns = useInvitationsColumns()
   const { data: ctx } = useCustomerContext()
-  const { currentWorkspace, isPersonal, currentWorkspaceId } =
-    resolveCurrentWorkspace(ctx)
   const {
     customerId,
     refreshTrigger,
     isAdmin,
+    isPersonal,
+    currentWorkspaceId,
   } = useMembers()
   const isMobile = useMediaQuery('(max-width: 640px)')
   const [sorting, setSorting] = useState<SortingState>([])
+
+  const currentWorkspace = useMemo(
+    () =>
+      (ctx?.workspaces ?? []).find((ws) => ws.id === currentWorkspaceId) ??
+      null,
+    [ctx?.workspaces, currentWorkspaceId]
+  )
 
   const {
     globalFilter,
@@ -121,15 +128,20 @@ export function InvitationsTable() {
     placeholderData: (prev) => prev,
   })
 
-  const scoped = useMemo(() => {
-    if (isPersonal) return invitations
-    return invitations.filter((inv) => {
-      if (inv.workspace_id == null || inv.workspace_id === 0) {
-        return Boolean(currentWorkspace?.is_default)
-      }
-      return inv.workspace_id === currentWorkspaceId
-    })
-  }, [invitations, isPersonal, currentWorkspaceId, currentWorkspace?.is_default])
+  const scoped = useMemo(
+    () =>
+      filterInvitationsByWorkspace(invitations, {
+        showAll: isPersonal,
+        workspaceId: currentWorkspaceId,
+        isDefaultWorkspace: Boolean(currentWorkspace?.is_default),
+      }),
+    [
+      invitations,
+      isPersonal,
+      currentWorkspaceId,
+      currentWorkspace?.is_default,
+    ]
+  )
 
   const filtered = useMemo(() => {
     const keyword = globalFilter?.trim().toLowerCase() ?? ''

@@ -89,7 +89,8 @@
     <div id="root" translate="no" class="notranslate"></div>
     <script>
       ;(function () {
-        if (!/^\\/oauth\\//.test(window.location.pathname)) return
+        // Avoid regex literals here — escape mistakes break this boot script silently.
+        if (window.location.pathname.indexOf('/oauth/') !== 0) return
         var loader = document.getElementById('boot-oauth-loader')
         if (loader) loader.hidden = false
       })()

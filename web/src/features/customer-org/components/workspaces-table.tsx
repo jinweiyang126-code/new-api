@@ -65,7 +65,7 @@ function compareWorkspaces(
 export function WorkspacesTable() {
   const { t } = useTranslation()
   const columns = useWorkspacesColumns()
-  const { refreshTrigger, currentWorkspaceId } = useWorkspaces()
+  const { refreshTrigger, currentWorkspaceId, customerName } = useWorkspaces()
   const { data: ctx } = useCustomerContext()
   const customerId = ctx?.customer?.id ?? 0
   const isMobile = useMediaQuery('(max-width: 640px)')
@@ -125,7 +125,8 @@ export function WorkspacesTable() {
       if (!keyword) return true
       return (
         ws.name.toLowerCase().includes(keyword) ||
-        ws.slug.toLowerCase().includes(keyword)
+        ws.slug.toLowerCase().includes(keyword) ||
+        customerName.toLowerCase().includes(keyword)
       )
     })
 
@@ -136,7 +137,7 @@ export function WorkspacesTable() {
       )
     }
     return rows
-  }, [workspaces, globalFilter, statusValue, sorting])
+  }, [workspaces, globalFilter, statusValue, sorting, customerName])
 
   const pageItems = useMemo(() => {
     const start = pagination.pageIndex * pagination.pageSize

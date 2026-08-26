@@ -1,10 +1,9 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import z from 'zod'
 
-import { getSelfCustomer } from '@/features/customer-org/api'
 import { WorkspacesPage } from '@/features/customer-org/workspaces-page'
 
 const workspacesSearchSchema = z.object({
@@ -15,12 +14,7 @@ const workspacesSearchSchema = z.object({
 })
 
 export const Route = createFileRoute('/_authenticated/workspaces/')({
-  beforeLoad: async () => {
-    const res = await getSelfCustomer().catch(() => null)
-    if (!res?.success || !res.data?.customer) {
-      throw redirect({ to: '/403' })
-    }
-  },
+  // Personal users (no org yet) may open this page to create an organization.
   validateSearch: workspacesSearchSchema,
   component: WorkspacesPage,
 })

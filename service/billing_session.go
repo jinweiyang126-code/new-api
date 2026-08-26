@@ -476,9 +476,9 @@ func tryWorkspaceFunding(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCo
 		} else if errors.Is(err, model.ErrWorkspaceNotFound) {
 			msg = "工作区不存在"
 		} else if errors.Is(err, model.ErrCustomerNotFound) {
-			msg = "客户不存在"
+			msg = "组织不存在"
 		} else if strings.Contains(err.Error(), "customer is disabled") {
-			msg = "客户已停用"
+			msg = "组织已停用"
 		}
 		return nil, types.NewErrorWithStatusCode(fmt.Errorf("%s", msg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())

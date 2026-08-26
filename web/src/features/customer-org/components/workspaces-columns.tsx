@@ -16,7 +16,7 @@ import { useWorkspaces } from './workspaces-provider'
 
 export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
   const { t } = useTranslation()
-  const { currentWorkspaceId } = useWorkspaces()
+  const { currentWorkspaceId, customerName } = useWorkspaces()
 
   return [
     {
@@ -62,6 +62,16 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
       meta: { mobileOrder: 8, mobileHidden: true },
     },
     {
+      id: 'customer_name',
+      header: t('Customer Name'),
+      size: 160,
+      enableSorting: false,
+      cell: () => (
+        <span className='truncate font-medium'>{customerName || '—'}</span>
+      ),
+      meta: { mobileOrder: 2 },
+    },
+    {
       accessorKey: 'name',
       header: t('Name'),
       size: 180,
@@ -88,7 +98,7 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
           </div>
         )
       },
-      meta: { mobileOrder: 2, mobileTitle: true },
+      meta: { mobileOrder: 3, mobileTitle: true },
     },
     {
       accessorKey: 'quota',
@@ -102,7 +112,7 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
           </span>
         </div>
       ),
-      meta: { mobileOrder: 4 },
+      meta: { mobileOrder: 5 },
     },
     {
       accessorKey: 'status',
@@ -118,14 +128,14 @@ export function useWorkspacesColumns(): ColumnDef<Workspace>[] {
             copyable={false}
           />
         ),
-      meta: { mobileOrder: 3, mobileBadge: true },
+      meta: { mobileOrder: 4, mobileBadge: true },
     },
     {
       accessorKey: 'created_at',
       header: t('Created At'),
       size: 160,
       cell: ({ row }) => formatTimestamp(row.original.created_at),
-      meta: { mobileOrder: 5, mobileHidden: true },
+      meta: { mobileOrder: 6, mobileHidden: true },
     },
     {
       id: 'actions',

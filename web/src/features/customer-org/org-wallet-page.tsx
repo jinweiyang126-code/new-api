@@ -46,6 +46,17 @@ export function OrgWalletPage() {
     return wallets.filter((w) => w.workspace_id === id)
   }, [wallets, workspaceFilter])
 
+  const workspaceFilterItems = useMemo(
+    () => [
+      { value: FILTER_ALL, label: t('All') },
+      ...workspaces.map((ws) => ({
+        value: String(ws.id),
+        label: ws.name,
+      })),
+    ],
+    [t, workspaces]
+  )
+
   const totalBalance = useMemo(
     () => filtered.reduce((sum, w) => sum + (w.balance ?? 0), 0),
     [filtered]
@@ -113,6 +124,7 @@ export function OrgWalletPage() {
                   </div>
                   <Select
                     value={workspaceFilter}
+                    items={workspaceFilterItems}
                     onValueChange={(value) => {
                       if (value != null) setWorkspaceFilter(value)
                     }}

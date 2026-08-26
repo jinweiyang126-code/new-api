@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { Dialog } from '@/components/dialog'
-import { Turnstile } from '@/components/turnstile'
+import { Turnstile, TurnstileLoadingPlaceholder } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -56,6 +56,8 @@ export function EmailBindDialog({
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const {
     isTurnstileEnabled,
+    showTurnstileSlot,
+    turnstileReady,
     turnstileSiteKey,
     turnstileToken,
     setTurnstileToken,
@@ -69,8 +71,6 @@ export function EmailBindDialog({
   } = useCountdown({
     initialSeconds: 60,
   })
-
-  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
 
   const handleSendCode = async () => {
     if (!email || !email.includes('@')) {
@@ -191,13 +191,17 @@ export function EmailBindDialog({
           />
         </div>
 
-        {isTurnstileEnabled && turnstileSiteKey ? (
-          <Turnstile
-            key={turnstileWidgetKey}
-            siteKey={turnstileSiteKey}
-            onVerify={setTurnstileToken}
-            onExpire={() => setTurnstileToken('')}
-          />
+        {showTurnstileSlot ? (
+          isTurnstileEnabled && turnstileSiteKey ? (
+            <Turnstile
+              key={turnstileWidgetKey}
+              siteKey={turnstileSiteKey}
+              onVerify={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+            />
+          ) : (
+            <TurnstileLoadingPlaceholder />
+          )
         ) : null}
 
         <div className='space-y-2'>

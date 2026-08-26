@@ -213,7 +213,7 @@ export function MembersWalletDialog() {
             disabled={pending || wsId <= 0 || quotaValue <= 0}
             onClick={() => void handleSubmit()}
           >
-            {mode === 'allocate' ? t('Allocate') : t('Revoke')}
+            {mode === 'allocate' ? t('Allocate wallet') : t('Revoke wallet')}
           </Button>
         </DialogFooter>
       </DialogContent>

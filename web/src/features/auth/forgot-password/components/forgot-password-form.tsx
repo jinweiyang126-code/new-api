@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 
-import { Turnstile } from '@/components/turnstile'
+import { Turnstile, TurnstileLoadingPlaceholder } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -53,6 +53,8 @@ export function ForgotPasswordForm({
 
   const {
     isTurnstileEnabled,
+    showTurnstileSlot,
+    turnstileReady,
     turnstileSiteKey,
     turnstileToken,
     setTurnstileToken,
@@ -68,7 +70,6 @@ export function ForgotPasswordForm({
     resolver: zodResolver(forgotPasswordFormSchema),
     defaultValues: { email: '' },
   })
-  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
 
   async function onSubmit(data: z.infer<typeof forgotPasswordFormSchema>) {
     if (!validateTurnstile()) return
@@ -122,13 +123,17 @@ export function ForgotPasswordForm({
           {isLoading ? <Loader2 className='animate-spin' /> : <ArrowRight />}
         </Button>
 
-        {isTurnstileEnabled && (
+        {showTurnstileSlot && (
           <div className='mt-2'>
-            <Turnstile
-              siteKey={turnstileSiteKey}
-              onVerify={setTurnstileToken}
-              onExpire={() => setTurnstileToken('')}
-            />
+            {isTurnstileEnabled ? (
+              <Turnstile
+                siteKey={turnstileSiteKey}
+                onVerify={setTurnstileToken}
+                onExpire={() => setTurnstileToken('')}
+              />
+            ) : (
+              <TurnstileLoadingPlaceholder />
+            )}
           </div>
         )}
       </form>

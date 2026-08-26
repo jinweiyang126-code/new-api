@@ -18,6 +18,7 @@ type WorkspacesContextType = {
   triggerRefresh: () => void
   isAdmin: boolean
   currentWorkspaceId: number
+  customerName: string
 }
 
 const WorkspacesContext = React.createContext<WorkspacesContextType | null>(
@@ -28,10 +29,12 @@ export function WorkspacesProvider({
   children,
   isAdmin,
   currentWorkspaceId,
+  customerName,
 }: {
   children: React.ReactNode
   isAdmin: boolean
   currentWorkspaceId: number
+  customerName: string
 }) {
   const [open, setOpen] = useDialogState<WorkspacesDialogType>(null)
   const [currentRow, setCurrentRow] = useState<Workspace | null>(null)
@@ -49,6 +52,7 @@ export function WorkspacesProvider({
         triggerRefresh,
         isAdmin,
         currentWorkspaceId,
+        customerName,
       }}
     >
       {children}

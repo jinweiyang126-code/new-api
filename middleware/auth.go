@@ -511,13 +511,13 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 				msg = "工作区已停用"
 			} else if errors.Is(err, model.ErrWorkspaceNotFound) {
 				msg = "工作区不存在"
-			} else if errors.Is(err, model.ErrCustomerNotFound) {
-				msg = "客户不存在"
-			} else if strings.Contains(err.Error(), "customer is disabled") {
-				msg = "客户已停用"
-			} else if strings.Contains(err.Error(), "mismatch") {
-				msg = "令牌客户与工作区不匹配"
-			}
+		} else if errors.Is(err, model.ErrCustomerNotFound) {
+			msg = "组织不存在"
+		} else if strings.Contains(err.Error(), "customer is disabled") {
+			msg = "组织已停用"
+		} else if strings.Contains(err.Error(), "mismatch") {
+			msg = "令牌组织与工作区不匹配"
+		}
 			abortWithOpenAiMessage(c, http.StatusForbidden, msg)
 			return err
 		}

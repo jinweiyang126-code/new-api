@@ -23,7 +23,7 @@
 | Midjourney / Kling / Jimeng / Suno 专用 UI | 厂商协议差异大，归二期                   |
 | 对外免登录公开体验页                       | 仍需登录；无独立营销落地页               |
 | 复杂工作流 / 批量队列 / 素材库             | 一期单次生成即可                         |
-| 替换`/v1` 对外 API                       | 体验中心是控制台能力，不改变客户集成方式 |
+| 替换`/v1` 对外 API                       | 体验中心是控制台能力，不改变组织集成方式 |
 | 改造 Chat Playground 本身                  | 体验中心与 Chat 分组并列，互不吞并       |
 
 ### 1.3 已锁定决策
@@ -48,7 +48,7 @@
 | 图片 relay           | `POST /v1/images/generations`（`TokenAuth`）                                                                    | 新增`/pg/images/...` 包装；OpenAI 渠道仍同步；`BasicRouter` 走异步 Task（`POST` 提交 + `GET .../:task_id` 轮询），与视频同形 |
 | 视频 relay           | `POST /v1/videos`、`GET /v1/videos/:id`；内容 `GET /v1/videos/:task_id/content`（已支持 `TokenOrUserAuth`） | 新增`/pg/videos` 提交/查询；`BasicRouter` 走 TaskAdaptor → `/v1/video-generations` |
 | 使用日志 / 任务日志  | `/usage-logs/common`、`/usage-logs/task`、`/usage-logs/drawing`                                               | 图片进普通消费日志；视频进任务日志；页内提供「查看日志」入口    |
-| 客户 / 工作区 / BYOK | M1 已交付                                                                                                           | 与 Playground 相同计费与选渠上下文                              |
+| 组织 / 工作区 / BYOK | M1 已交付                                                                                                           | 与 Playground 相同计费与选渠上下文                              |
 
 ---
 
@@ -120,7 +120,7 @@ flowchart TD
   vidPreview --> vidLog[Optional link to Task Logs]
 ```
 
-**工作区上下文**：若用户属于客户且 UI 已选定工作区（与令牌 / Playground 一致），请求携带当前工作区语义，扣工作区池；否则个人模式扣 `User.Quota`。
+**工作区上下文**：若用户属于组织且 UI 已选定工作区（与令牌 / Playground 一致），请求携带当前工作区语义，扣工作区池；否则个人模式扣 `User.Quota`。
 
 ---
 
@@ -248,12 +248,12 @@ flowchart TD
 
 ---
 
-## 7. 计费与客户 / 工作区
+## 7. 计费与组织 / 工作区
 
 | 场景                      | 扣费                                       |
 | ------------------------- | ------------------------------------------ |
-| 个人用户（无客户）        | `User.Quota`                             |
-| 客户成员 + 已选工作区     | 工作区池（与 Playground / 工作区令牌一致） |
+| 个人用户（无组织）        | `User.Quota`                             |
+| 组织成员 + 已选工作区     | 工作区池（与 Playground / 工作区令牌一致） |
 | BYOK / dedicated / shared | 选渠与`upstream_source` 与现网一致       |
 
 - 额度不足：拒绝生成并本地化提示。
@@ -268,7 +268,7 @@ flowchart TD
 
 - 任意已登录且通过 `sidebar_modules` 过滤的用户（含普通成员）。
 - 不要求 `SUPER_ADMIN`。
-- 客户成员无额外角色门槛（有额度即可试）。
+- 组织成员无额外角色门槛（有额度即可试）。
 
 ### 8.2 i18n / 前端标准
 

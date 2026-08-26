@@ -14,8 +14,8 @@ import {
   roleLabel,
 } from '../lib/api-message'
 import type { Invitation } from '../types'
+import { useCustomerContext } from '../hooks/use-customer-context'
 import { InvitationsRowActions } from './invitations-row-actions'
-import { useMembers } from './members-provider'
 
 function invitationStatusVariant(
   status: string
@@ -35,7 +35,20 @@ function invitationStatusVariant(
 
 export function useInvitationsColumns(): ColumnDef<Invitation>[] {
   const { t } = useTranslation()
-  const { isPersonal, currentWorkspaceName } = useMembers()
+  const { data: ctx } = useCustomerContext()
+  const workspaces = ctx?.workspaces ?? []
+
+  const workspaceNameById = (workspaceId: number | null | undefined) => {
+    if (workspaceId == null || workspaceId === 0) {
+      return (
+        workspaces.find((ws) => ws.is_default)?.name || t('default')
+      )
+    }
+    return (
+      workspaces.find((ws) => ws.id === workspaceId)?.name ||
+      `#${workspaceId}`
+    )
+  }
 
   return [
     {
@@ -103,16 +116,10 @@ export function useInvitationsColumns(): ColumnDef<Invitation>[] {
     },
     {
       id: 'workspace',
-      header: t('Workspace'),
+      header: t('Workspace Name'),
       size: 140,
       enableSorting: false,
-      cell: ({ row }) => {
-        if (row.original.workspace_id == null || row.original.workspace_id === 0) {
-          return t('default')
-        }
-        if (!isPersonal) return currentWorkspaceName || `#${row.original.workspace_id}`
-        return `#${row.original.workspace_id}`
-      },
+      cell: ({ row }) => workspaceNameById(row.original.workspace_id),
       meta: { mobileOrder: 6, mobileHidden: true },
     },
     {

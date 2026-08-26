@@ -32,6 +32,7 @@ import {
   useCustomerContext,
   useSetCurrentCustomer,
 } from './hooks/use-customer-context'
+import { filterInvitationsByWorkspace } from './lib/filter-invitations'
 import {
   type MembersSectionId,
   MEMBERS_DEFAULT_SECTION,
@@ -77,7 +78,7 @@ function MembersContent() {
     },
   })
 
-  const { data: invitationsCount = 0 } = useQuery({
+  const { data: invitations = [] } = useQuery({
     queryKey: ['customer-invitations', customerId, refreshTrigger],
     enabled: customerId > 0 && isAdmin,
     queryFn: async () => {
@@ -85,8 +86,25 @@ function MembersContent() {
       if (!res.success) return []
       return res.data ?? []
     },
-    select: (rows) => rows.length,
   })
+
+  const invitationsCount = useMemo(
+    () =>
+      filterInvitationsByWorkspace(invitations, {
+        showAll: isPersonal,
+        workspaceId: currentWorkspaceId,
+        isDefaultWorkspace: Boolean(
+          ctx?.workspaces?.find((ws) => ws.id === currentWorkspaceId)
+            ?.is_default
+        ),
+      }).length,
+    [
+      invitations,
+      isPersonal,
+      currentWorkspaceId,
+      ctx?.workspaces,
+    ]
+  )
 
   const visibleSections = useMemo(
     () =>

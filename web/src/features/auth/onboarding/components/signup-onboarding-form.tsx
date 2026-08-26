@@ -2,6 +2,7 @@
 Copyright (C) 2023-2026 QuantumNous
 */
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Building2, Loader2, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +10,10 @@ import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { createSelfCustomer } from '@/features/customer-org/api'
+import {
+  SELF_CUSTOMER_QUERY_KEY,
+  useSetCurrentCustomer,
+} from '@/features/customer-org/hooks/use-customer-context'
 import { OrganizationSetupFields } from '@/features/auth/sign-up/components/organization-setup-fields'
 import { clearSignupOnboardingPending } from '@/features/auth/lib/signup-onboarding'
 import { cn } from '@/lib/utils'
@@ -41,6 +46,8 @@ export function SignupOnboardingForm({
 }: SignupOnboardingFormProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const setCurrentCustomer = useSetCurrentCustomer()
   const user = useAuthStore((state) => state.auth.user)
   const setUser = useAuthStore((state) => state.auth.setUser)
   const [step, setStep] = useState<OnboardingStep>(initialStep)
@@ -93,10 +100,14 @@ export function SignupOnboardingForm({
         toast.error(res?.message || t('Failed to create organization'))
         return
       }
+      // Sidebar org menus gate on self-customer context, not user.customer_id alone.
+      // Refresh context before updating user.customer_id (that update can trigger redirect).
+      clearSignupOnboardingPending()
+      await queryClient.invalidateQueries({ queryKey: SELF_CUSTOMER_QUERY_KEY })
+      await setCurrentCustomer.mutateAsync(res.data.customer_id)
       if (user) {
         setUser({ ...user, customer_id: res.data.customer_id })
       }
-      clearSignupOnboardingPending()
       toast.success(t('Organization created'))
       void navigate({ to: '/dashboard', replace: true })
     } catch {
