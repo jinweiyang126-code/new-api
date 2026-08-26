@@ -3,12 +3,10 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { WalletCards } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
-import { IconBadge } from '@/components/ui/icon-badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { WalletStatsCard } from '@/features/wallet/components/wallet-stats-card'
 import {
   Select,
   SelectContent,
@@ -19,6 +17,8 @@ import {
 import { formatQuota } from '@/lib/format'
 
 import { getSelfOrgWallets, type OrgWallet } from './api'
+import { OrgWalletLedgerDialog } from './components/dialogs/org-wallet-ledger-dialog'
+import { OrgWalletFundsCard } from './components/org-wallet-funds-card'
 import { useCustomerContext } from './hooks/use-customer-context'
 
 const FILTER_ALL = 'all'
@@ -29,6 +29,7 @@ export function OrgWalletPage() {
   const customerId = ctx?.customer?.id ?? 0
   const workspaces = ctx?.workspaces ?? []
   const [workspaceFilter, setWorkspaceFilter] = useState(FILTER_ALL)
+  const [ledgerDialogOpen, setLedgerDialogOpen] = useState(false)
 
   const { data: wallets = [], isLoading: walletsLoading } = useQuery({
     queryKey: ['self-org-wallets', customerId],
@@ -57,10 +58,21 @@ export function OrgWalletPage() {
     [t, workspaces]
   )
 
-  const totalBalance = useMemo(
-    () => filtered.reduce((sum, w) => sum + (w.balance ?? 0), 0),
+  const stats = useMemo(
+    () =>
+      filtered.reduce(
+        (acc, wallet) => ({
+          quota: acc.quota + (wallet.balance ?? 0),
+          used_quota: acc.used_quota + (wallet.used_quota ?? 0),
+          request_count: acc.request_count + (wallet.request_count ?? 0),
+        }),
+        { quota: 0, used_quota: 0, request_count: 0 }
+      ),
     [filtered]
   )
+
+  const ledgerWorkspaceId =
+    workspaceFilter === FILTER_ALL ? 0 : Number(workspaceFilter)
 
   const loading = ctxLoading || walletsLoading
 
@@ -78,45 +90,18 @@ export function OrgWalletPage() {
   }
 
   return (
-    <SectionPageLayout>
-      <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
-      <SectionPageLayout.Content>
-        <div className='mx-auto flex w-full max-w-5xl flex-col gap-4 sm:gap-5'>
-          <p className='text-muted-foreground text-sm'>
-            {t(
-              'Organization wallet balances are allocated by customer admins. This page is read-only.'
-            )}
-          </p>
+    <>
+      <SectionPageLayout>
+        <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
+        <SectionPageLayout.Content>
+          <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
+            <WalletStatsCard stats={stats} loading={loading} />
 
-          {loading ? (
-            <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
-              {['a', 'b', 'c'].map((k) => (
-                <div key={k} className='rounded-lg border p-4'>
-                  <Skeleton className='h-4 w-24' />
-                  <Skeleton className='mt-3 h-7 w-32' />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <>
-              <div className='grid grid-cols-1 divide-y rounded-lg border sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
-                <OrgStat
-                  label={t('Current Balance')}
-                  value={formatQuota(totalBalance)}
-                  description={t('Sum of your org wallets in view')}
-                />
-                <OrgStat
-                  label={t('Wallets')}
-                  value={String(filtered.length)}
-                  description={t('Workspace-scoped balances')}
-                />
-                <OrgStat
-                  label={t('Customer')}
-                  value={ctx?.customer?.name ?? '—'}
-                  description={t('Organization')}
-                />
-              </div>
+            <OrgWalletFundsCard
+              onOpenLedger={() => setLedgerDialogOpen(true)}
+            />
 
+            {!loading ? (
               <div className='rounded-lg border'>
                 <div className='flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2'>
                   <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
@@ -159,40 +144,18 @@ export function OrgWalletPage() {
                   </ul>
                 )}
               </div>
-            </>
-          )}
-        </div>
-      </SectionPageLayout.Content>
-    </SectionPageLayout>
-  )
-}
+            ) : null}
+          </div>
+        </SectionPageLayout.Content>
+      </SectionPageLayout>
 
-function OrgStat({
-  label,
-  value,
-  description,
-}: {
-  label: string
-  value: string
-  description: string
-}) {
-  return (
-    <div className='min-w-0 px-4 py-3 sm:py-4'>
-      <div className='flex items-center gap-2'>
-        <IconBadge tone='success' size='stat'>
-          <WalletCards />
-        </IconBadge>
-        <div className='text-muted-foreground truncate text-[11px] font-medium tracking-wider uppercase sm:text-xs'>
-          {label}
-        </div>
-      </div>
-      <div className='text-foreground mt-2 font-mono text-sm font-bold tracking-tight break-all tabular-nums sm:text-xl'>
-        {value}
-      </div>
-      <div className='text-muted-foreground/60 mt-1 hidden text-xs md:block'>
-        {description}
-      </div>
-    </div>
+      <OrgWalletLedgerDialog
+        open={ledgerDialogOpen}
+        onOpenChange={setLedgerDialogOpen}
+        customerId={customerId}
+        workspaceId={ledgerWorkspaceId}
+      />
+    </>
   )
 }
 
@@ -215,3 +178,4 @@ function OrgWalletRow({ wallet }: { wallet: OrgWallet }) {
     </li>
   )
 }
+

@@ -23,10 +23,14 @@ import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatQuota } from '@/lib/format'
 
-import type { UserWalletData } from '../types'
+export interface WalletStatsSummary {
+  quota: number
+  used_quota: number
+  request_count: number
+}
 
 interface WalletStatsCardProps {
-  user: UserWalletData | null
+  stats: WalletStatsSummary | null
   loading?: boolean
 }
 
@@ -55,21 +59,21 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
   }[] = [
     {
       label: t('Current Balance'),
-      value: formatQuota(props.user?.quota ?? 0),
+      value: formatQuota(props.stats?.quota ?? 0),
       description: t('Remaining quota'),
       icon: WalletCards,
       tone: 'success',
     },
     {
       label: t('Total Usage'),
-      value: formatQuota(props.user?.used_quota ?? 0),
+      value: formatQuota(props.stats?.used_quota ?? 0),
       description: t('Total consumed quota'),
       icon: BarChart3,
       tone: 'info',
     },
     {
       label: t('API Requests'),
-      value: (props.user?.request_count ?? 0).toLocaleString(),
+      value: (props.stats?.request_count ?? 0).toLocaleString(),
       description: t('Total requests made'),
       icon: Activity,
       tone: 'chart-4',

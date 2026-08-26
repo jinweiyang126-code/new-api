@@ -24,6 +24,10 @@ export type MemberRow = {
   /** customer = org-wide list (personal context); workspace = focused workspace */
   scope: 'customer' | 'workspace'
   workspace_names: string[]
+  /** Workspace IDs this member belongs to (for allocate/revoke picker). */
+  workspace_ids: number[]
+  /** Sum of org-wallet balances (all workspaces or filtered workspace). */
+  org_wallet_balance: number
 }
 
 type MembersContextType = {

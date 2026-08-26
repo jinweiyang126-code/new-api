@@ -288,7 +288,18 @@ export function Wallet(props: WalletProps) {
         <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
         <SectionPageLayout.Content>
           <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
-            <WalletStatsCard user={user} loading={userLoading} />
+            <WalletStatsCard
+              stats={
+                user
+                  ? {
+                      quota: user.quota,
+                      used_quota: user.used_quota,
+                      request_count: user.request_count,
+                    }
+                  : null
+              }
+              loading={userLoading}
+            />
 
             <div
               className={

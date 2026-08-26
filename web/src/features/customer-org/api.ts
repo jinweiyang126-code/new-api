@@ -294,11 +294,24 @@ export type OrgWallet = {
   customer_id: number
   workspace_id: number
   balance: number
+  used_quota?: number
+  request_count?: number
   created_at: number
   updated_at: number
   customer_name?: string
   workspace_name?: string
   username?: string
+}
+
+export type OrgWalletLedgerEntry = {
+  id: number
+  action: string
+  amount: number
+  workspace_id: number
+  workspace_name?: string
+  customer_id: number
+  operator_id?: number
+  created_at: number
 }
 
 export async function getSelfOrgWallets(
@@ -307,6 +320,16 @@ export async function getSelfOrgWallets(
   const res = await api.get('/api/user/self/org-wallets', {
     params: customerId ? { customer_id: customerId } : undefined,
   })
+  return res.data
+}
+
+export async function getSelfOrgWalletLedger(params: {
+  customer_id?: number
+  workspace_id?: number
+  p?: number
+  size?: number
+}): Promise<ApiResponse<{ items: OrgWalletLedgerEntry[]; total: number }>> {
+  const res = await api.get('/api/user/self/org-wallet-ledger', { params })
   return res.data
 }
 

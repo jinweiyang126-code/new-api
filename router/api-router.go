@@ -89,6 +89,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.GET("/self", controller.GetSelf)
 				selfRoute.GET("/self/customer", controller.GetSelfCustomer)
 				selfRoute.GET("/self/org-wallets", controller.GetSelfOrgWallets)
+				selfRoute.GET("/self/org-wallet-ledger", controller.GetSelfOrgWalletLedger)
 				selfRoute.POST("/self/current-customer", controller.SetCurrentCustomer)
 				selfRoute.POST("/self/current-workspace", controller.SetCurrentWorkspace)
 				selfRoute.GET("/models", controller.GetUserModels)

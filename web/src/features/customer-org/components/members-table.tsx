@@ -17,7 +17,7 @@ import {
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
-import { getCustomerMembers, getWorkspaceMembers } from '../api'
+import { getCustomerMembers, getWorkspaceMembers, getWorkspaceOrgWallets } from '../api'
 import { useCustomerContext } from '../hooks/use-customer-context'
 import { apiErrorMessage } from '../lib/api-message'
 import { CREDENTIAL_STATUS, getCredentialStatusOptions } from '../constants'
@@ -35,6 +35,7 @@ const SORTABLE = new Set([
   'status',
   'created_at',
   'workspace_names',
+  'org_wallet_balance',
 ])
 
 function compareMembers(a: MemberRow, b: MemberRow, sortBy: string, desc: boolean) {
@@ -58,6 +59,11 @@ function compareMembers(a: MemberRow, b: MemberRow, sortBy: string, desc: boolea
       const av = a.workspace_names.join(', ')
       const bv = b.workspace_names.join(', ')
       return av.localeCompare(bv) * dir
+    }
+    case 'org_wallet_balance': {
+      const av = a.org_wallet_balance ?? 0
+      const bv = b.org_wallet_balance ?? 0
+      return (av - bv) * dir
     }
     default:
       return (a.id - b.id) * dir
@@ -145,11 +151,14 @@ export function MembersTable() {
     enabled: customerId > 0 && (isPersonal || currentWorkspaceId > 0),
     queryFn: async (): Promise<MemberRow[]> => {
       if (isPersonal) {
-        const [customerRes, ...workspaceMemberResults] = await Promise.all([
+        const [customerRes, ...workspaceResults] = await Promise.all([
           getCustomerMembers(customerId),
           ...workspaces.map(async (ws) => {
-            const res = await getWorkspaceMembers(ws.id)
-            return { workspace: ws, res }
+            const [membersRes, walletsRes] = await Promise.all([
+              getWorkspaceMembers(ws.id),
+              getWorkspaceOrgWallets(ws.id),
+            ])
+            return { workspace: ws, membersRes, walletsRes }
           }),
         ])
 
@@ -161,12 +170,28 @@ export function MembersTable() {
         }
 
         const namesByUserId = new Map<number, string[]>()
-        for (const { workspace, res } of workspaceMemberResults) {
-          if (!res.success || !res.data) continue
-          for (const member of res.data) {
-            const existing = namesByUserId.get(member.user_id) ?? []
-            if (!existing.includes(workspace.name)) {
-              namesByUserId.set(member.user_id, [...existing, workspace.name])
+        const idsByUserId = new Map<number, number[]>()
+        const balanceByUserId = new Map<number, number>()
+        for (const { workspace, membersRes, walletsRes } of workspaceResults) {
+          if (membersRes.success && membersRes.data) {
+            for (const member of membersRes.data) {
+              const existing = namesByUserId.get(member.user_id) ?? []
+              if (!existing.includes(workspace.name)) {
+                namesByUserId.set(member.user_id, [...existing, workspace.name])
+              }
+              const existingIds = idsByUserId.get(member.user_id) ?? []
+              if (!existingIds.includes(workspace.id)) {
+                idsByUserId.set(member.user_id, [...existingIds, workspace.id])
+              }
+            }
+          }
+          if (walletsRes.success && walletsRes.data) {
+            for (const wallet of walletsRes.data) {
+              const existing = balanceByUserId.get(wallet.user_id) ?? 0
+              balanceByUserId.set(
+                wallet.user_id,
+                existing + (wallet.balance ?? 0)
+              )
             }
           }
         }
@@ -180,16 +205,27 @@ export function MembersTable() {
           created_at: m.created_at,
           scope: 'customer' as const,
           workspace_names: namesByUserId.get(m.user_id) ?? [],
+          workspace_ids: idsByUserId.get(m.user_id) ?? [],
+          org_wallet_balance: balanceByUserId.get(m.user_id) ?? 0,
         }))
       }
 
-      const res = await getWorkspaceMembers(currentWorkspaceId)
-      if (!res.success) {
-        toast.error(apiErrorMessage(t, res.message, 'Failed to load members'))
+      const [membersRes, walletsRes] = await Promise.all([
+        getWorkspaceMembers(currentWorkspaceId),
+        getWorkspaceOrgWallets(currentWorkspaceId),
+      ])
+      if (!membersRes.success) {
+        toast.error(apiErrorMessage(t, membersRes.message, 'Failed to load members'))
         return []
       }
+      const balanceByUserId = new Map<number, number>()
+      if (walletsRes.success && walletsRes.data) {
+        for (const wallet of walletsRes.data) {
+          balanceByUserId.set(wallet.user_id, wallet.balance ?? 0)
+        }
+      }
       const workspaceName = currentWorkspaceName || `#${currentWorkspaceId}`
-      return (res.data ?? []).map((m) => ({
+      return (membersRes.data ?? []).map((m) => ({
         id: m.id,
         user_id: m.user_id,
         username: m.username,
@@ -198,6 +234,8 @@ export function MembersTable() {
         created_at: m.created_at,
         scope: 'workspace' as const,
         workspace_names: workspaceName ? [workspaceName] : [],
+        workspace_ids: currentWorkspaceId > 0 ? [currentWorkspaceId] : [],
+        org_wallet_balance: balanceByUserId.get(m.user_id) ?? 0,
       }))
     },
     placeholderData: (prev) => prev,

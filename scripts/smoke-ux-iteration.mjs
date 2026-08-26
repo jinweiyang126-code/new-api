@@ -107,10 +107,19 @@ check('members page no top workspace filter handler', !membersPage.includes('onW
 const membersTable = read('web/src/features/customer-org/components/members-table.tsx')
 check('members table has workspace toolbar filter', membersTable.includes("columnId: 'workspace_id'"))
 check('members table loads workspace names in all mode', membersTable.includes('workspace_names'))
+check('members table tracks member workspace ids', membersTable.includes('workspace_ids'))
+check('members table loads org wallet balances', membersTable.includes('getWorkspaceOrgWallets'))
+check('members table maps org_wallet_balance', membersTable.includes('org_wallet_balance'))
 
 const membersCols = read('web/src/features/customer-org/components/members-columns.tsx')
 check('members columns use BadgeListCell for workspaces', membersCols.includes('BadgeListCell'))
 check('members columns Workspace Name header', membersCols.includes("t('Workspace Name')"))
+check('members columns Quota header', membersCols.includes("t('Quota')"))
+check('members columns format org wallet balance', membersCols.includes('org_wallet_balance'))
+
+const membersWalletDialog = read('web/src/features/customer-org/components/members-wallet-dialog.tsx')
+check('members wallet dialog filters member workspaces', membersWalletDialog.includes('memberWorkspaces'))
+check('members wallet dialog select uses workspace items', membersWalletDialog.includes('items={workspaceItems}'))
 
 const invitationsCols = read('web/src/features/customer-org/components/invitations-columns.tsx')
 check('invitations columns Workspace Name header', invitationsCols.includes("t('Workspace Name')"))
@@ -154,7 +163,12 @@ check('members search has mWorkspace', membersSearch.includes('mWorkspace'))
 // --- Org wallet ---
 const orgWallet = read('web/src/features/customer-org/org-wallet-page.tsx')
 check('org wallet filter inside list header', orgWallet.includes('My organization wallets') && orgWallet.includes('setWorkspaceFilter'))
-check('org wallet Usage Logs button removed', !orgWallet.includes('Usage Logs'))
+check('org wallet aligns stats with personal wallet', orgWallet.includes('WalletStatsCard'))
+const orgWalletFunds = read('web/src/features/customer-org/components/org-wallet-funds-card.tsx')
+check('org wallet funds card uses admin contact message', orgWalletFunds.includes('Please contact your organization administrator'))
+check('org wallet ledger dialog wired', orgWallet.includes('OrgWalletLedgerDialog'))
+check('org wallet has no affiliate or redemption', !orgWallet.includes('AffiliateRewardsCard') && !orgWallet.includes('RechargeFormCard'))
+check('org wallet wallet-count stat removed', !orgWallet.includes("t('Wallets')"))
 check('org wallet is list (ul)', orgWallet.includes('<ul'))
 check(
   'org wallet select uses items labels for All',
@@ -207,6 +221,10 @@ const zh = JSON.parse(read('web/src/i18n/locales/zh.json')).translation
 check('zh Customer Name = 组织名', zh['Customer Name'] === '组织名')
 check('zh Workspace Name = 工作区名', zh['Workspace Name'] === '工作区名')
 check('zh Allocate wallet = 充值', zh['Allocate wallet'] === '充值')
+check(
+  'zh insufficient workspace allocatable quota i18n',
+  zh['insufficient workspace allocatable quota'] === '工作区可分配额度不足'
+)
 check('zh Revoke wallet = 扣款', zh['Revoke wallet'] === '扣款')
 check('zh Customer Management = 组织管理', zh['Customer Management'] === '组织管理')
 check('zh Customer = 组织', zh['Customer'] === '组织')

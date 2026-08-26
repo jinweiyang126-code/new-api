@@ -61,11 +61,57 @@ export function MembersWalletDialog() {
   const [amount, setAmount] = useState('')
   const [pending, setPending] = useState(false)
 
+  const workspaces = ctx?.workspaces ?? []
+
+  const memberWorkspaces = useMemo(() => {
+    if (!currentMember) return []
+    const memberIds = new Set(currentMember.workspace_ids ?? [])
+    return workspaces.filter((ws) => memberIds.has(ws.id))
+  }, [currentMember, workspaces])
+
+  const workspaceItems = useMemo(
+    () =>
+      memberWorkspaces.map((ws) => ({
+        value: String(ws.id),
+        label: ws.name,
+      })),
+    [memberWorkspaces]
+  )
+
+  const lockedWorkspaceId =
+    currentWorkspaceId > 0 &&
+    (currentMember?.workspace_ids ?? []).includes(currentWorkspaceId)
+      ? currentWorkspaceId
+      : 0
+
+  const selectedWorkspaceName = useMemo(() => {
+    const id = lockedWorkspaceId || Number(workspaceId) || 0
+    if (id <= 0) return ''
+    return (
+      memberWorkspaces.find((ws) => ws.id === id)?.name ||
+      currentWorkspaceName ||
+      `#${id}`
+    )
+  }, [
+    lockedWorkspaceId,
+    workspaceId,
+    memberWorkspaces,
+    currentWorkspaceName,
+  ])
+
   useEffect(() => {
-    if (!mode) return
+    if (!mode || !currentMember) return
     setAmount('')
-    setWorkspaceId(currentWorkspaceId > 0 ? String(currentWorkspaceId) : '')
-  }, [mode, currentWorkspaceId, currentMember?.user_id])
+    if (lockedWorkspaceId > 0) {
+      setWorkspaceId(String(lockedWorkspaceId))
+      return
+    }
+    if (memberWorkspaces.length === 1) {
+      setWorkspaceId(String(memberWorkspaces[0].id))
+      return
+    }
+    setWorkspaceId('')
+  }, [mode, lockedWorkspaceId, currentMember, memberWorkspaces])
 
   const wsId = Number(workspaceId) || 0
   const dollars = parseFloat(amount) || 0
@@ -99,8 +145,6 @@ export function MembersWalletDialog() {
     )
   }, [wallets, currentMember])
 
-  const workspaces = ctx?.workspaces ?? []
-
   const handleSubmit = async () => {
     if (!currentMember || !mode || wsId <= 0 || quotaValue <= 0) return
     setPending(true)
@@ -132,6 +176,8 @@ export function MembersWalletDialog() {
       triggerRefresh()
       void queryClient.invalidateQueries({ queryKey: ['workspace-org-wallets'] })
       void queryClient.invalidateQueries({ queryKey: ['self-org-wallets'] })
+      void queryClient.invalidateQueries({ queryKey: ['self-org-wallet-ledger'] })
+      void queryClient.invalidateQueries({ queryKey: ['members-table'] })
       void queryClient.invalidateQueries({ queryKey: ['workspace', wsId] })
     } finally {
       setPending(false)
@@ -157,24 +203,34 @@ export function MembersWalletDialog() {
         <div className='grid gap-3 py-2'>
           <div className='grid gap-1.5'>
             <Label>{t('Workspace')}</Label>
-            <Select
-              value={workspaceId}
-              onValueChange={(value) => {
-                if (value != null) setWorkspaceId(value)
-              }}
-              disabled={currentWorkspaceId > 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('Select workspace')} />
-              </SelectTrigger>
-              <SelectContent>
-                {workspaces.map((ws) => (
-                  <SelectItem key={ws.id} value={String(ws.id)}>
-                    {ws.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {lockedWorkspaceId > 0 ? (
+              <div className='border-input bg-muted/40 flex h-9 items-center rounded-md border px-3 text-sm font-medium'>
+                {selectedWorkspaceName}
+              </div>
+            ) : memberWorkspaces.length === 0 ? (
+              <p className='text-muted-foreground text-sm'>
+                {t('Member is not in any workspace yet.')}
+              </p>
+            ) : (
+              <Select
+                value={workspaceId}
+                items={workspaceItems}
+                onValueChange={(value) => {
+                  if (value != null) setWorkspaceId(value)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('Select workspace')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {memberWorkspaces.map((ws) => (
+                    <SelectItem key={ws.id} value={String(ws.id)}>
+                      {ws.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className='text-muted-foreground grid gap-1 text-xs'>
@@ -210,7 +266,12 @@ export function MembersWalletDialog() {
             {t('Cancel')}
           </Button>
           <Button
-            disabled={pending || wsId <= 0 || quotaValue <= 0}
+            disabled={
+              pending ||
+              wsId <= 0 ||
+              quotaValue <= 0 ||
+              memberWorkspaces.length === 0
+            }
             onClick={() => void handleSubmit()}
           >
             {mode === 'allocate' ? t('Allocate wallet') : t('Revoke wallet')}

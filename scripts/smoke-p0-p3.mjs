@@ -146,6 +146,7 @@ check(
   'API wires org-wallet allocate/self',
   apiRouter.includes('org-wallet') &&
     apiRouter.includes('GetSelfOrgWallets') &&
+    apiRouter.includes('GetSelfOrgWalletLedger') &&
     apiRouter.includes('AllocateOrgWallet')
 )
 

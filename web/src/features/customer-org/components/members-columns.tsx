@@ -8,7 +8,7 @@ import { BadgeListCell } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
 import { Checkbox } from '@/components/ui/checkbox'
-import { formatTimestamp } from '@/lib/format'
+import { formatQuota, formatTimestamp } from '@/lib/format'
 
 import { CREDENTIAL_STATUS } from '../constants'
 import { roleLabel } from '../lib/api-message'
@@ -112,6 +112,17 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
       meta: { mobileOrder: 4 },
     },
     {
+      accessorKey: 'org_wallet_balance',
+      header: t('Quota'),
+      size: 120,
+      cell: ({ row }) => (
+        <span className='font-mono text-sm tabular-nums'>
+          {formatQuota(row.original.org_wallet_balance ?? 0)}
+        </span>
+      ),
+      meta: { mobileOrder: 5 },
+    },
+    {
       accessorKey: 'status',
       header: t('Status'),
       size: 100,
@@ -125,14 +136,14 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
             copyable={false}
           />
         ),
-      meta: { mobileOrder: 5, mobileBadge: true },
+      meta: { mobileOrder: 6, mobileBadge: true },
     },
     {
       accessorKey: 'created_at',
       header: t('Created At'),
       size: 160,
       cell: ({ row }) => formatTimestamp(row.original.created_at),
-      meta: { mobileOrder: 6, mobileHidden: true },
+      meta: { mobileOrder: 7, mobileHidden: true },
     },
     {
       id: 'actions',

@@ -314,3 +314,28 @@ func IncreaseOrgWalletBalance(userId, workspaceId, amount int) error {
 	}
 	return nil
 }
+
+// SumUserWorkspaceTokenUsedQuota returns Σ token.used_quota for workspace-scoped keys.
+func SumUserWorkspaceTokenUsedQuota(userId, workspaceId int) (int, error) {
+	if userId <= 0 || workspaceId <= 0 {
+		return 0, nil
+	}
+	var sum int64
+	err := DB.Model(&Token{}).
+		Where("user_id = ? AND workspace_id = ?", userId, workspaceId).
+		Select("COALESCE(SUM(used_quota), 0)").
+		Scan(&sum).Error
+	return int(sum), err
+}
+
+// CountUserWorkspaceConsumeLogs counts consume logs billed under a workspace scope.
+func CountUserWorkspaceConsumeLogs(userId, workspaceId int) (int, error) {
+	if userId <= 0 || workspaceId <= 0 {
+		return 0, nil
+	}
+	var count int64
+	err := DB.Model(&Log{}).
+		Where("user_id = ? AND workspace_id = ? AND type = ?", userId, workspaceId, LogTypeConsume).
+		Count(&count).Error
+	return int(count), err
+}

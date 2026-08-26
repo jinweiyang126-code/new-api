@@ -26,6 +26,8 @@ type orgWalletView struct {
 	CustomerId    int    `json:"customer_id"`
 	WorkspaceId   int    `json:"workspace_id"`
 	Balance       int    `json:"balance"`
+	UsedQuota     int    `json:"used_quota"`
+	RequestCount  int    `json:"request_count"`
 	CreatedAt     int64  `json:"created_at"`
 	UpdatedAt     int64  `json:"updated_at"`
 	CustomerName  string `json:"customer_name,omitempty"`
@@ -43,6 +45,29 @@ func GetSelfOrgWallets(c *gin.Context) {
 		return
 	}
 	common.ApiSuccess(c, enrichOrgWallets(rows, false))
+}
+
+// GetSelfOrgWalletLedger lists allocate/revoke ledger rows for the current member.
+func GetSelfOrgWalletLedger(c *gin.Context) {
+	userId := c.GetInt("id")
+	customerId, _ := strconv.Atoi(c.Query("customer_id"))
+	workspaceId, _ := strconv.Atoi(c.Query("workspace_id"))
+	pageInfo := common.GetPageQuery(c)
+	rows, total, err := model.ListOrgWalletLedgerForUser(
+		userId,
+		customerId,
+		workspaceId,
+		pageInfo.GetStartIdx(),
+		pageInfo.GetPageSize(),
+	)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, gin.H{
+		"items": rows,
+		"total": total,
+	})
 }
 
 // GetWorkspaceOrgWallets lists org wallets in a workspace (customer admin).
@@ -97,6 +122,20 @@ func AllocateOrgWallet(c *gin.Context) {
 	}
 
 	operatorId := c.GetInt("id")
+	ws, _ := model.GetWorkspaceById(workspaceId)
+	customerId := 0
+	if ws != nil {
+		customerId = ws.CustomerId
+	}
+	model.RecordOrgWalletLedgerLog(
+		req.UserId,
+		customerId,
+		workspaceId,
+		model.OrgWalletLedgerCredit,
+		req.Amount,
+		operatorId,
+		c.ClientIP(),
+	)
 	model.RecordOperationAuditLog(operatorId,
 		fmt.Sprintf("allocate org wallet workspace=%d user=%d amount=%d", workspaceId, req.UserId, req.Amount),
 		c.ClientIP(),
@@ -135,6 +174,20 @@ func RevokeOrgWallet(c *gin.Context) {
 	}
 
 	operatorId := c.GetInt("id")
+	ws, _ := model.GetWorkspaceById(workspaceId)
+	customerId := 0
+	if ws != nil {
+		customerId = ws.CustomerId
+	}
+	model.RecordOrgWalletLedgerLog(
+		req.UserId,
+		customerId,
+		workspaceId,
+		model.OrgWalletLedgerDebit,
+		req.Amount,
+		operatorId,
+		c.ClientIP(),
+	)
 	model.RecordOperationAuditLog(operatorId,
 		fmt.Sprintf("revoke org wallet workspace=%d user=%d amount=%d", workspaceId, req.UserId, req.Amount),
 		c.ClientIP(),
@@ -205,6 +258,14 @@ func enrichOrgWallet(row *model.OrganizationWallet, withUsername bool) *orgWalle
 	}
 	if ws, err := model.GetWorkspaceById(row.WorkspaceId); err == nil && ws != nil {
 		view.WorkspaceName = ws.Name
+	}
+	if row.UserId > 0 && row.WorkspaceId > 0 {
+		if used, err := model.SumUserWorkspaceTokenUsedQuota(row.UserId, row.WorkspaceId); err == nil {
+			view.UsedQuota = used
+		}
+		if count, err := model.CountUserWorkspaceConsumeLogs(row.UserId, row.WorkspaceId); err == nil {
+			view.RequestCount = count
+		}
 	}
 	if withUsername && row.UserId > 0 {
 		if names, err := model.UsernamesByIDs([]int{row.UserId}); err == nil {
