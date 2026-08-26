@@ -4,6 +4,7 @@ Copyright (C) 2023-2026 QuantumNous
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 
+import { BadgeListCell } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -82,6 +83,35 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
       meta: { mobileOrder: 3 },
     },
     {
+      id: 'workspace_id',
+      accessorFn: () => '',
+      header: () => null,
+      cell: () => null,
+      enableSorting: false,
+      enableHiding: false,
+      size: 0,
+      meta: { mobileHidden: true },
+    },
+    {
+      id: 'workspace_names',
+      accessorFn: (row) => row.workspace_names.join(', '),
+      header: t('Workspace Name'),
+      size: 180,
+      cell: ({ row }) => (
+        <BadgeListCell
+          items={row.original.workspace_names.map((name) => (
+            <StatusBadge
+              key={name}
+              label={name}
+              autoColor={name}
+              size='sm'
+            />
+          ))}
+        />
+      ),
+      meta: { mobileOrder: 4 },
+    },
+    {
       accessorKey: 'status',
       header: t('Status'),
       size: 100,
@@ -95,14 +125,14 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
             copyable={false}
           />
         ),
-      meta: { mobileOrder: 4, mobileBadge: true },
+      meta: { mobileOrder: 5, mobileBadge: true },
     },
     {
       accessorKey: 'created_at',
       header: t('Created At'),
       size: 160,
       cell: ({ row }) => formatTimestamp(row.original.created_at),
-      meta: { mobileOrder: 5, mobileHidden: true },
+      meta: { mobileOrder: 6, mobileHidden: true },
     },
     {
       id: 'actions',

@@ -1,7 +1,8 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -9,6 +10,11 @@ import { toast } from 'sonner'
 import { SectionPageLayout } from '@/components/layout'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+import {
+  getCustomerInvitations,
+  getCustomerMembers,
+  getWorkspaceMembers,
+} from './api'
 import { InvitationsTable } from './components/invitations-table'
 import { MembersConfirmDialogs } from './components/members-confirm-dialogs'
 import { MembersInviteDrawer } from './components/members-invite-drawer'
@@ -34,26 +40,53 @@ import {
 
 const route = getRouteApi('/_authenticated/members/$section')
 
-const SECTION_META: Record<MembersSectionId, { titleKey: string }> = {
-  members: { titleKey: 'Members' },
-  invitations: { titleKey: 'Invitations' },
-}
-
-function MembersContent({
-  workspaceFilter,
-  onWorkspaceFilterChange,
-}: {
-  workspaceFilter: string
-  onWorkspaceFilterChange: (value: string) => void
-}) {
+function MembersContent() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: ctx, isLoading } = useCustomerContext()
   const setCurrentCustomer = useSetCurrentCustomer()
-  const { open, setOpen, isAdmin } = useMembers()
+  const {
+    open,
+    setOpen,
+    isAdmin,
+    customerId,
+    isPersonal,
+    currentWorkspaceId,
+    refreshTrigger,
+  } = useMembers()
   const params = route.useParams()
   const activeSection = (params.section ??
     MEMBERS_DEFAULT_SECTION) as MembersSectionId
+
+  const { data: membersCount = 0 } = useQuery({
+    queryKey: [
+      'members-count',
+      customerId,
+      isPersonal,
+      currentWorkspaceId,
+      refreshTrigger,
+    ],
+    enabled: customerId > 0 && (isPersonal || currentWorkspaceId > 0),
+    queryFn: async () => {
+      if (isPersonal) {
+        const res = await getCustomerMembers(customerId)
+        return res.success ? (res.data?.length ?? 0) : 0
+      }
+      const res = await getWorkspaceMembers(currentWorkspaceId)
+      return res.success ? (res.data?.length ?? 0) : 0
+    },
+  })
+
+  const { data: invitationsCount = 0 } = useQuery({
+    queryKey: ['customer-invitations', customerId, refreshTrigger],
+    enabled: customerId > 0 && isAdmin,
+    queryFn: async () => {
+      const res = await getCustomerInvitations(customerId)
+      if (!res.success) return []
+      return res.data ?? []
+    },
+    select: (rows) => rows.length,
+  })
 
   const visibleSections = useMemo(
     () =>
@@ -72,7 +105,6 @@ function MembersContent({
     },
     [navigate]
   )
-
 
   const customers = useMemo(
     () =>
@@ -98,14 +130,12 @@ function MembersContent({
     })
   }
 
-  const workspaces = useMemo(
-    () =>
-      (ctx?.workspaces ?? []).map((ws) => ({
-        id: ws.id,
-        name: ws.name,
-      })),
-    [ctx?.workspaces]
-  )
+  const sectionLabel = (section: MembersSectionId) => {
+    if (section === 'invitations') {
+      return t('Invitations ({{count}})', { count: invitationsCount })
+    }
+    return t('Members ({{count}})', { count: membersCount })
+  }
 
   if (isLoading) {
     return (
@@ -128,33 +158,36 @@ function MembersContent({
     )
   }
 
-  const meta = SECTION_META[activeSection] ?? SECTION_META.members
-
   return (
     <>
       <SectionPageLayout fixedContent>
-        <SectionPageLayout.Title>{t(meta.titleKey)}</SectionPageLayout.Title>
+        <SectionPageLayout.Title>
+          {sectionLabel(activeSection)}
+        </SectionPageLayout.Title>
         <SectionPageLayout.Actions>
           {isAdmin ? <MembersPrimaryButtons /> : null}
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
           <div className='flex h-full min-h-0 flex-col gap-4'>
-            <OrgScopeFilters
-              customers={customers}
-              workspaces={workspaces}
-              customerId={selectedCustomerId}
-              workspaceId={workspaceFilter}
-              onCustomerChange={handleCustomerChange}
-              onWorkspaceChange={onWorkspaceFilterChange}
-              showCustomerFilter={showCustomerFilter}
-              customerIncludeAll={false}
-            />
+            {showCustomerFilter ? (
+              <OrgScopeFilters
+                customers={customers}
+                workspaces={[]}
+                customerId={selectedCustomerId}
+                workspaceId={ORG_FILTER_ALL}
+                onCustomerChange={handleCustomerChange}
+                onWorkspaceChange={() => undefined}
+                showCustomerFilter
+                customerIncludeAll={false}
+                showWorkspaceFilter={false}
+              />
+            ) : null}
             {visibleSections.length > 1 ? (
               <Tabs value={activeSection} onValueChange={handleSectionChange}>
                 <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
                   {visibleSections.map((section) => (
                     <TabsTrigger key={section} value={section}>
-                      {t(SECTION_META[section].titleKey)}
+                      {sectionLabel(section)}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -182,8 +215,10 @@ function MembersContent({
 
 export function MembersPage() {
   const { data: ctx } = useCustomerContext()
-  const [workspaceFilter, setWorkspaceFilter] = useState(ORG_FILTER_ALL)
-  const isPersonal = workspaceFilter === ORG_FILTER_ALL
+  const search = route.useSearch()
+  const workspaceFilter = search.mWorkspace?.[0] ?? ORG_FILTER_ALL
+  const isPersonal =
+    !workspaceFilter || workspaceFilter === ORG_FILTER_ALL
   const currentWorkspaceId = isPersonal ? 0 : Number(workspaceFilter) || 0
   const currentWorkspaceName =
     ctx?.workspaces?.find((ws) => ws.id === currentWorkspaceId)?.name ?? ''
@@ -196,10 +231,7 @@ export function MembersPage() {
       currentWorkspaceId={currentWorkspaceId}
       currentWorkspaceName={currentWorkspaceName}
     >
-      <MembersContent
-        workspaceFilter={workspaceFilter}
-        onWorkspaceFilterChange={setWorkspaceFilter}
-      />
+      <MembersContent />
     </MembersProvider>
   )
 }

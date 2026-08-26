@@ -7,7 +7,7 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
+but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
 
@@ -23,7 +23,6 @@ import { SignUp } from '@/features/auth/sign-up'
 import { useAuthStore } from '@/stores/auth-store'
 
 type SignUpSearch = {
-  setup?: 'organization'
   invite?: string
   aff?: string
 }
@@ -31,24 +30,19 @@ type SignUpSearch = {
 export const Route = createFileRoute('/(auth)/sign-up')({
   component: SignUpRoute,
   validateSearch: (search: Record<string, unknown>): SignUpSearch => ({
-    setup: search.setup === 'organization' ? 'organization' : undefined,
     invite: typeof search.invite === 'string' ? search.invite : undefined,
     aff: typeof search.aff === 'string' ? search.aff : undefined,
   }),
-  beforeLoad: async ({ search }) => {
+  beforeLoad: () => {
     const { auth } = useAuthStore.getState()
 
-    if (!auth.user) return
-
-    const needsOrgSetup =
-      search.setup === 'organization' && !auth.user.customer_id
-    if (needsOrgSetup) return
-
-    throw redirect({ to: '/dashboard' })
+    if (auth.user) {
+      throw redirect({ to: '/dashboard' })
+    }
   },
 })
 
 function SignUpRoute() {
   const search = Route.useSearch()
-  return <SignUp setup={search.setup} invite={search.invite} />
+  return <SignUp invite={search.invite} />
 }

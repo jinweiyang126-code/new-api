@@ -24,7 +24,7 @@ import { useStatus } from '@/hooks/use-status'
 
 import { AuthLayout } from '../auth-layout'
 import { TermsFooter } from '../components/terms-footer'
-import { setSignupOrgIntent } from '../lib/signup-org-intent'
+import { clearSignupOnboardingPending } from '../lib/signup-onboarding'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
@@ -33,7 +33,7 @@ export function SignIn() {
   const { status } = useStatus()
 
   useEffect(() => {
-    setSignupOrgIntent(false)
+    clearSignupOnboardingPending()
   }, [])
 
   return (

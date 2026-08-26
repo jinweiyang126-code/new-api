@@ -23,6 +23,7 @@ export type MemberRow = {
   created_at: number
   /** customer = org-wide list (personal context); workspace = focused workspace */
   scope: 'customer' | 'workspace'
+  workspace_names: string[]
 }
 
 type MembersContextType = {

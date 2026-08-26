@@ -17,6 +17,7 @@ const membersSearchSchema = z.object({
   mFilter: z.string().optional().catch(''),
   mStatus: z.array(z.string()).optional().catch([]),
   mRole: z.array(z.string()).optional().catch([]),
+  mWorkspace: z.array(z.string()).optional().catch([]),
   iPage: z.number().optional().catch(1),
   iPageSize: z.number().optional().catch(undefined),
   iFilter: z.string().optional().catch(''),

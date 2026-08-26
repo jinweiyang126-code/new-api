@@ -20,6 +20,7 @@ func setupLogAccessDB(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(
 		&model.User{}, &model.Customer{}, &model.Workspace{},
 		&model.CustomerMember{}, &model.WorkspaceMember{},
+		&model.OrganizationWallet{},
 	))
 	model.DB = db
 	common.SetDatabaseTypes(common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)

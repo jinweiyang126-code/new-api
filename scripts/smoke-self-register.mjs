@@ -45,8 +45,9 @@ const missingZh = keys.filter((k) => !(k in zh))
 const mustExist = [
   'controller/customer_self.go',
   'controller/customer_self_test.go',
-  'web/src/features/auth/lib/signup-org-intent.ts',
-  'web/src/features/auth/lib/signup-org-intent.test.ts',
+  'web/src/features/auth/lib/signup-onboarding.ts',
+  'web/src/features/auth/lib/signup-onboarding.test.ts',
+  'web/src/routes/(auth)/onboarding.tsx',
   'web/src/features/auth/sign-up/components/organization-setup-fields.tsx',
   'web/src/features/auth/sign-up/components/sign-up-form.tsx',
   'web/src/routes/(auth)/sign-up.tsx',
@@ -97,18 +98,23 @@ const checks = [
     option.includes('CustomerSelfRegisterEnabled'),
   ],
   [
-    'sign-up form has personal/organization tabs',
-    signUpForm.includes("value='personal'") &&
-      signUpForm.includes("value='organization'") &&
-      signUpForm.includes('createSelfCustomer'),
+    'sign-up form sets onboarding pending',
+    signUpForm.includes('setSignupOnboardingPending') &&
+      signUpForm.includes('login('),
   ],
   [
-    'oauth callback resolves org setup redirect',
-    oauth.includes('resolveSignupOrgRedirect'),
+    'onboarding form creates organization',
+    read('web/src/features/auth/onboarding/components/signup-onboarding-form.tsx').includes(
+      'createSelfCustomer'
+    ),
   ],
   [
-    'login success resolves org setup redirect',
-    authRedirect.includes('resolveSignupOrgRedirect'),
+    'oauth callback resolves onboarding redirect',
+    oauth.includes('resolveSignupOnboardingRedirect'),
+  ],
+  [
+    'login success resolves onboarding redirect',
+    authRedirect.includes('resolveSignupOnboardingRedirect'),
   ],
   [
     'frontend API has createSelfCustomer',

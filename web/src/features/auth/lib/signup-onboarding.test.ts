@@ -7,7 +7,7 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
+but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Affero General Public License for more details.
 
@@ -20,13 +20,13 @@ For commercial licensing, please contact support@quantumnous.com
 import assert from 'node:assert/strict'
 import { afterEach, describe, test } from 'node:test'
 
-import {
-  SIGNUP_ORG_SETUP_PATH,
-  consumeSignupOrgIntent,
-  resolveSignupOrgRedirect,
-  setSignupOrgIntent,
-} from './signup-org-intent'
 import { sanitizeAuthRedirect } from './auth-redirect'
+import {
+  SIGNUP_ONBOARDING_PATH,
+  consumeSignupOnboardingPending,
+  resolveSignupOnboardingRedirect,
+  setSignupOnboardingPending,
+} from './signup-onboarding'
 
 function installSessionStorage() {
   const store = new Map<string, string>()
@@ -60,37 +60,41 @@ afterEach(() => {
   Reflect.deleteProperty(globalThis, 'sessionStorage')
 })
 
-describe('signup org intent', () => {
-  test('stores and consumes organization intent once', () => {
+describe('signup onboarding', () => {
+  test('stores and consumes onboarding intent once', () => {
     const store = installSessionStorage()
-    setSignupOrgIntent(true)
-    assert.equal(store.get('tokenapi.signup_org'), '1')
-    assert.equal(consumeSignupOrgIntent(), true)
-    assert.equal(store.has('tokenapi.signup_org'), false)
-    assert.equal(consumeSignupOrgIntent(), false)
+    setSignupOnboardingPending(true)
+    assert.equal(store.get('tokenapi.signup_onboarding'), '1')
+    assert.equal(consumeSignupOnboardingPending(), true)
+    assert.equal(store.has('tokenapi.signup_onboarding'), false)
+    assert.equal(consumeSignupOnboardingPending(), false)
   })
 
-  test('clears organization intent when disabled', () => {
+  test('clears onboarding intent when disabled', () => {
     const store = installSessionStorage()
-    setSignupOrgIntent(true)
-    setSignupOrgIntent(false)
-    assert.equal(store.has('tokenapi.signup_org'), false)
+    setSignupOnboardingPending(true)
+    setSignupOnboardingPending(false)
+    assert.equal(store.has('tokenapi.signup_onboarding'), false)
   })
 
-  test('redirects to organization setup only when intent is set and no customer', () => {
+  test('redirects to onboarding only when intent is set and no customer', () => {
     installSessionStorage()
-    setSignupOrgIntent(true)
-    assert.equal(resolveSignupOrgRedirect(0), SIGNUP_ORG_SETUP_PATH)
-    assert.equal(resolveSignupOrgRedirect(undefined), undefined)
+    setSignupOnboardingPending(true)
+    assert.equal(resolveSignupOnboardingRedirect(0), SIGNUP_ONBOARDING_PATH)
 
-    setSignupOrgIntent(true)
-    assert.equal(resolveSignupOrgRedirect(42), undefined)
+    setSignupOnboardingPending(true)
+    assert.equal(resolveSignupOnboardingRedirect(undefined), SIGNUP_ONBOARDING_PATH)
+
+    setSignupOnboardingPending(true)
+    assert.equal(resolveSignupOnboardingRedirect(42), undefined)
+
+    assert.equal(resolveSignupOnboardingRedirect(undefined), undefined)
   })
 
-  test('organization setup path survives auth redirect sanitization', () => {
+  test('onboarding path survives auth redirect sanitization', () => {
     assert.equal(
-      sanitizeAuthRedirect(SIGNUP_ORG_SETUP_PATH, 'https://token.example.com'),
-      SIGNUP_ORG_SETUP_PATH
+      sanitizeAuthRedirect(SIGNUP_ONBOARDING_PATH, 'https://token.example.com'),
+      SIGNUP_ONBOARDING_PATH
     )
   })
 })

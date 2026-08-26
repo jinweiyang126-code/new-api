@@ -28,6 +28,7 @@ func setupCustomerAuthMiddlewareTest(t *testing.T) (customerID, memberID, outsid
 		&model.Workspace{},
 		&model.CustomerMember{},
 		&model.WorkspaceMember{},
+		&model.OrganizationWallet{},
 	))
 	model.DB = db
 	t.Cleanup(func() { model.DB = previousDB })
@@ -125,6 +126,7 @@ func setupCustomerAuthMiddlewareTestDBOnly(t *testing.T) *gorm.DB {
 	require.NoError(t, db.AutoMigrate(
 		&model.User{}, &model.Customer{}, &model.Workspace{},
 		&model.CustomerMember{}, &model.WorkspaceMember{},
+		&model.OrganizationWallet{},
 	))
 	model.DB = db
 	t.Cleanup(func() { model.DB = previousDB })

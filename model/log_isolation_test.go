@@ -31,6 +31,7 @@ func setupLogIsolationDB(t *testing.T) {
 	common.LogConsumeEnabled = true
 	require.NoError(t, db.AutoMigrate(
 		&User{}, &Customer{}, &Workspace{}, &CustomerMember{}, &WorkspaceMember{}, &Log{}, &Token{},
+		&OrganizationWallet{},
 	))
 	DB, LOG_DB = db, db
 	t.Cleanup(func() {

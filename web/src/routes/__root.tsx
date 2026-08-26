@@ -150,9 +150,18 @@ export const Route = createRootRouteWithContext<{
     }
 
     const pathname = location?.pathname || ''
+    const isOAuthCallback = pathname.startsWith('/oauth/')
     const needsSetupCheck =
-      !setupStatusChecked && !pathname.startsWith('/setup')
+      !setupStatusChecked &&
+      !pathname.startsWith('/setup') &&
+      !isOAuthCallback
     const authBootstrap = bootstrapAuthentication()
+
+    // OAuth callback exchanges code immediately; don't block first paint on session refresh.
+    if (isOAuthCallback) {
+      void authBootstrap
+      return
+    }
 
     // 只检查 setup 状态（如果需要）
     if (needsSetupCheck) {

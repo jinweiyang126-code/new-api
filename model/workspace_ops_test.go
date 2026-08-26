@@ -29,6 +29,7 @@ func setupWorkspaceOpsTestDB(t *testing.T) *gorm.DB {
 
 	require.NoError(t, db.AutoMigrate(
 		&User{}, &Customer{}, &Workspace{}, &CustomerMember{}, &WorkspaceMember{},
+		&OrganizationWallet{},
 	))
 	DB, LOG_DB = db, db
 	t.Cleanup(func() {

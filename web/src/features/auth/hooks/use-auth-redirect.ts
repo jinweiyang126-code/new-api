@@ -23,7 +23,7 @@ import {
   getSavedLanguage,
   sanitizeAuthRedirect,
 } from '@/features/auth/lib/auth-redirect'
-import { resolveSignupOrgRedirect } from '@/features/auth/lib/signup-org-intent'
+import { resolveSignupOnboardingRedirect } from '@/features/auth/lib/signup-onboarding'
 import { applyAuthBundle } from '@/lib/api'
 import type { AuthBundle } from '@/stores/auth-store'
 
@@ -50,7 +50,8 @@ export function useAuthRedirect() {
 
     const targetPath =
       sanitizeAuthRedirect(
-        resolveSignupOrgRedirect(bundle.user?.customer_id) ?? redirectTo,
+        resolveSignupOnboardingRedirect(bundle.user?.customer_id) ??
+          redirectTo,
         window.location.origin
       ) ?? '/dashboard'
     navigate({ href: targetPath, replace: true })

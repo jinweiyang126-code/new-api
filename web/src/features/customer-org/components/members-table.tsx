@@ -18,15 +18,24 @@ import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
 import { getCustomerMembers, getWorkspaceMembers } from '../api'
+import { useCustomerContext } from '../hooks/use-customer-context'
 import { apiErrorMessage } from '../lib/api-message'
 import { CREDENTIAL_STATUS, getCredentialStatusOptions } from '../constants'
+import { ORG_FILTER_ALL } from './org-scope-filters'
 import { MembersBulkActions } from './members-bulk-actions'
 import { useMembersColumns } from './members-columns'
 import { type MemberRow, useMembers } from './members-provider'
 
 const route = getRouteApi('/_authenticated/members/$section')
 
-const SORTABLE = new Set(['id', 'username', 'role', 'status', 'created_at'])
+const SORTABLE = new Set([
+  'id',
+  'username',
+  'role',
+  'status',
+  'created_at',
+  'workspace_names',
+])
 
 function compareMembers(a: MemberRow, b: MemberRow, sortBy: string, desc: boolean) {
   const dir = desc ? -1 : 1
@@ -45,6 +54,11 @@ function compareMembers(a: MemberRow, b: MemberRow, sortBy: string, desc: boolea
     }
     case 'role':
       return a.role.localeCompare(b.role) * dir
+    case 'workspace_names': {
+      const av = a.workspace_names.join(', ')
+      const bv = b.workspace_names.join(', ')
+      return av.localeCompare(bv) * dir
+    }
     default:
       return (a.id - b.id) * dir
   }
@@ -53,14 +67,32 @@ function compareMembers(a: MemberRow, b: MemberRow, sortBy: string, desc: boolea
 export function MembersTable() {
   const { t } = useTranslation()
   const columns = useMembersColumns()
+  const { data: ctx } = useCustomerContext()
   const {
     customerId,
     refreshTrigger,
     isPersonal,
     currentWorkspaceId,
+    currentWorkspaceName,
   } = useMembers()
   const isMobile = useMediaQuery('(max-width: 640px)')
   const [sorting, setSorting] = useState<SortingState>([])
+
+  const workspaces = useMemo(
+    () => ctx?.workspaces ?? [],
+    [ctx?.workspaces]
+  )
+
+  const workspaceFilterOptions = useMemo(
+    () => [
+      { label: t('All'), value: ORG_FILTER_ALL },
+      ...workspaces.map((ws) => ({
+        label: ws.name,
+        value: String(ws.id),
+      })),
+    ],
+    [t, workspaces]
+  )
 
   const {
     globalFilter,
@@ -83,6 +115,7 @@ export function MembersTable() {
     columnFilters: [
       { columnId: 'status', searchKey: 'mStatus', type: 'array' },
       { columnId: 'role', searchKey: 'mRole', type: 'array' },
+      { columnId: 'workspace_id', searchKey: 'mWorkspace', type: 'array' },
     ],
   })
 
@@ -107,16 +140,38 @@ export function MembersTable() {
       isPersonal,
       currentWorkspaceId,
       refreshTrigger,
+      workspaces.map((ws) => ws.id).join(','),
     ],
     enabled: customerId > 0 && (isPersonal || currentWorkspaceId > 0),
     queryFn: async (): Promise<MemberRow[]> => {
       if (isPersonal) {
-        const res = await getCustomerMembers(customerId)
-        if (!res.success) {
-          toast.error(apiErrorMessage(t, res.message, 'Failed to load members'))
+        const [customerRes, ...workspaceMemberResults] = await Promise.all([
+          getCustomerMembers(customerId),
+          ...workspaces.map(async (ws) => {
+            const res = await getWorkspaceMembers(ws.id)
+            return { workspace: ws, res }
+          }),
+        ])
+
+        if (!customerRes.success) {
+          toast.error(
+            apiErrorMessage(t, customerRes.message, 'Failed to load members')
+          )
           return []
         }
-        return (res.data ?? []).map((m) => ({
+
+        const namesByUserId = new Map<number, string[]>()
+        for (const { workspace, res } of workspaceMemberResults) {
+          if (!res.success || !res.data) continue
+          for (const member of res.data) {
+            const existing = namesByUserId.get(member.user_id) ?? []
+            if (!existing.includes(workspace.name)) {
+              namesByUserId.set(member.user_id, [...existing, workspace.name])
+            }
+          }
+        }
+
+        return (customerRes.data ?? []).map((m) => ({
           id: m.id,
           user_id: m.user_id,
           username: m.username,
@@ -124,13 +179,16 @@ export function MembersTable() {
           status: m.status,
           created_at: m.created_at,
           scope: 'customer' as const,
+          workspace_names: namesByUserId.get(m.user_id) ?? [],
         }))
       }
+
       const res = await getWorkspaceMembers(currentWorkspaceId)
       if (!res.success) {
         toast.error(apiErrorMessage(t, res.message, 'Failed to load members'))
         return []
       }
+      const workspaceName = currentWorkspaceName || `#${currentWorkspaceId}`
       return (res.data ?? []).map((m) => ({
         id: m.id,
         user_id: m.user_id,
@@ -139,6 +197,7 @@ export function MembersTable() {
         status: m.status,
         created_at: m.created_at,
         scope: 'workspace' as const,
+        workspace_names: workspaceName ? [workspaceName] : [],
       }))
     },
     placeholderData: (prev) => prev,
@@ -151,7 +210,12 @@ export function MembersTable() {
       if (roleValue !== '' && m.role !== roleValue) return false
       if (!keyword) return true
       const name = (m.username || `User #${m.user_id}`).toLowerCase()
-      return name.includes(keyword) || m.role.toLowerCase().includes(keyword)
+      const workspacesLabel = m.workspace_names.join(', ').toLowerCase()
+      return (
+        name.includes(keyword) ||
+        m.role.toLowerCase().includes(keyword) ||
+        workspacesLabel.includes(keyword)
+      )
     })
     const activeSort = sorting[0]
     if (activeSort && SORTABLE.has(activeSort.id)) {
@@ -188,7 +252,7 @@ export function MembersTable() {
     columnVisibilityStorageKey: 'members-column-visibility',
   })
 
-return (
+  return (
     <DataTablePage
       table={table}
       columns={columns}
@@ -197,7 +261,9 @@ return (
       emptyTitle={t('No members')}
       emptyDescription={
         isPersonal
-          ? t('Select a workspace filter to view its members, or keep All for the organization-wide list.')
+          ? t(
+              'Select a workspace filter to view its members, or keep All for the organization-wide list.'
+            )
           : t('Invite people to collaborate in this organization.')
       }
       skeletonKeyPrefix='members-skeleton'
@@ -206,6 +272,12 @@ return (
         searchPlaceholder: t('Filter by username or role...'),
         searchDebounceMs: 300,
         filters: [
+          {
+            columnId: 'workspace_id',
+            title: t('Workspace'),
+            options: workspaceFilterOptions,
+            singleSelect: true,
+          },
           {
             columnId: 'status',
             title: t('Status'),

@@ -3,12 +3,10 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { History, WalletCards } from 'lucide-react'
+import { WalletCards } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
-import { Button } from '@/components/ui/button'
 import { IconBadge } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -79,36 +77,6 @@ export function OrgWalletPage() {
             )}
           </p>
 
-          <div className='flex flex-wrap items-center gap-3'>
-            <Select
-              value={workspaceFilter}
-              onValueChange={(value) => {
-                if (value != null) setWorkspaceFilter(value)
-              }}
-            >
-              <SelectTrigger className='w-[220px]'>
-                <SelectValue placeholder={t('Workspace')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={FILTER_ALL}>{t('All')}</SelectItem>
-                {workspaces.map((ws) => (
-                  <SelectItem key={ws.id} value={String(ws.id)}>
-                    {ws.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant='outline'
-              render={
-                <Link to='/usage-logs/$section' params={{ section: 'common' }} />
-              }
-            >
-              <History className='size-4' />
-              {t('Usage Logs')}
-            </Button>
-          </div>
-
           {loading ? (
             <div className='grid grid-cols-1 gap-3 sm:grid-cols-3'>
               {['a', 'b', 'c'].map((k) => (
@@ -139,8 +107,28 @@ export function OrgWalletPage() {
               </div>
 
               <div className='rounded-lg border'>
-                <div className='text-muted-foreground border-b px-4 py-2 text-xs font-medium tracking-wider uppercase'>
-                  {t('My organization wallets')}
+                <div className='flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2'>
+                  <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
+                    {t('My organization wallets')}
+                  </div>
+                  <Select
+                    value={workspaceFilter}
+                    onValueChange={(value) => {
+                      if (value != null) setWorkspaceFilter(value)
+                    }}
+                  >
+                    <SelectTrigger className='h-8 w-[180px]'>
+                      <SelectValue placeholder={t('Workspace')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={FILTER_ALL}>{t('All')}</SelectItem>
+                      {workspaces.map((ws) => (
+                        <SelectItem key={ws.id} value={String(ws.id)}>
+                          {ws.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {filtered.length === 0 ? (
                   <p className='text-muted-foreground p-4 text-sm'>

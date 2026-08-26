@@ -28,17 +28,16 @@ function check(phase, name, cond) {
 const signUp = read('web/src/features/auth/sign-up/components/sign-up-form.tsx')
 check(
   'P0',
-  'signup chooser personal/organization',
-  signUp.includes('Personal') &&
-    signUp.includes('Organization') &&
-    signUp.includes('setSignupOrgIntent')
+  'signup form sets onboarding pending',
+  signUp.includes('setSignupOnboardingPending') &&
+    !signUp.includes('setSignupOrgIntent')
 )
 
-const orgIntent = read('web/src/features/auth/lib/signup-org-intent.ts')
+const onboarding = read('web/src/features/auth/lib/signup-onboarding.ts')
 check(
   'P0',
-  'signup org intent setup=organization',
-  orgIntent.includes('setup=organization')
+  'signup onboarding route path',
+  onboarding.includes('/onboarding')
 )
 
 const signIn = read('web/src/features/auth/sign-in/components/user-auth-form.tsx')
@@ -67,8 +66,8 @@ check(
 const scopeLabel = read('web/src/features/keys/lib/token-scope-label.ts')
 check(
   'P0',
-  'token scope label CustomerName-WorkspaceName',
-  scopeLabel.includes('`${customer}-${workspace}`')
+  'token scope label CustomerName - WorkspaceName',
+  scopeLabel.includes('`${customer} - ${workspace}`')
 )
 
 const filters = read(

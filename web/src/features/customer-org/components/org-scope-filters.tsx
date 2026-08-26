@@ -33,6 +33,8 @@ type Props = {
   showCustomerFilter?: boolean
   /** When false, customer filter acts as a switcher (no All). Default true. */
   customerIncludeAll?: boolean
+  /** When false, hide the workspace selector. Default true. */
+  showWorkspaceFilter?: boolean
 }
 
 /**
@@ -48,6 +50,7 @@ export function OrgScopeFilters({
   onWorkspaceChange,
   showCustomerFilter = false,
   customerIncludeAll = true,
+  showWorkspaceFilter = true,
 }: Props) {
   const { t } = useTranslation()
 
@@ -74,22 +77,24 @@ export function OrgScopeFilters({
         </Select>
       ) : null}
 
-      <Select
-        value={workspaceId}
-        onValueChange={(value) => onWorkspaceChange(value ?? ORG_FILTER_ALL)}
-      >
-        <SelectTrigger className='w-[180px]'>
-          <SelectValue placeholder={t('Workspace')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ORG_FILTER_ALL}>{t('All')}</SelectItem>
-          {workspaces.map((ws) => (
-            <SelectItem key={ws.id} value={String(ws.id)}>
-              {ws.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {showWorkspaceFilter ? (
+        <Select
+          value={workspaceId}
+          onValueChange={(value) => onWorkspaceChange(value ?? ORG_FILTER_ALL)}
+        >
+          <SelectTrigger className='w-[180px]'>
+            <SelectValue placeholder={t('Workspace')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ORG_FILTER_ALL}>{t('All')}</SelectItem>
+            {workspaces.map((ws) => (
+              <SelectItem key={ws.id} value={String(ws.id)}>
+                {ws.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
     </div>
   )
 }

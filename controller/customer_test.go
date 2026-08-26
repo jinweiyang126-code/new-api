@@ -34,7 +34,7 @@ func setupCustomerControllerTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, db.AutoMigrate(
 		&model.User{}, &model.Customer{}, &model.Workspace{},
 		&model.CustomerMember{}, &model.WorkspaceMember{}, &model.CustomerInvitation{},
-		&model.Log{},
+		&model.Log{}, &model.OrganizationWallet{},
 	))
 	model.DB, model.LOG_DB = db, db
 	t.Cleanup(func() {
@@ -88,10 +88,10 @@ func TestTopUpCustomerRejectsNonRoot(t *testing.T) {
 
 	loaded, err := model.GetCustomerById(customer.Id)
 	require.NoError(t, err)
-	require.Equal(t, 0, loaded.Quota)
+	require.Equal(t, 0, loaded.QuotaLimit)
 }
 
-func TestTopUpCustomerAllowsRoot(t *testing.T) {
+func TestTopUpCustomerDeprecatedEvenForRoot(t *testing.T) {
 	db := setupCustomerControllerTestDB(t)
 	owner := createCustomerTestUser(t, db, "topup-owner2", common.RoleCommonUser)
 	root := createCustomerTestUser(t, db, "topup-root", common.RoleRootUser)
@@ -115,9 +115,41 @@ func TestTopUpCustomerAllowsRoot(t *testing.T) {
 
 	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	require.Equal(t, true, resp["success"])
+	require.Equal(t, false, resp["success"], "body=%s", w.Body.String())
+	require.Contains(t, fmt.Sprint(resp["message"]), "deprecated")
 
 	loaded, err := model.GetCustomerById(customer.Id)
 	require.NoError(t, err)
-	require.Equal(t, 2500, loaded.Quota)
+	require.Equal(t, 0, loaded.QuotaLimit)
+}
+
+func TestSetCustomerQuotaLimitAllowsRoot(t *testing.T) {
+	db := setupCustomerControllerTestDB(t)
+	owner := createCustomerTestUser(t, db, "limit-owner", common.RoleCommonUser)
+	root := createCustomerTestUser(t, db, "limit-root", common.RoleRootUser)
+	customer := &model.Customer{Name: "Limit OK"}
+	_, err := model.CreateCustomerWithOwner(customer, owner.Id)
+	require.NoError(t, err)
+
+	r := gin.New()
+	r.POST("/customers/:id/quota-limit", func(c *gin.Context) {
+		c.Set("id", root.Id)
+		c.Set("role", common.RoleRootUser)
+		c.Next()
+	}, SetCustomerQuotaLimit)
+
+	body, _ := json.Marshal(map[string]int{"quota_limit": 2500})
+	req := httptest.NewRequest(http.MethodPost, "/customers/"+fmt.Sprintf("%d", customer.Id)+"/quota-limit", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+
+	var resp map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	require.Equal(t, true, resp["success"], "body=%s code=%d", w.Body.String(), w.Code)
+
+	loaded, err := model.GetCustomerById(customer.Id)
+	require.NoError(t, err)
+	require.Equal(t, 2500, loaded.QuotaLimit)
 }

@@ -33,7 +33,7 @@ import {
   OAUTH_BIND_RESULT_MESSAGE,
 } from '@/features/auth/constants'
 import { sanitizeAuthRedirect } from '@/features/auth/lib/auth-redirect'
-import { resolveSignupOrgRedirect } from '@/features/auth/lib/signup-org-intent'
+import { resolveSignupOnboardingRedirect } from '@/features/auth/lib/signup-onboarding'
 import {
   parseTelegramBindCallback,
   postTelegramBindResult,
@@ -201,10 +201,10 @@ function OAuthCallback() {
         const response = await api.get(`/api/oauth/${provider}`, config)
         if (response.data?.success && isAuthBundle(response.data?.data)) {
           applyAuthBundle(response.data.data)
-          const orgSetup = resolveSignupOrgRedirect(
+          const onboardingPath = resolveSignupOnboardingRedirect(
             response.data.data.user?.customer_id
           )
-          safeNavigate(orgSetup ?? search.redirect)
+          safeNavigate(onboardingPath ?? search.redirect)
           toast.success(i18next.t('Signed in successfully!'))
           return
         }

@@ -17,9 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Loader2, Send, Shield, UserRound, type LucideIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SiGithub, SiLinux, SiWechat } from 'react-icons/si'
+
+import { hideBootOAuthLoader } from '@/lib/boot-oauth-loader'
 
 import { AuthLayout } from '../auth-layout'
 
@@ -61,6 +63,11 @@ export function OAuthCallbackScreen({
   mode,
 }: OAuthCallbackScreenProps) {
   const { t } = useTranslation()
+
+  useEffect(() => {
+    hideBootOAuthLoader()
+  }, [])
+
   const { label, Icon } = useMemo(() => {
     const normalized = provider?.toLowerCase() ?? ''
     return (
@@ -108,9 +115,11 @@ export function OAuthCallbackScreen({
         </div>
 
         <div className='space-y-4 text-center'>
-          <div className='flex items-center justify-center gap-2 text-sm font-medium'>
-            <Loader2 className='h-4 w-4 animate-spin' />
-            <span>{t('Processing OAuth response...')}</span>
+          <div className='flex flex-col items-center justify-center gap-3 py-4'>
+            <Loader2 className='text-primary h-10 w-10 animate-spin' />
+            <p className='text-sm font-medium'>
+              {t('Processing OAuth response...')}
+            </p>
           </div>
           <p className='text-muted-foreground text-sm'>{secondaryNote}</p>
           <p className='text-muted-foreground text-xs'>

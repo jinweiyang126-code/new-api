@@ -90,6 +90,7 @@ export function UserAuthForm({
     setTurnstileToken,
     validateTurnstile,
   } = useTurnstile()
+  const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
   const { handleLoginSuccess, redirectTo2FA } = useAuthRedirect()
   const setPending2FAFlowToken = useAuthStore(
     (state) => state.auth.setPending2FAFlowToken
@@ -386,7 +387,11 @@ export function UserAuthForm({
             <Button
               type='submit'
               className='mt-2 w-full justify-center gap-2'
-              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+              disabled={
+                isLoading ||
+                (requiresLegalConsent && !agreedToLegal) ||
+                !turnstileReady
+              }
             >
               {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
               {t('Sign in')}
@@ -398,6 +403,7 @@ export function UserAuthForm({
                 <Turnstile
                   siteKey={turnstileSiteKey}
                   onVerify={setTurnstileToken}
+                  onExpire={() => setTurnstileToken('')}
                 />
               </div>
             )}

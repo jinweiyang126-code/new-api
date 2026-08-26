@@ -476,7 +476,7 @@ export function ApiKeysMutateDrawer({
                         {isUpdate
                           ? t('Token scope cannot be changed after creation.')
                           : t(
-                              'Personal tokens use your personal wallet. Workspace-scoped tokens (Customer-Workspace) debit your organization wallet for that workspace.'
+                              'Personal tokens use your personal wallet. Workspace-scoped tokens (Customer - Workspace) debit your organization wallet for that workspace.'
                             )}
                       </FormDescription>
                       <FormMessage />

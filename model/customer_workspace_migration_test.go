@@ -29,6 +29,7 @@ func TestCustomerWorkspaceModelsAutoMigrate(t *testing.T) {
 		&CustomerInvitation{},
 		&CustomerChannelBinding{},
 		&CustomerUpstreamCredential{},
+		&OrganizationWallet{},
 	)
 	require.NoError(t, err)
 

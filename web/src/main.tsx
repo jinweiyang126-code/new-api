@@ -34,6 +34,7 @@ import { DEFAULT_LOGO } from '@/lib/constants'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import '@/lib/dayjs'
 import { initializeFrontendCache } from '@/lib/frontend-cache'
+import { hideBootOAuthLoader } from '@/lib/boot-oauth-loader'
 import { handleServerError } from '@/lib/handle-server-error'
 
 import { DirectionProvider } from './context/direction-provider'
@@ -158,6 +159,7 @@ if (!rootElement) {
   }
 })()
 if (!rootElement.innerHTML) {
+  hideBootOAuthLoader()
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>

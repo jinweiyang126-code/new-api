@@ -33,6 +33,7 @@ func setupCustomerAuthzTestDB(t *testing.T) *customerAuthzFixture {
 		&model.Workspace{},
 		&model.CustomerMember{},
 		&model.WorkspaceMember{},
+		&model.OrganizationWallet{},
 	))
 	model.DB = db
 	t.Cleanup(func() { model.DB = previousDB })
