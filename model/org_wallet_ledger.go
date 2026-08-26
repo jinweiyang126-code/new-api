@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/QuantumNous/new-api/common"
 )
@@ -45,7 +44,6 @@ func RecordOrgWalletLedgerLog(
 	if customerId > 0 {
 		params["customer_id"] = customerId
 	}
-	content := fmt.Sprintf("org wallet ledger %s workspace=%d amount=%d", action, workspaceId, amount)
 	username, _ := GetUsernameById(memberUserId, false)
 	other := map[string]interface{}{
 		"op": buildOpField(action, params),

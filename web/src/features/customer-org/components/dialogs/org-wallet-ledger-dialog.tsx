@@ -19,8 +19,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatQuota, formatTimestampToDate } from '@/lib/format'
 
-import type { OrgWalletLedgerEntry } from '../api'
-import { useOrgWalletLedger } from '../hooks/use-org-wallet-ledger'
+import type { OrgWalletLedgerEntry } from '../../api'
+import { useOrgWalletLedger } from '../../hooks/use-org-wallet-ledger'
 
 interface OrgWalletLedgerDialogProps {
   open: boolean
@@ -214,7 +214,7 @@ function LedgerRecord({
           </Label>
           <div className='truncate text-sm font-medium'>{workspaceLabel}</div>
         </div>
-        {record.operator_id > 0 ? (
+        {(record.operator_id ?? 0) > 0 ? (
           <div className='space-y-1'>
             <Label className='text-muted-foreground text-xs'>
               {t('Operator ID')}
