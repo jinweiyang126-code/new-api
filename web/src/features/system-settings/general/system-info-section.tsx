@@ -50,6 +50,7 @@ const _systemInfoSchema = z.object({
   ServerAddress: z.string().optional(),
   Logo: z.string().url().optional().or(z.literal('')),
   Footer: z.string().optional(),
+  FeedbackUrl: z.string().optional(),
   About: z.string().optional(),
   HomePageContent: z.string().optional(),
   legal: z.object({
@@ -78,6 +79,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     ServerAddress: normalizeValue(defaultValues.ServerAddress),
     Logo: normalizeValue(defaultValues.Logo),
     Footer: normalizeValue(defaultValues.Footer),
+    FeedbackUrl: normalizeValue(defaultValues.FeedbackUrl),
     About: normalizeValue(defaultValues.About),
     HomePageContent: normalizeValue(defaultValues.HomePageContent),
     legal: {
@@ -93,6 +95,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     ServerAddress: z.string().optional(),
     Logo: z.string().url().optional().or(z.literal('')),
     Footer: z.string().optional(),
+    FeedbackUrl: z.string().optional(),
     About: z.string().optional(),
     HomePageContent: z.string().optional(),
     legal: z.object({
@@ -211,6 +214,30 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                     </FormControl>
                     <FormDescription>
                       {t('Footer text displayed at the bottom of pages')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='FeedbackUrl'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Issue feedback link')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t(
+                          'https://github.com/your/repo/issues'
+                        )}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'URL for the Report an issue button on error pages. Leave empty to hide the button.'
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

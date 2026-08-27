@@ -29,6 +29,7 @@ const defaultSiteSettings: SiteSettings = {
   SystemName: 'Token API',
   Logo: '',
   Footer: '',
+  FeedbackUrl: '',
   About: '',
   HomePageContent: '',
   ServerAddress: 'https://token.abcyjw.me',
