@@ -196,11 +196,17 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
         channel_id: selectedChannelId,
         priority: 0,
       })
-      if (!res.success || !res.data) throw new Error(res.message || 'failed')
+      if (!res.success || !res.data) {
+        throw new Error(
+          apiErrorMessage(t, res.message, 'Failed to add channel binding')
+        )
+      }
       const orderedIds = [...previousIds, res.data.id]
       const reorderRes = await reorderChannelBindings(customerId, orderedIds)
       if (!reorderRes.success) {
-        throw new Error(reorderRes.message || 'failed')
+        throw new Error(
+          apiErrorMessage(t, reorderRes.message, 'Failed to add channel binding')
+        )
       }
       return res.data
     },
@@ -210,7 +216,9 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
       void refetchBindings()
     },
     onError: (err: Error) => {
-      toast.error(err.message || t('Failed to add channel binding'))
+      toast.error(
+        apiErrorMessage(t, err.message, 'Failed to add channel binding')
+      )
       void refetchBindings()
     },
   })
@@ -218,14 +226,24 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
   const removeBinding = useMutation({
     mutationFn: async (bindingId: number) => {
       const res = await deleteChannelBinding(customerId, bindingId)
-      if (!res.success) throw new Error(res.message || 'failed')
+      if (!res.success) {
+        throw new Error(
+          apiErrorMessage(t, res.message, 'Failed to remove channel binding')
+        )
+      }
       const remaining = bindings
         .filter((b) => b.id !== bindingId)
         .map((b) => b.id)
       if (remaining.length > 0) {
         const reorderRes = await reorderChannelBindings(customerId, remaining)
         if (!reorderRes.success) {
-          throw new Error(reorderRes.message || 'failed')
+          throw new Error(
+            apiErrorMessage(
+              t,
+              reorderRes.message,
+              'Failed to remove channel binding'
+            )
+          )
         }
       }
     },
@@ -234,7 +252,9 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
       void refetchBindings()
     },
     onError: (err: Error) => {
-      toast.error(err.message || t('Failed to remove channel binding'))
+      toast.error(
+        apiErrorMessage(t, err.message, 'Failed to remove channel binding')
+      )
       void refetchBindings()
     },
   })
@@ -242,14 +262,20 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
   const reorderBindings = useMutation({
     mutationFn: async (orderedIds: number[]) => {
       const res = await reorderChannelBindings(customerId, orderedIds)
-      if (!res.success) throw new Error(res.message || 'failed')
+      if (!res.success) {
+        throw new Error(
+          apiErrorMessage(t, res.message, 'Failed to reorder channel bindings')
+        )
+      }
       return res.data
     },
     onSuccess: () => {
       void refetchBindings()
     },
     onError: (err: Error) => {
-      toast.error(err.message || t('Failed to reorder channel bindings'))
+      toast.error(
+        apiErrorMessage(t, err.message, 'Failed to reorder channel bindings')
+      )
       void refetchBindings()
     },
   })

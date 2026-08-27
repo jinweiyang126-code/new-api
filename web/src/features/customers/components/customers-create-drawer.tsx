@@ -36,6 +36,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 
 import { createCustomer } from '../api'
+import { apiErrorMessage } from '@/features/customer-org/lib/api-message'
 import { useCustomers } from './customers-provider'
 import { OwnerUserPicker } from './owner-user-picker'
 
@@ -85,9 +86,7 @@ export function CustomersCreateDrawer({ open, onOpenChange }: Props) {
       owner_user_id: values.owner_user_id,
     })
     if (!res.success || !res.data) {
-      toast.error(
-        res.message ? t(res.message) : t('Failed to create customer')
-      )
+      toast.error(apiErrorMessage(t, res.message, 'Failed to create customer'))
       return
     }
     toast.success(t('Customer created'))

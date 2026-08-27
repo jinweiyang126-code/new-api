@@ -18,6 +18,7 @@ import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
 import { getCustomers } from '../api'
+import { apiErrorMessage } from '@/features/customer-org/lib/api-message'
 import {
   CUSTOMER_STATUS,
   getCustomerStatusOptions,
@@ -111,7 +112,7 @@ export function CustomersTable() {
         ...sortParams,
       })
       if (!result.success) {
-        toast.error(result.message || t('Failed to load customers'))
+        toast.error(apiErrorMessage(t, result.message, 'Failed to load customers'))
         return { items: [], total: 0 }
       }
       return {
