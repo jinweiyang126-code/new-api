@@ -146,6 +146,27 @@ docker compose up -d --build
 docker compose down
 ```
 
+### 磁盘清理
+
+反复 `git pull` + `docker compose up -d --build` 会导致悬空镜像与构建缓存累积。`git pull` 本身影响很小，主要增长来自 Docker build。
+
+```bash
+# 查看占用
+docker system df
+df -h
+
+# 日常首选：清悬空镜像，不影响下次 build 速度
+docker image prune -f
+
+# 磁盘仍紧张：清构建缓存（下次 build 会更慢）
+docker builder prune -f
+
+# 或一条命令合并清理（勿加 --volumes）
+docker system prune -f
+```
+
+各命令优缺点、风险参数（`--volumes`、`-a`）及本项目数据卷说明见：[Docker 磁盘清理命令说明](./docker-prune-commands.md)。
+
 ---
 
 ## 注意事项
@@ -168,6 +189,7 @@ docker compose down
 | `Dockerfile.dev`         | 开发用后端构建（前端走本地 dev server）            |
 | `docker-compose.yml`     | 生产 Compose（默认拉官方镜像，可改为`build: .`） |
 | `docker-compose.dev.yml` | 开发 Compose                                       |
+| `docker-prune-commands.md` | Docker 磁盘清理命令（`prune`）说明                 |
 
 ---
 
