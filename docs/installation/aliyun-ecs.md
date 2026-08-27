@@ -176,7 +176,7 @@ docker system prune -f
 3. **HTTPS**：生产建议使用 Nginx 或阿里云 SLB 配置证书，避免长期明文 HTTP。
 4. **多机部署**：各节点 `SESSION_SECRET` 必须一致，并共用同一 Redis。
 5. **数据持久化**：务必挂载 `./data`（或同等数据卷），避免容器重建丢数据。
-6. **可选架构**：也可在本机/CI 构建镜像后推送到阿里云 ACR，再在 ECS 上拉取运行，减轻 ECS 构建压力。
+6. **推荐架构（ECS 规格较小或 build 过慢时）**：在本机/CI 构建镜像后推送到阿里云 ACR，ECS 上仅 `pull` + `up -d`。完整步骤见 [本地构建并推送 ACR 部署](./aliyun-acr-local-build.md)。
 7. **组织 / 工作区（M1）**：多组织、工作区、邀请、BYOK 等能力与现网共用同一服务端口（默认 `3001`），**无需额外开放端口**；BYOK 加密依赖环境/配置中的密钥（如 `CRYPTO_SECRET`），部署时一并配置即可。
 
 ---
@@ -190,6 +190,7 @@ docker system prune -f
 | `docker-compose.yml`     | 生产 Compose（默认拉官方镜像，可改为`build: .`） |
 | `docker-compose.dev.yml` | 开发 Compose                                       |
 | `docker-prune-commands.md` | Docker 磁盘清理命令（`prune`）说明                 |
+| `aliyun-acr-local-build.md` | 本地构建镜像 → 推送 ACR → ECS 拉取部署           |
 
 ---
 

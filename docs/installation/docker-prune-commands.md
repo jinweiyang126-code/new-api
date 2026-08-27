@@ -226,7 +226,7 @@ docker compose up -d --build
 ## 减少磁盘压力的其他方式
 
 1. **仅代码变更时** `--build`；仅配置变更时用 `docker compose up -d`
-2. **CI / 本机构建** 镜像推送到阿里云 ACR，ECS 上 `pull` 运行，避免在 ECS 上反复全量 build
+2. **CI / 本机构建** 镜像推送到阿里云 ACR，ECS 上 `pull` 运行，避免在 ECS 上反复全量 build（步骤见 [本地构建并推送 ACR 部署](./aliyun-acr-local-build.md)）
 3. **定期轮转或清理** `./logs`，日志 bind mount 不受 `prune` 管理，可能比镜像更占空间
 4. **监控 MySQL 卷** `mysql_data` 业务增长，属正常数据而非垃圾
 
