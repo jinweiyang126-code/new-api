@@ -19,7 +19,14 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -60,6 +67,8 @@ type SignUpFormProps = React.HTMLAttributes<HTMLFormElement> & {
   invite?: string
 }
 
+const TURNSTILE_REFRESH_TIMEOUT_MS = 15_000
+
 export function SignUpForm({
   className,
   invite,
@@ -73,6 +82,7 @@ export function SignUpForm({
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
+  const turnstileVerifyRef = useRef<((token: string) => void) | null>(null)
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
   const { status } = useStatus()
@@ -157,6 +167,33 @@ export function SignUpForm({
     setSignupOnboardingPending(shouldOnboardAfterSignup)
   }, [shouldOnboardAfterSignup])
 
+  const handleTurnstileVerify = useCallback(
+    (token: string) => {
+      setTurnstileToken(token)
+      turnstileVerifyRef.current?.(token)
+    },
+    [setTurnstileToken]
+  )
+
+  const refreshTurnstileTokenForLogin = useCallback((): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        turnstileVerifyRef.current = null
+        reject(new Error('Turnstile refresh timed out'))
+      }, TURNSTILE_REFRESH_TIMEOUT_MS)
+
+      turnstileVerifyRef.current = (token: string) => {
+        if (!token) return
+        window.clearTimeout(timeoutId)
+        turnstileVerifyRef.current = null
+        resolve(token)
+      }
+
+      setTurnstileToken('')
+      setTurnstileWidgetKey((current) => current + 1)
+    })
+  }, [setTurnstileToken])
+
   async function onSubmit(data: z.infer<typeof registerFormSchema>) {
     if (requiresLegalConsent && !agreedToLegal) {
       toast.error(legalConsentErrorMessage)
@@ -192,10 +229,21 @@ export function SignUpForm({
         return
       }
 
+      let loginTurnstileToken = turnstileToken
+      if (isTurnstileEnabled) {
+        try {
+          loginTurnstileToken = await refreshTurnstileTokenForLogin()
+        } catch {
+          toast.success(t('Account created! Please sign in'))
+          redirectToLogin()
+          return
+        }
+      }
+
       const loginRes = await login({
         username: data.username,
         password: data.password,
-        turnstile: turnstileToken,
+        turnstile: loginTurnstileToken,
       })
 
       if (
@@ -387,7 +435,7 @@ export function SignUpForm({
               <Turnstile
                 key={turnstileWidgetKey}
                 siteKey={turnstileSiteKey}
-                onVerify={setTurnstileToken}
+                onVerify={handleTurnstileVerify}
                 onExpire={() => setTurnstileToken('')}
               />
             ) : (
