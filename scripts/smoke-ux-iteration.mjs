@@ -162,7 +162,9 @@ check('members search has mWorkspace', membersSearch.includes('mWorkspace'))
 
 // --- Org wallet ---
 const orgWallet = read('web/src/features/customer-org/org-wallet-page.tsx')
-check('org wallet filter inside list header', orgWallet.includes('My organization wallets') && orgWallet.includes('setWorkspaceFilter'))
+check('org wallet filter inside list header', orgWallet.includes('Workspace balances') && orgWallet.includes('setWorkspaceFilter'))
+check('org wallet list explains workspace breakdown', orgWallet.includes('grouped by workspace'))
+check('org wallet row shows workspace name only', orgWallet.includes('wallet.workspace_name') && !orgWallet.includes('customer_name'))
 check('org wallet aligns stats with personal wallet', orgWallet.includes('WalletStatsCard'))
 const orgWalletFunds = read('web/src/features/customer-org/components/org-wallet-funds-card.tsx')
 check('org wallet funds card uses admin contact message', orgWalletFunds.includes('Please contact your organization administrator'))
