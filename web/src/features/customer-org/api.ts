@@ -1,6 +1,8 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
+import { isAxiosError } from 'axios'
+
 import { api } from '@/lib/api'
 
 import type {
@@ -13,6 +15,24 @@ import type {
   Workspace,
   WorkspaceMember,
 } from './types'
+
+function failedApiResponse<T>(message: string): ApiResponse<T> {
+  return { success: false, message }
+}
+
+async function getApiResponseSilently<T>(
+  request: () => Promise<{ data: ApiResponse<T> }>
+): Promise<ApiResponse<T>> {
+  try {
+    const res = await request()
+    return res.data
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.data) {
+      return error.response.data as ApiResponse<T>
+    }
+    return failedApiResponse('Request failed')
+  }
+}
 
 export async function createSelfCustomer(data: {
   organization_name: string
@@ -72,6 +92,17 @@ export async function getWorkspaceMembers(
 ): Promise<ApiResponse<WorkspaceMember[]>> {
   const res = await api.get(`/api/workspaces/${workspaceId}/members`)
   return res.data
+}
+
+/** Same as getWorkspaceMembers but suppresses global error toasts (403/404, etc.). */
+export async function getWorkspaceMembersQuiet(
+  workspaceId: number
+): Promise<ApiResponse<WorkspaceMember[]>> {
+  return getApiResponseSilently(() =>
+    api.get(`/api/workspaces/${workspaceId}/members`, {
+      skipErrorHandler: true,
+    })
+  )
 }
 
 export async function createWorkspace(
@@ -339,6 +370,17 @@ export async function getWorkspaceOrgWallets(
 ): Promise<ApiResponse<OrgWallet[]>> {
   const res = await api.get(`/api/workspaces/${workspaceId}/org-wallets`)
   return res.data
+}
+
+/** Same as getWorkspaceOrgWallets but suppresses global error toasts (admin-only 403). */
+export async function getWorkspaceOrgWalletsQuiet(
+  workspaceId: number
+): Promise<ApiResponse<OrgWallet[]>> {
+  return getApiResponseSilently(() =>
+    api.get(`/api/workspaces/${workspaceId}/org-wallets`, {
+      skipErrorHandler: true,
+    })
+  )
 }
 
 export async function allocateOrgWallet(

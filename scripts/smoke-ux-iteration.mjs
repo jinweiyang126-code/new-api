@@ -108,7 +108,7 @@ const membersTable = read('web/src/features/customer-org/components/members-tabl
 check('members table has workspace toolbar filter', membersTable.includes("columnId: 'workspace_id'"))
 check('members table loads workspace names in all mode', membersTable.includes('workspace_names'))
 check('members table tracks member workspace ids', membersTable.includes('workspace_ids'))
-check('members table loads org wallet balances', membersTable.includes('getWorkspaceOrgWallets'))
+check('members table loads org wallet balances for admins', membersTable.includes('getWorkspaceOrgWalletsQuiet') && membersTable.includes('isAdmin'))
 check('members table maps org_wallet_balance', membersTable.includes('org_wallet_balance'))
 
 const membersCols = read('web/src/features/customer-org/components/members-columns.tsx')

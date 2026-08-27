@@ -17,7 +17,12 @@ import {
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 
-import { getCustomerMembers, getWorkspaceMembers, getWorkspaceOrgWallets } from '../api'
+import {
+  getCustomerMembers,
+  getWorkspaceMembers,
+  getWorkspaceMembersQuiet,
+  getWorkspaceOrgWalletsQuiet,
+} from '../api'
 import { useCustomerContext } from '../hooks/use-customer-context'
 import { apiErrorMessage } from '../lib/api-message'
 import { CREDENTIAL_STATUS, getCredentialStatusOptions } from '../constants'
@@ -78,6 +83,7 @@ export function MembersTable() {
     customerId,
     refreshTrigger,
     isPersonal,
+    isAdmin,
     currentWorkspaceId,
     currentWorkspaceName,
   } = useMembers()
@@ -144,6 +150,7 @@ export function MembersTable() {
       'members-table',
       customerId,
       isPersonal,
+      isAdmin,
       currentWorkspaceId,
       refreshTrigger,
       workspaces.map((ws) => ws.id).join(','),
@@ -155,8 +162,10 @@ export function MembersTable() {
           getCustomerMembers(customerId),
           ...workspaces.map(async (ws) => {
             const [membersRes, walletsRes] = await Promise.all([
-              getWorkspaceMembers(ws.id),
-              getWorkspaceOrgWallets(ws.id),
+              getWorkspaceMembersQuiet(ws.id),
+              isAdmin
+                ? getWorkspaceOrgWalletsQuiet(ws.id)
+                : Promise.resolve({ success: false as const, message: '' }),
             ])
             return { workspace: ws, membersRes, walletsRes }
           }),
@@ -212,7 +221,9 @@ export function MembersTable() {
 
       const [membersRes, walletsRes] = await Promise.all([
         getWorkspaceMembers(currentWorkspaceId),
-        getWorkspaceOrgWallets(currentWorkspaceId),
+        isAdmin
+          ? getWorkspaceOrgWalletsQuiet(currentWorkspaceId)
+          : Promise.resolve({ success: false as const, message: '' }),
       ])
       if (!membersRes.success) {
         toast.error(apiErrorMessage(t, membersRes.message, 'Failed to load members'))

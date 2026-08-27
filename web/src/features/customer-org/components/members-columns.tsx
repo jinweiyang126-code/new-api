@@ -13,12 +13,14 @@ import { formatQuota, formatTimestamp } from '@/lib/format'
 import { CREDENTIAL_STATUS } from '../constants'
 import { roleLabel } from '../lib/api-message'
 import type { MemberRow } from './members-provider'
+import { useMembers } from './members-provider'
 import { MembersRowActions } from './members-row-actions'
 
 export function useMembersColumns(): ColumnDef<MemberRow>[] {
   const { t } = useTranslation()
+  const { isAdmin } = useMembers()
 
-  return [
+  const columns: ColumnDef<MemberRow>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -111,17 +113,21 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
       ),
       meta: { mobileOrder: 4 },
     },
-    {
-      accessorKey: 'org_wallet_balance',
-      header: t('Quota'),
-      size: 120,
-      cell: ({ row }) => (
-        <span className='font-mono text-sm tabular-nums'>
-          {formatQuota(row.original.org_wallet_balance ?? 0)}
-        </span>
-      ),
-      meta: { mobileOrder: 5 },
-    },
+    ...(isAdmin
+      ? [
+          {
+            accessorKey: 'org_wallet_balance',
+            header: t('Quota'),
+            size: 120,
+            cell: ({ row }) => (
+              <span className='font-mono text-sm tabular-nums'>
+                {formatQuota(row.original.org_wallet_balance ?? 0)}
+              </span>
+            ),
+            meta: { mobileOrder: 5 },
+          } satisfies ColumnDef<MemberRow>,
+        ]
+      : []),
     {
       accessorKey: 'status',
       header: t('Status'),
@@ -155,4 +161,6 @@ export function useMembersColumns(): ColumnDef<MemberRow>[] {
       meta: { pinned: 'right', mobileOrder: 99 },
     },
   ]
+
+  return columns
 }
