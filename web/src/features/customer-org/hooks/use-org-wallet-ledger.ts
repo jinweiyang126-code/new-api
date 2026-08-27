@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 
 import { getSelfOrgWalletLedger, type OrgWalletLedgerEntry } from '../api'
+import { apiErrorMessage } from '../lib/api-message'
 
 interface UseOrgWalletLedgerOptions {
   customerId?: number
@@ -44,7 +45,13 @@ export function useOrgWalletLedger(options: UseOrgWalletLedgerOptions = {}) {
         setRecords(res.data.items ?? [])
         setTotal(res.data.total ?? 0)
       } else {
-        toast.error(res.message || i18next.t('Failed to load billing history'))
+        toast.error(
+          apiErrorMessage(
+            i18next.t.bind(i18next),
+            res.message,
+            'Failed to load billing history'
+          )
+        )
         setRecords([])
         setTotal(0)
       }

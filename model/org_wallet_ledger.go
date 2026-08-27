@@ -99,9 +99,7 @@ func ListOrgWalletLedgerForUser(
 			entry.WorkspaceName = ws.Name
 		}
 		if entry.OperatorId > 0 {
-			if name, err := GetUsernameById(entry.OperatorId, false); err == nil && name != "" {
-				entry.OperatorName = name
-			}
+			entry.OperatorName = GetUserDisplayLabelById(entry.OperatorId)
 		}
 		out = append(out, entry)
 	}

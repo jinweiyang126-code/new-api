@@ -176,4 +176,4 @@ function OrgWalletRow({ wallet }: { wallet: OrgWallet }) {
     </li>
   )
 }
-
+

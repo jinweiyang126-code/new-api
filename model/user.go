@@ -1445,6 +1445,27 @@ func GetUsernameById(id int, fromDB bool) (username string, err error) {
 	return username, nil
 }
 
+// GetUserDisplayLabelById returns display_name when set, otherwise username.
+func GetUserDisplayLabelById(id int) string {
+	if id <= 0 {
+		return ""
+	}
+	user, err := GetUserById(id, false)
+	if err == nil && user != nil {
+		if name := strings.TrimSpace(user.DisplayName); name != "" {
+			return name
+		}
+		if name := strings.TrimSpace(user.Username); name != "" {
+			return name
+		}
+	}
+	name, err := GetUsernameById(id, false)
+	if err != nil {
+		return ""
+	}
+	return name
+}
+
 func IsLinuxDOIdAlreadyTaken(linuxDOId string) bool {
 	var user User
 	err := DB.Unscoped().Where("linux_do_id = ?", linuxDOId).First(&user).Error

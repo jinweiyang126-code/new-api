@@ -57,6 +57,7 @@ import {
   updateCustomer,
   updateUpstreamSettings,
 } from '../api'
+import { apiErrorMessage } from '@/features/customer-org/lib/api-message'
 import { UPSTREAM_MODE, getUpstreamModeOptions } from '../constants'
 import type { Customer } from '../types'
 import { ChannelPicker } from './channel-picker'
@@ -153,7 +154,7 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
       remark: values.remark?.trim() || '',
     })
     if (!res.success) {
-      toast.error(res.message || t('Failed to update customer'))
+      toast.error(apiErrorMessage(t, res.message, 'Failed to update customer'))
       return
     }
     toast.success(t('Customer updated'))
@@ -168,7 +169,11 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
         allow_global_fallback: allowFallback,
         byok_enabled: byokEnabled,
       })
-      if (!res.success) throw new Error(res.message || 'failed')
+      if (!res.success) {
+        throw new Error(
+          apiErrorMessage(t, res.message, 'Failed to save upstream settings')
+        )
+      }
       return res.data
     },
     onSuccess: () => {
@@ -177,7 +182,9 @@ export function CustomersEditDrawer({ open, onOpenChange, customer }: Props) {
       triggerRefresh()
     },
     onError: (err: Error) => {
-      toast.error(err.message || t('Failed to save upstream settings'))
+      toast.error(
+        apiErrorMessage(t, err.message, 'Failed to save upstream settings')
+      )
     },
   })
 

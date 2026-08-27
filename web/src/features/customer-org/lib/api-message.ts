@@ -3,10 +3,15 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import type { TFunction } from 'i18next'
 
+import { formatQuota } from '@/lib/format'
+
 /** Backend errors that append dynamic details after a fixed prefix. */
 const ERROR_MESSAGE_PREFIX_KEYS = [
   'quota limit cannot be below occupied amount',
 ] as const
+
+const QUOTA_MINIMUM_ERROR_RE =
+  /^quota limit cannot be below occupied amount: minimum (\d+)$/
 
 /** Translate backend API message when a locale key exists; otherwise show as-is / fallback. */
 export function apiErrorMessage(
@@ -16,6 +21,13 @@ export function apiErrorMessage(
 ): string {
   const msg = (message || '').trim()
   if (!msg) return t(fallbackKey)
+
+  const minimumMatch = msg.match(QUOTA_MINIMUM_ERROR_RE)
+  if (minimumMatch) {
+    return t('Quota limit cannot be below occupied amount ({{min}})', {
+      min: formatQuota(Number(minimumMatch[1])),
+    })
+  }
 
   const exact = t(msg)
   if (exact !== msg) return exact

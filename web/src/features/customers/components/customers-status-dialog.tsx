@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { apiErrorMessage } from '@/features/customer-org/lib/api-message'
 
 import { updateCustomer } from '../api'
 import { CUSTOMER_STATUS } from '../constants'
@@ -27,7 +28,7 @@ export function CustomersStatusDialog() {
       const next = disabling ? CUSTOMER_STATUS.DISABLED : CUSTOMER_STATUS.ENABLED
       const res = await updateCustomer(currentRow.id, { status: next })
       if (!res.success) {
-        toast.error(res.message || t('Failed to update customer'))
+        toast.error(apiErrorMessage(t, res.message, 'Failed to update customer'))
         return
       }
       toast.success(disabling ? t('Customer disabled') : t('Customer enabled'))
