@@ -206,7 +206,9 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
       })
 
       if (!res?.success) {
-        toast.error(res?.message || t('Failed to create account'))
+        toast.error(
+          t(res?.message || 'Failed to create account')
+        )
         return
       }
 
@@ -250,13 +252,16 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
     } finally {
       setIsLoading(false)
       setPendingAction(null)
+      setTurnstileToken('')
+      setTurnstileWidgetKey((current) => current + 1)
     }
   }
 
   async function requestVerificationCode(email: string, tokenOverride?: string) {
-    if (await sendCode(email, tokenOverride)) {
-      setTurnstileToken('')
-      setTurnstileWidgetKey((current) => current + 1)
+    const sent = await sendCode(email, tokenOverride)
+    setTurnstileToken('')
+    setTurnstileWidgetKey((current) => current + 1)
+    if (sent) {
       setView('verify')
       return true
     }
@@ -306,9 +311,34 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
       return
     }
     if (pendingAction === 'register') {
+      setPendingAction(null)
       await performRegister(data, verificationCode, token)
-      setView('form')
+      setView(emailVerificationRequired ? 'verify' : 'form')
     }
+  }
+
+  function submitEmailVerification() {
+    if (!verificationCode) {
+      toast.error(t('Please enter the verification code'))
+      return
+    }
+    if (showTurnstileSlot && !turnstileToken) {
+      setPendingAction('register')
+      setView('turnstile')
+      return
+    }
+    if (!validateTurnstile()) return
+    void performRegister(form.getValues(), verificationCode)
+  }
+
+  function resendVerificationCode() {
+    if (!emailValue) return
+    if (showTurnstileSlot && !turnstileToken) {
+      setPendingAction('send-code')
+      setView('turnstile')
+      return
+    }
+    void requestVerificationCode(emailValue)
   }
 
   const handleOpenWeChatDialog = () => {
@@ -371,18 +401,8 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
         email={emailValue || ''}
         code={verificationCode}
         onCodeChange={setVerificationCode}
-        onSubmit={() => {
-          if (!verificationCode) {
-            toast.error(t('Please enter the verification code'))
-            return
-          }
-          void performRegister(form.getValues(), verificationCode)
-        }}
-        onResend={() => {
-          if (emailValue) {
-            void requestVerificationCode(emailValue)
-          }
-        }}
+        onSubmit={submitEmailVerification}
+        onResend={resendVerificationCode}
         isSubmitting={isLoading}
         isSending={isSendingCode}
         secondsLeft={secondsLeft}

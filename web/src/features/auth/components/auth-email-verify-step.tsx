@@ -81,6 +81,8 @@ export function AuthEmailVerifyStep({
         maxLength={OTP_LENGTH}
         value={code}
         onChange={onCodeChange}
+        inputMode='numeric'
+        pattern='[0-9]*'
         containerClassName='justify-center gap-2'
       >
         <InputOTPGroup className='gap-2'>

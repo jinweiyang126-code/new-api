@@ -184,6 +184,7 @@ export function UserAuthForm({
     } finally {
       setIsLoading(false)
       setPendingSubmit(null)
+      setTurnstileToken('')
     }
   }
 

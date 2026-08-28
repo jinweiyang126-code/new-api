@@ -3460,6 +3460,8 @@
         "Please upload key file(s)": "请上传密钥文件",
         "Please wait a moment before trying again.": "请稍候再试。",
         "Please wait a moment, human check is initializing...": "请稍等，人机验证正在初始化...",
+        "Turnstile token 为空": "人机验证凭证缺失，请重试。",
+        "Turnstile 校验失败，请刷新重试！": "人机验证失败，请刷新后重试。",
         "Please wait before editing to avoid overwriting saved values.": "请等待加载完成后再编辑，以免覆盖已保存的值。",
         "Please wait for the current generation to complete": "请等待当前生成完成",
         "Policy JSON": "策略 JSON",
