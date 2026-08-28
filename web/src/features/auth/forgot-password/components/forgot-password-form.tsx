@@ -17,25 +17,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 
-import { Turnstile, TurnstileLoadingPlaceholder } from '@/components/turnstile'
-import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { sendPasswordResetEmail } from '@/features/auth/api'
+import { AuthBrand } from '@/features/auth/components/auth-brand'
+import { AuthCard } from '@/features/auth/components/auth-card'
+import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
+import {
+  AuthFieldLabel,
+  AuthTextField,
+} from '@/features/auth/components/auth-text-field'
+import { AuthTurnstileStep } from '@/features/auth/components/auth-turnstile-step'
 import {
   forgotPasswordFormSchema,
   PASSWORD_RESET_COUNTDOWN,
@@ -50,11 +55,12 @@ export function ForgotPasswordForm({
 }: React.HTMLAttributes<HTMLFormElement>) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
+  const [view, setView] = useState<'form' | 'turnstile'>('form')
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
 
   const {
     isTurnstileEnabled,
     showTurnstileSlot,
-    turnstileReady,
     turnstileSiteKey,
     turnstileToken,
     setTurnstileToken,
@@ -71,12 +77,13 @@ export function ForgotPasswordForm({
     defaultValues: { email: '' },
   })
 
-  async function onSubmit(data: z.infer<typeof forgotPasswordFormSchema>) {
-    if (!validateTurnstile()) return
-
+  async function sendReset(email: string, tokenOverride?: string) {
     setIsLoading(true)
     try {
-      const res = await sendPasswordResetEmail(data.email, turnstileToken)
+      const res = await sendPasswordResetEmail(
+        email,
+        tokenOverride ?? turnstileToken
+      )
       if (res?.success) {
         form.reset()
         startCountdown()
@@ -84,59 +91,101 @@ export function ForgotPasswordForm({
       } else {
         toast.error(res?.message || t('Failed to send reset email'))
       }
-    } catch (_error) {
+    } catch {
       // Errors are handled by global interceptor
     } finally {
       setIsLoading(false)
+      setPendingEmail(null)
+      setTurnstileToken('')
+      setView('form')
     }
   }
 
+  async function onSubmit(data: z.infer<typeof forgotPasswordFormSchema>) {
+    if (showTurnstileSlot && !turnstileToken) {
+      setPendingEmail(data.email)
+      setView('turnstile')
+      return
+    }
+
+    if (!validateTurnstile()) return
+    await sendReset(data.email)
+  }
+
+  function handleTurnstileVerify(token: string) {
+    setTurnstileToken(token)
+    if (pendingEmail) {
+      void sendReset(pendingEmail, token)
+    }
+  }
+
+  if (view === 'turnstile' && showTurnstileSlot) {
+    return (
+      <AuthTurnstileStep
+        siteKey={turnstileSiteKey}
+        enabled={isTurnstileEnabled}
+        onVerify={handleTurnstileVerify}
+        onExpire={() => setTurnstileToken('')}
+      />
+    )
+  }
+
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-2', className)}
-        {...props}
-      >
-        <FormField
-          control={form.control}
-          name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder='name@example.com' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button
-          type='submit'
-          className='mt-2'
-          disabled={isLoading || isActive || !turnstileReady}
-        >
-          {isActive
-            ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
-            : t('Send reset email')}
-          {isLoading ? <Loader2 className='animate-spin' /> : <ArrowRight />}
-        </Button>
-
-        {showTurnstileSlot && (
-          <div className='mt-2'>
-            {isTurnstileEnabled ? (
-              <Turnstile
-                siteKey={turnstileSiteKey}
-                onVerify={setTurnstileToken}
-                onExpire={() => setTurnstileToken('')}
-              />
-            ) : (
-              <TurnstileLoadingPlaceholder />
+    <AuthCard className='flex flex-col items-center gap-6'>
+      <div className='flex w-full flex-col items-center gap-4 text-center'>
+        <AuthBrand />
+        <div className='space-y-2'>
+          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+            {t('Forgot password')}
+          </h1>
+          <p className='text-muted-foreground text-xs'>
+            {t(
+              'Enter your registered email and we will send you a link to reset your password.'
             )}
-          </div>
-        )}
-      </form>
-    </Form>
+          </p>
+        </div>
+      </div>
+
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className={cn('flex w-full flex-col gap-4', className)}
+          {...props}
+        >
+          <FormField
+            control={form.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem className='gap-2'>
+                <AuthFieldLabel label={t('Email')} />
+                <FormControl>
+                  <AuthTextField
+                    placeholder={t('Email')}
+                    type='email'
+                    autoComplete='email'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <AuthSubmitButton type='submit' disabled={isLoading || isActive}>
+            {isLoading ? <Loader2 className='animate-spin' /> : null}
+            {isActive
+              ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
+              : t('Send reset email')}
+          </AuthSubmitButton>
+        </form>
+      </Form>
+
+      <p className='text-muted-foreground w-full text-center text-xs'>
+        {t("Don't have an account?")}{' '}
+        <Link to='/sign-up' className='auth-link'>
+          {t('Sign up')}
+        </Link>
+      </p>
+    </AuthCard>
   )
 }

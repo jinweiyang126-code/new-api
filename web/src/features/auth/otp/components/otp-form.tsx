@@ -25,6 +25,7 @@ import { toast } from 'sonner'
 import type { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
+import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
 import {
   Form,
   FormControl,
@@ -203,14 +204,13 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
           )}
         />
 
-        <Button
+        <AuthSubmitButton
           type='submit'
-          className='mt-2 w-full'
           disabled={!isFormValid || isLoading}
         >
           {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
           {t('Verify and Sign In')}
-        </Button>
+        </AuthSubmitButton>
 
         <div className='flex items-center justify-center gap-2 text-sm'>
           <Button

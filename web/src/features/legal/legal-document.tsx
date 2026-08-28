@@ -20,7 +20,10 @@ import { useQuery } from '@tanstack/react-query'
 import { FileWarning } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { PublicLayout } from '@/components/layout'
+import {
+  PublicLayout,
+  useLandingPublicLayoutProps,
+} from '@/components/layout'
 import { RichContent } from '@/components/rich-content'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -43,6 +46,9 @@ export function LegalDocument({
   emptyMessage,
 }: LegalDocumentProps) {
   const { t } = useTranslation()
+  const landingLayout = useLandingPublicLayoutProps({
+    showMainContainer: true,
+  })
   const { data, isLoading } = useQuery({
     queryKey: [queryKey],
     queryFn: fetchDocument,
@@ -57,7 +63,7 @@ export function LegalDocument({
 
   if (isLoading) {
     return (
-      <PublicLayout>
+      <PublicLayout {...landingLayout}>
         <div className='mx-auto flex max-w-4xl flex-col gap-4 py-12'>
           <Skeleton className='h-8 w-[45%]' />
           <Skeleton className='h-4 w-full' />
@@ -70,7 +76,7 @@ export function LegalDocument({
 
   if (!success || !hasContent) {
     return (
-      <PublicLayout>
+      <PublicLayout {...landingLayout}>
         <div className='mx-auto max-w-2xl py-12'>
           <Card className='border-dashed'>
             <CardHeader className='flex flex-row items-center gap-4'>
@@ -92,7 +98,7 @@ export function LegalDocument({
 
   if (isUrl) {
     return (
-      <PublicLayout>
+      <PublicLayout {...landingLayout}>
         <div className='mx-auto max-w-2xl py-12'>
           <Card>
             <CardHeader>
@@ -123,7 +129,7 @@ export function LegalDocument({
   }
 
   return (
-    <PublicLayout showMainContainer={!contentIsHtml}>
+    <PublicLayout {...landingLayout} showMainContainer={!contentIsHtml}>
       {contentIsHtml ? (
         <RichContent mode='html' htmlVariant='isolated' content={rawContent} />
       ) : (

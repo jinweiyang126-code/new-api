@@ -20,9 +20,9 @@ For commercial licensing, please contact support@quantumnous.com
  * Application-wide constants
  */
 
-// System Configuration Defaults
-export const DEFAULT_SYSTEM_NAME = 'Token API'
-export const DEFAULT_LOGO = '/logo.32cf2df4.png'
+// System Configuration Defaults (console Site settings override when set)
+export const DEFAULT_SYSTEM_NAME = 'UnionMeta'
+export const DEFAULT_LOGO = '/landing/unionmeta-logo-mark.svg'
 
 // LocalStorage Keys
 export const STORAGE_KEYS = {

@@ -44,20 +44,23 @@ export function useEmailVerification(options?: UseEmailVerificationOptions) {
   /**
    * Send verification code to email
    */
-  const sendCode = async (email: string) => {
+  const sendCode = async (email: string, tokenOverride?: string) => {
     if (!email) {
       toast.error(i18next.t('Please enter your email first'))
       return false
     }
 
     // Validate turnstile if validation function is provided
-    if (options?.validateTurnstile && !options.validateTurnstile()) {
+    if (!tokenOverride && options?.validateTurnstile && !options.validateTurnstile()) {
       return false
     }
 
     setIsSending(true)
     try {
-      const res = await sendEmailVerification(email, options?.turnstileToken)
+      const res = await sendEmailVerification(
+        email,
+        tokenOverride ?? options?.turnstileToken
+      )
       if (res?.success) {
         startCountdown()
         toast.success(i18next.t('Verification email sent'))
@@ -67,7 +70,7 @@ export function useEmailVerification(options?: UseEmailVerificationOptions) {
         res?.message || i18next.t('Failed to send verification email')
       )
       return false
-    } catch (_error) {
+    } catch {
       // Errors are handled by global interceptor
       return false
     } finally {

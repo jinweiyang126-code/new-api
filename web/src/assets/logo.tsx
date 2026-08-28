@@ -16,15 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type SVGProps } from 'react'
+import type { SVGProps } from 'react'
 
 import { cn } from '@/lib/utils'
 
-/** Token API mark. Uses currentColor so it tracks light/dark UI chrome. */
+/** UnionMeta mark. Uses currentColor so it tracks light/dark UI chrome. */
 export function Logo({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      id='token-api-logo'
+      id='unionmeta-logo'
       viewBox='0 0 24 24'
       xmlns='http://www.w3.org/2000/svg'
       height='24'
@@ -33,7 +33,7 @@ export function Logo({ className, ...props }: SVGProps<SVGSVGElement>) {
       className={cn('size-6', className)}
       {...props}
     >
-      <title>Token API</title>
+      <title>UnionMeta</title>
       <circle
         cx='12'
         cy='12'

@@ -24,6 +24,8 @@ import { SiGithub, SiLinux, SiWechat } from 'react-icons/si'
 import { hideBootOAuthLoader } from '@/lib/boot-oauth-loader'
 
 import { AuthLayout } from '../auth-layout'
+import { AuthBrand } from './auth-brand'
+import { AuthCard } from './auth-card'
 
 type OAuthCallbackScreenProps = {
   provider: string
@@ -99,13 +101,14 @@ export function OAuthCallbackScreen({
 
   return (
     <AuthLayout>
-      <div className='w-full space-y-8'>
+      <AuthCard className='w-full max-w-[420px] space-y-6'>
+        <AuthBrand />
         <div className='flex flex-col items-center space-y-4 text-center'>
           <div className='bg-muted flex h-16 w-16 items-center justify-center rounded-2xl'>
             <Icon className='h-8 w-8' />
           </div>
           <div className='space-y-2'>
-            <h2 className='text-center text-2xl font-semibold tracking-tight'>
+            <h2 className='text-center text-lg font-semibold tracking-tight'>
               {headline}
             </h2>
             <p className='text-muted-foreground text-sm sm:text-base'>
@@ -128,7 +131,7 @@ export function OAuthCallbackScreen({
             )}
           </p>
         </div>
-      </div>
+      </AuthCard>
     </AuthLayout>
   )
 }

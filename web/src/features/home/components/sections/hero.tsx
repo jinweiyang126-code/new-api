@@ -7,9 +7,9 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
@@ -17,11 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import { ArrowRight, ArrowUpRight, BookOpen } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import { useStatus } from '@/hooks/use-status'
+import { cn } from '@/lib/utils'
+
+import { getDefaultStats } from '../../constants'
 
 interface HeroProps {
   className?: string
@@ -30,86 +32,43 @@ interface HeroProps {
 
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
-  const { status } = useStatus()
-  const docsUrl =
-    (status?.docs_link as string | undefined) || 'https://docs.newapi.pro'
-  const origin =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://api.example.com'
+  const stats = getDefaultStats(t)
   const primaryTo = props.isAuthenticated ? '/dashboard' : '/sign-up'
   const primaryLabel = props.isAuthenticated
     ? t('Go to Dashboard')
     : t('Get Started')
 
-  const renderDocsLink = () => {
-    const isExternal = docsUrl.startsWith('http')
-    const className =
-      'text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors'
-    const inner = (
-      <>
-        <BookOpen className='size-3.5' />
-        <span>{t('Docs')}</span>
-      </>
-    )
-    if (isExternal) {
-      return (
-        <a
-          href={docsUrl}
-          target='_blank'
-          rel='noopener noreferrer'
-          className={className}
-        >
-          {inner}
-        </a>
-      )
-    }
-    return (
-      <Link to={docsUrl} className={className}>
-        {inner}
-      </Link>
-    )
-  }
-
   return (
-    <section className='relative z-10 flex min-h-[min(92svh,920px)] flex-col items-center justify-center overflow-hidden px-6 pt-28 pb-16 md:pt-32 md:pb-24'>
-      <div
-        aria-hidden
-        className='pointer-events-none absolute inset-0 -z-10'
-        style={{
-          background: [
-            'radial-gradient(ellipse 70% 55% at 50% -10%, oklch(0.72 0.18 250 / 28%) 0%, transparent 62%)',
-            'radial-gradient(ellipse 50% 40% at 12% 70%, oklch(0.68 0.16 280 / 18%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 45% 35% at 88% 55%, oklch(0.7 0.14 200 / 16%) 0%, transparent 70%)',
-          ].join(', '),
-        }}
-      />
-      <div
-        aria-hidden
-        className='absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_70%_55%_at_50%_20%,black_15%,transparent_75%)] bg-[size:4.5rem_4.5rem] opacity-[0.07]'
-      />
+    <section
+      className={cn(
+        'relative z-10 flex min-h-[min(92svh,975px)] flex-col items-center overflow-hidden px-6 pt-28 pb-16 md:pt-32 md:pb-20',
+        props.className
+      )}
+    >
+      <div aria-hidden className='landing-glow pointer-events-none absolute inset-0 -z-10' />
 
       <div className='mx-auto flex w-full max-w-5xl flex-col items-center text-center'>
         <p
-          className='landing-animate-fade-up text-muted-foreground mb-6 text-[13px] font-medium tracking-[0.18em] uppercase opacity-0'
+          className='landing-animate-fade-up text-muted-foreground mb-5 text-sm leading-[26px] opacity-0'
           style={{ animationDelay: '0ms' }}
         >
           {t('Connect. Route. Scale. Instantly.')}
         </p>
 
         <h1
-          className='landing-animate-fade-up max-w-4xl text-[clamp(2.6rem,8vw,5.25rem)] leading-[1.04] font-semibold tracking-[-0.04em] opacity-0'
+          className='landing-animate-fade-up max-w-4xl text-[clamp(2.25rem,6.5vw,4.5rem)] leading-[1.08] font-bold tracking-tight capitalize opacity-0'
           style={{ animationDelay: '70ms' }}
         >
-          {t('Unified API Gateway for')}
-          <br />
-          <span className='bg-gradient-to-r from-sky-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent'>
-            {t('Vast Range of AI Models')}
+          <span className='text-foreground block'>
+            {t('One Gateway to Global AI')}
+          </span>
+          <span className='landing-hero-gradient mt-1 block'>
+            {t('Better Models & Better Prices')}
           </span>
         </h1>
 
         <p
-          className='landing-animate-fade-up text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed opacity-0 md:text-lg'
+          className='landing-animate-fade-up text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed tracking-[-0.01em] opacity-0 md:text-2xl md:leading-8'
           style={{ animationDelay: '140ms' }}
         >
           {t(
@@ -118,53 +77,42 @@ export function Hero(props: HeroProps) {
         </p>
 
         <div
-          className='landing-animate-fade-up mt-10 w-full max-w-3xl opacity-0'
+          className='landing-animate-fade-up mt-10 flex flex-wrap items-center justify-center gap-4 opacity-0 sm:gap-5'
           style={{ animationDelay: '200ms' }}
         >
-          <Link
-            to={primaryTo}
-            className='border-border/50 bg-background/70 group hover:border-border relative flex flex-col gap-4 rounded-[1.75rem] border p-2.5 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-[border-color,box-shadow] dark:bg-white/[0.04] dark:shadow-[0_28px_90px_-36px_rgba(0,0,0,0.75)]'
-          >
-            <div className='bg-muted/40 flex min-h-[7.5rem] flex-col justify-between rounded-[1.35rem] px-5 py-4 text-left md:min-h-[8.25rem] md:px-6 md:py-5'>
-              <div className='text-muted-foreground flex items-center gap-2.5 font-mono text-[11px] tracking-wide md:text-xs'>
-                <span className='bg-foreground/8 rounded-md px-1.5 py-0.5 font-semibold text-sky-600 dark:text-sky-400'>
-                  POST
-                </span>
-                <span className='truncate'>{origin}/v1/chat/completions</span>
-              </div>
-              <div className='mt-6 flex items-end justify-between gap-4'>
-                <p className='text-muted-foreground/80 max-w-[18rem] text-sm leading-snug md:max-w-md md:text-[15px]'>
-                  {t('One key. Chat, image, and video.')}
-                </p>
-                <span className='bg-foreground text-background inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:translate-x-0.5 group-hover:scale-105'>
-                  <ArrowUpRight className='size-5' />
-                </span>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        <div
-          className='landing-animate-fade-up mt-8 flex flex-wrap items-center justify-center gap-3 opacity-0'
-          style={{ animationDelay: '260ms' }}
-        >
           <Button
-            className='group h-12 rounded-full px-7 text-sm font-semibold'
+            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-[min(100%,12.5rem)] rounded-full px-6 text-base font-semibold sm:h-14 sm:text-lg'
             render={<Link to={primaryTo} />}
           >
             {primaryLabel}
-            <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
+            <ArrowRight className='ml-1 size-5 transition-transform duration-200 group-hover:translate-x-0.5' />
           </Button>
           {!props.isAuthenticated && (
             <Button
               variant='outline'
-              className='border-border/50 hover:border-border hover:bg-muted/50 h-12 rounded-full px-7 text-sm font-medium'
+              className='border-border text-foreground hover:bg-muted/40 h-12 w-[min(100%,12.5rem)] rounded-full px-6 text-base font-semibold sm:h-14 sm:text-lg'
               render={<Link to='/pricing' />}
             >
               {t('View Pricing')}
             </Button>
           )}
-          {renderDocsLink()}
+        </div>
+
+        <div
+          className='landing-animate-fade-up mt-14 grid w-full max-w-4xl grid-cols-2 gap-8 opacity-0 md:mt-20 md:grid-cols-4 md:gap-10'
+          style={{ animationDelay: '280ms' }}
+        >
+          {stats.map((stat) => (
+            <div key={stat.description} className='text-center'>
+              <p className='text-foreground text-[clamp(1.75rem,4vw,2.875rem)] leading-tight font-semibold tracking-[-0.02em]'>
+                {stat.value}
+                {stat.suffix}
+              </p>
+              <p className='text-muted-foreground mt-1 text-xs leading-[22px] md:text-sm'>
+                {stat.description}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

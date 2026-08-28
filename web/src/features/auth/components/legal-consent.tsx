@@ -29,6 +29,7 @@ interface LegalConsentProps {
   checked: boolean
   onCheckedChange: (nextValue: boolean) => void
   className?: string
+  variant?: 'sign-in' | 'sign-up'
 }
 
 export function LegalConsent({
@@ -50,12 +51,7 @@ export function LegalConsent({
   }
 
   return (
-    <div
-      className={cn(
-        'border-border/60 bg-muted/40 flex items-start gap-3 rounded-md border p-3',
-        className
-      )}
-    >
+    <div className={cn('flex items-start gap-2', className)}>
       <Checkbox
         id='legal-consent'
         checked={checked}
@@ -67,24 +63,24 @@ export function LegalConsent({
         className='text-muted-foreground items-start gap-1 text-left text-xs leading-5 font-normal'
       >
         <span>
-          {t('I have read and agree to the')}{' '}
+          {t('I agree to the')}{' '}
           {hasUserAgreement && (
             <a
               href='/user-agreement'
               target='_blank'
               rel='noopener noreferrer'
-              className='text-primary hover:underline'
+              className='auth-link'
             >
-              {t('User Agreement')}
+              {t('Terms of Service')}
             </a>
           )}
-          {hasUserAgreement && hasPrivacyPolicy && ' and the '}
+          {hasUserAgreement && hasPrivacyPolicy && ` ${t('and')} `}
           {hasPrivacyPolicy && (
             <a
               href='/privacy-policy'
               target='_blank'
               rel='noopener noreferrer'
-              className='text-primary hover:underline'
+              className='auth-link'
             >
               {t('Privacy Policy')}
             </a>

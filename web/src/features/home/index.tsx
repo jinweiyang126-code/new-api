@@ -7,35 +7,30 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PublicLayout } from '@/components/layout'
+import {
+  PublicLayout,
+  useLandingPublicLayoutProps,
+} from '@/components/layout'
 import { Footer } from '@/components/layout/components/footer'
 import { RichContent } from '@/components/rich-content'
 import { useTheme } from '@/context/theme-provider'
 import { isLikelyHtml } from '@/lib/content-format'
 import { useAuthStore } from '@/stores/auth-store'
 
-import {
-  CTA,
-  Enterprise,
-  Features,
-  Hero,
-  HowItWorks,
-  ModelsStrip,
-  Showcase,
-  Stats,
-} from './components'
+import { GetInTouchDialog } from './components/get-in-touch-dialog'
+import { Enterprise, Hero, ModelsStrip } from './components'
 import { useHomePageContent } from './hooks'
 
 export function Home() {
@@ -45,6 +40,8 @@ export function Home() {
   const { auth } = useAuthStore()
   const isAuthenticated = !!auth.user
   const { content, isLoaded, isUrl } = useHomePageContent()
+  const landingLayout = useLandingPublicLayoutProps()
+  const [contactOpen, setContactOpen] = useState(false)
 
   const syncIframePreferences = useCallback(() => {
     try {
@@ -69,7 +66,7 @@ export function Home() {
 
   if (!isLoaded) {
     return (
-      <PublicLayout showMainContainer={false}>
+      <PublicLayout {...landingLayout}>
         <main className='flex min-h-screen items-center justify-center'>
           <div className='text-muted-foreground'>{t('Loading...')}</div>
         </main>
@@ -80,7 +77,7 @@ export function Home() {
   if (content) {
     if (isUrl) {
       return (
-        <PublicLayout showMainContainer={false}>
+        <PublicLayout {...landingLayout}>
           {/*
             allow-top-navigation-by-user-activation: the custom home page URL is
             admin-configured (trusted); this lets its target="_top" nav/menu links
@@ -105,7 +102,7 @@ export function Home() {
 
     if (contentIsHtml) {
       return (
-        <PublicLayout showMainContainer={false}>
+        <PublicLayout {...landingLayout}>
           <RichContent
             mode='html'
             htmlVariant='isolated'
@@ -117,7 +114,7 @@ export function Home() {
     }
 
     return (
-      <PublicLayout>
+      <PublicLayout {...landingLayout} showMainContainer>
         <div className='mx-auto max-w-6xl px-4 py-8'>
           <RichContent
             mode='markdown'
@@ -130,16 +127,15 @@ export function Home() {
   }
 
   return (
-    <PublicLayout showMainContainer={false}>
+    <PublicLayout {...landingLayout}>
       <Hero isAuthenticated={isAuthenticated} />
-      <Showcase isAuthenticated={isAuthenticated} />
       <ModelsStrip />
-      <Features />
-      <Enterprise isAuthenticated={isAuthenticated} />
-      <HowItWorks />
-      <Stats />
-      <CTA isAuthenticated={isAuthenticated} />
-      <Footer />
+      <Enterprise
+        isAuthenticated={isAuthenticated}
+        onContactClick={() => setContactOpen(true)}
+      />
+      <Footer variant='landing' onContactClick={() => setContactOpen(true)} />
+      <GetInTouchDialog open={contactOpen} onOpenChange={setContactOpen} />
     </PublicLayout>
   )
 }

@@ -95,7 +95,12 @@ check(
 )
 
 const signIn = read('web/src/features/auth/sign-in/components/user-auth-form.tsx')
-check('sign-in disables submit until turnstileReady', signIn.includes('!turnstileReady'))
+check(
+  'sign-in gates login behind turnstile step',
+  signIn.includes('showTurnstileSlot && !turnstileToken') &&
+    signIn.includes("setView('turnstile')") &&
+    signIn.includes('validateTurnstile')
+)
 check('sign-in shows turnstile slot while status pending', signIn.includes('showTurnstileSlot'))
 
 // --- Members ---

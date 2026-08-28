@@ -16,11 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ChevronDown, RotateCcw } from 'lucide-react'
-import type { ReactNode } from 'react'
+import {
+  Check,
+  ChevronDown,
+  Layers,
+  RotateCcw,
+  Tag,
+  Users,
+  Waypoints,
+} from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -50,9 +57,12 @@ type FilterOption = {
 
 type FilterSectionProps = {
   title: string
+  icon?: ReactNode
   value: string
   options: FilterOption[]
   onChange: (value: string) => void
+  defaultOpen?: boolean
+  collapsedPreview?: number
 }
 
 export interface PricingSidebarProps {
@@ -91,7 +101,7 @@ function formatGroupRatio(ratio: number | undefined): string | undefined {
   return `x${formatted}`
 }
 
-function FilterChip(props: {
+function FilterRow(props: {
   option: FilterOption
   active: boolean
   onClick: () => void
@@ -101,26 +111,37 @@ function FilterChip(props: {
       type='button'
       onClick={props.onClick}
       className={cn(
-        'group inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-all',
+        'flex w-full items-center gap-2 rounded-[5px] py-2 pr-2 pl-5 text-left transition-colors',
         props.active
-          ? 'border-foreground/30 bg-foreground/5 text-foreground shadow-sm'
-          : 'border-border/70 bg-background text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground'
+          ? 'bg-primary/10 text-foreground'
+          : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
       )}
       title={props.option.label}
     >
-      {props.option.icon && (
+      <span
+        className={cn(
+          'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+          props.active
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-border bg-background'
+        )}
+        aria-hidden
+      >
+        {props.active ? <Check className='size-2.5 stroke-[3]' /> : null}
+      </span>
+      {props.option.icon ? (
         <span className='shrink-0'>{props.option.icon}</span>
-      )}
-      <span className='truncate'>{props.option.label}</span>
+      ) : null}
+      <span
+        className={cn(
+          'min-w-0 truncate text-sm',
+          props.active ? 'font-medium' : 'font-normal'
+        )}
+      >
+        {props.option.label}
+      </span>
       {(props.option.suffix || props.option.count != null) && (
-        <span
-          className={cn(
-            'rounded-md px-1.5 py-0.5 text-[12px]',
-            props.active
-              ? 'bg-background text-foreground'
-              : 'bg-muted text-muted-foreground'
-          )}
-        >
+        <span className='text-muted-foreground shrink-0 text-xs'>
           {props.option.suffix ?? props.option.count}
         </span>
       )}
@@ -129,27 +150,46 @@ function FilterChip(props: {
 }
 
 function FilterSection(props: FilterSectionProps) {
+  const { t } = useTranslation()
+  const [expanded, setExpanded] = useState(false)
+  const preview = props.collapsedPreview ?? 0
+  const needsMore =
+    preview > 0 && props.options.length > preview && !expanded
+  const visibleOptions = needsMore
+    ? props.options.slice(0, preview)
+    : props.options
+
   return (
     <Collapsible
-      defaultOpen
-      className='border-border/70 border-b pb-3 last:border-b-0'
+      defaultOpen={props.defaultOpen ?? true}
+      className='space-y-2'
     >
-      <CollapsibleTrigger className='group flex w-full items-center justify-between py-2.5 text-left'>
-        <span className='text-foreground text-sm font-semibold'>
-          {props.title}
+      <CollapsibleTrigger className='group flex w-full items-center justify-between gap-2 py-2 text-left'>
+        <span className='text-foreground flex min-w-0 items-center gap-1 font-medium'>
+          {props.icon}
+          <span className='truncate text-sm'>{props.title}</span>
         </span>
-        <ChevronDown className='text-muted-foreground size-4 transition-transform group-data-[panel-open]:rotate-180' />
+        <ChevronDown className='text-muted-foreground size-4 shrink-0 transition-transform group-data-[panel-open]:rotate-180' />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className='flex flex-wrap gap-1.5'>
-          {props.options.map((option) => (
-            <FilterChip
+        <div className='flex flex-col gap-1'>
+          {visibleOptions.map((option) => (
+            <FilterRow
               key={option.value}
               option={option}
               active={props.value === option.value}
               onClick={() => props.onChange(option.value)}
             />
           ))}
+          {needsMore ? (
+            <button
+              type='button'
+              onClick={() => setExpanded(true)}
+              className='text-muted-foreground hover:text-foreground px-5 py-2 text-left text-sm'
+            >
+              {t('More...')}
+            </button>
+          ) : null}
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -246,11 +286,18 @@ export function PricingSidebar(props: PricingSidebarProps) {
   ]
 
   return (
-    <aside className={cn('rounded-xl border p-3', props.className)}>
-      <div className='mb-2.5 flex items-center justify-between gap-2'>
-        <div>
-          <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
-          <p className='text-muted-foreground mt-1 text-xs'>
+    <aside
+      className={cn(
+        'border-border/80 rounded-[20px] border p-5',
+        props.className
+      )}
+    >
+      <div className='mb-4 flex items-start justify-between gap-2'>
+        <div className='min-w-0'>
+          <h2 className='text-foreground text-[15px] font-semibold'>
+            {t('Filter')}
+          </h2>
+          <p className='text-muted-foreground mt-1 text-xs leading-snug'>
             {t('Refine models by provider, group, type, and tags.')}
           </p>
         </div>
@@ -260,49 +307,52 @@ export function PricingSidebar(props: PricingSidebarProps) {
           size='sm'
           onClick={props.onClearFilters}
           disabled={!props.hasActiveFilters}
-          className='h-7 gap-1.5 px-2 text-xs'
+          className='text-foreground h-auto shrink-0 gap-1 px-0 py-0 text-xs font-medium hover:bg-transparent'
         >
-          <RotateCcw className='size-3.5' />
+          <RotateCcw className='size-3' />
           {t('Reset')}
         </Button>
       </div>
 
-      {props.hasActiveFilters && (
-        <Badge variant='secondary' className='mb-3'>
-          {t('Filters active')}
-        </Badge>
-      )}
-
-      <div className='space-y-1'>
+      <div className='space-y-3'>
         <FilterSection
           title={t('Groups')}
+          icon={<Users className='size-4' />}
           value={props.groupFilter}
           options={groupOptions}
           onChange={props.onGroupChange}
         />
         <FilterSection
-          title={t('All Vendors')}
+          title={t('Vendors')}
+          icon={<Layers className='size-4' />}
           value={props.vendorFilter}
           options={vendorOptions}
           onChange={props.onVendorChange}
+          collapsedPreview={4}
         />
         <FilterSection
           title={t('Model Tags')}
+          icon={<Tag className='size-4' />}
           value={props.tagFilter}
           options={tagOptions}
           onChange={props.onTagChange}
+          defaultOpen={false}
         />
         <FilterSection
           title={t('Pricing Type')}
+          icon={<Waypoints className='size-4' />}
           value={props.quotaTypeFilter}
           options={quotaOptions}
           onChange={props.onQuotaTypeChange}
+          defaultOpen={false}
         />
         <FilterSection
           title={t('Endpoint Type')}
+          icon={<Waypoints className='size-4' />}
           value={props.endpointTypeFilter}
           options={endpointOptions}
           onChange={props.onEndpointTypeChange}
+          defaultOpen={false}
         />
       </div>
     </aside>

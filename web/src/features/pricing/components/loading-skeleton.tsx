@@ -33,7 +33,7 @@ export function LoadingSkeleton(props: LoadingSkeletonProps) {
         <Skeleton className='h-8 w-40' />
         <Skeleton className='h-4 w-52' />
       </div>
-      <Skeleton className='h-10 w-full rounded-lg' />
+      <Skeleton className='h-10 w-full rounded-[18px]' />
       <FilterBarSkeleton />
       {viewMode === VIEW_MODES.TABLE ? (
         <TableContentSkeleton />
@@ -46,18 +46,18 @@ export function LoadingSkeleton(props: LoadingSkeletonProps) {
 
 function CardContentSkeleton() {
   return (
-    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
       {Array.from({ length: 9 }).map((_, i) => (
-        <div key={i} className='rounded-xl border p-5'>
+        <div key={i} className='min-h-[200px] rounded-[20px] border p-[19px]'>
           <div className='flex items-start justify-between gap-3'>
             <div className='flex min-w-0 items-start gap-3'>
-              <Skeleton className='size-10 shrink-0 rounded-xl' />
+              <Skeleton className='size-[30px] shrink-0 rounded-full' />
               <div className='min-w-0 flex-1 space-y-2'>
-                <Skeleton className='h-5 w-36' />
+                <Skeleton className='h-4 w-36' />
                 <Skeleton className='h-3.5 w-48' />
               </div>
             </div>
-            <Skeleton className='h-8 w-16 rounded-md' />
+            <Skeleton className='h-7 w-16 rounded-full' />
           </div>
           <div className='mt-4 space-y-2'>
             <Skeleton className='h-3.5 w-full' />

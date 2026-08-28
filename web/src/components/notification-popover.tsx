@@ -62,6 +62,8 @@ interface NotificationPopoverProps {
   announcements: AnnouncementItem[]
   loading: boolean
   className?: string
+  iconClassName?: string
+  icon?: React.ReactNode
 }
 
 /**
@@ -300,6 +302,8 @@ export function NotificationPopover({
   announcements,
   loading,
   className,
+  iconClassName,
+  icon,
 }: NotificationPopoverProps) {
   const { t } = useTranslation()
   return (
@@ -314,7 +318,7 @@ export function NotificationPopover({
           />
         }
       >
-        <Bell className='size-[1.2rem]' />
+        {icon ?? <Bell className={cn('size-[1.2rem]', iconClassName)} />}
         {unreadCount > 0 ? (
           <Badge
             variant='destructive'

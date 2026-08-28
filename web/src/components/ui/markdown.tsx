@@ -17,12 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import DOMPurify from 'dompurify'
-import * as katex from 'katex'
-
-import 'katex/dist/katex.min.css'
 import { Marked, Renderer, type MarkedExtension, type Tokens } from 'marked'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
+import {
+  getKatexSync,
+  loadKatex,
+  markdownNeedsKatex,
+} from '@/lib/katex-loader'
 import { cn } from '@/lib/utils'
 
 interface MarkdownProps {
@@ -181,7 +183,15 @@ function normalizeMathSource(source: string): string {
 }
 
 function renderMath(source: string, displayMode: boolean): string {
-  return katex.renderToString(normalizeMathSource(source), {
+  const katex = getKatexSync()
+  const normalized = normalizeMathSource(source)
+
+  if (!katex) {
+    const tag = displayMode ? 'pre' : 'code'
+    return `<${tag} class="markdown-math-fallback">${escapeHtml(normalized)}</${tag}>`
+  }
+
+  return katex.renderToString(normalized, {
     displayMode,
     output: 'htmlAndMathml',
     throwOnError: false,
@@ -745,9 +755,44 @@ function renderMarkdown(markdown: string, breaks = false): string {
 }
 
 export function Markdown(props: MarkdownProps) {
+  const needsKatex = useMemo(
+    () => markdownNeedsKatex(props.children),
+    [props.children]
+  )
+  const [katexReady, setKatexReady] = useState(
+    () => !needsKatex || Boolean(getKatexSync())
+  )
+
+  useEffect(() => {
+    if (!needsKatex) {
+      setKatexReady(true)
+      return
+    }
+    if (getKatexSync()) {
+      setKatexReady(true)
+      return
+    }
+
+    let cancelled = false
+    setKatexReady(false)
+    loadKatex()
+      .then(() => {
+        if (!cancelled) setKatexReady(true)
+      })
+      .catch(() => {
+        if (!cancelled) setKatexReady(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [needsKatex, props.children])
+
   const html = useMemo(
     () => renderMarkdown(props.children, props.breaks),
-    [props.breaks, props.children]
+    // Re-parse after katex loads so $$ blocks upgrade from plain fallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- katexReady intentionally gates math
+    [props.breaks, props.children, katexReady]
   )
 
   return (

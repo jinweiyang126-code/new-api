@@ -28,12 +28,12 @@ import { DEFAULT_TOKEN_UNIT } from '../constants'
 import {
   getDynamicDisplayGroupRatio,
   getDynamicPricingSummary,
+  isDynamicPricingModel,
 } from '../lib/dynamic-price'
 import { parseTags } from '../lib/filters'
 import { isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
-import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
 
 export interface ModelCardProps {
@@ -45,6 +45,15 @@ export interface ModelCardProps {
   showRechargePrice?: boolean
   selectedGroup?: string
   perf?: ModelPerfBadgeData
+}
+
+function billingLabel(
+  model: PricingModel,
+  t: (key: string) => string
+): string {
+  if (isDynamicPricingModel(model)) return t('Dynamic Pricing')
+  if (isTokenBasedModel(model)) return t('Token-based')
+  return t('Per Request')
 }
 
 export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
@@ -60,7 +69,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const groups = props.model.enable_groups || []
   const endpoints = props.model.supported_endpoint_types || []
   const modelIconKey = props.model.icon || props.model.vendor_icon
-  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 28) : null
+  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 20) : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
   const isDynamicPricing =
     props.model.billing_mode === 'tiered_expr' &&
@@ -80,10 +89,14 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     : null
 
   const primaryGroup = groups[0]
-  const bottomTags = [...endpoints.slice(0, 2), ...tags.slice(0, 2)]
+  const bottomTags = [
+    props.model.vendor_name,
+    ...endpoints.slice(0, 1),
+    ...tags.slice(0, 2),
+  ].filter(Boolean) as string[]
   const hiddenCount =
     Math.max(groups.length - 1, 0) +
-    Math.max(endpoints.length - 2, 0) +
+    Math.max(endpoints.length - 1, 0) +
     Math.max(tags.length - 2, 0)
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -113,7 +126,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               className='text-muted-foreground whitespace-nowrap'
             >
               {t(entry.shortLabel)}{' '}
-              <span className='text-foreground font-mono font-semibold'>
+              <span className='text-foreground font-semibold'>
                 {entry.formatted}
               </span>
             </span>
@@ -132,7 +145,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       <>
         <span className='text-muted-foreground whitespace-nowrap'>
           {t('Input')}{' '}
-          <span className='text-foreground font-mono font-semibold'>
+          <span className='text-foreground font-semibold'>
             {formatPrice(
               props.model,
               'input',
@@ -146,7 +159,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         </span>
         <span className='text-muted-foreground whitespace-nowrap'>
           {t('Output')}{' '}
-          <span className='text-foreground font-mono font-semibold'>
+          <span className='text-foreground font-semibold'>
             {formatPrice(
               props.model,
               'output',
@@ -161,7 +174,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         {hasCachedPrice && (
           <span className='text-muted-foreground whitespace-nowrap'>
             {t('Cached')}{' '}
-            <span className='text-foreground font-mono font-semibold'>
+            <span className='text-foreground font-semibold'>
               {formatPrice(
                 props.model,
                 'cache',
@@ -179,7 +192,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   } else {
     priceSummary = (
       <span className='text-muted-foreground whitespace-nowrap'>
-        <span className='text-foreground font-mono font-semibold'>
+        <span className='text-foreground font-semibold'>
           {formatRequestPrice(
             props.model,
             showRechargePrice,
@@ -196,81 +209,73 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   return (
     <div
       className={cn(
-        'group relative flex flex-col rounded-xl border p-3 transition-colors sm:p-5',
+        'group border-border/80 bg-card/40 relative flex min-h-[200px] flex-col rounded-[20px] border p-[19px] transition-colors',
         'hover:bg-muted/20'
       )}
     >
-      {/* Header: icon + name + price + actions */}
-      <div className='flex items-start justify-between gap-2.5 sm:gap-3'>
-        <div className='flex min-w-0 items-start gap-2.5 sm:gap-3'>
-          <div className='bg-muted/40 flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-10 sm:rounded-xl'>
-            {modelIcon || (
-              <span className='text-muted-foreground text-sm font-bold'>
-                {initial}
-              </span>
-            )}
-          </div>
-          <div className='min-w-0'>
-            <h3 className='text-foreground truncate font-mono text-[15px] leading-tight font-bold'>
-              {props.model.model_name}
-            </h3>
-            <div className='mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm sm:mt-1 sm:gap-x-3'>
-              {priceSummary}
-            </div>
-          </div>
+      <div className='flex items-start gap-3'>
+        <div className='bg-muted/50 flex size-[30px] shrink-0 items-center justify-center rounded-full p-[5px]'>
+          {modelIcon || (
+            <span className='text-muted-foreground text-xs font-bold'>
+              {initial}
+            </span>
+          )}
         </div>
 
-        <div className='flex shrink-0 items-center gap-1.5'>
-          <button
-            type='button'
-            onClick={props.onClick}
-            className='text-muted-foreground hover:text-foreground hover:bg-muted inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors sm:px-2.5 sm:py-1.5'
-          >
-            {t('Details')}
-            <ChevronRight className='size-3.5' />
-          </button>
-          <button
-            type='button'
-            onClick={handleCopy}
-            className='text-muted-foreground hover:text-foreground hover:bg-muted rounded-md border p-1.5 transition-colors'
-            title={t('Copy')}
-          >
-            <Copy className='size-3.5' />
-          </button>
+        <div className='min-w-0 flex-1'>
+          <div className='flex items-start justify-between gap-2'>
+            <h3 className='text-foreground truncate text-sm leading-tight font-semibold'>
+              {props.model.model_name}
+            </h3>
+            <div className='flex shrink-0 items-center gap-1.5'>
+              <button
+                type='button'
+                onClick={props.onClick}
+                className='border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex h-7 items-center gap-0.5 rounded-full border py-0.5 pr-1 pl-2 text-[11px] transition-colors'
+              >
+                {t('Details')}
+                <ChevronRight className='size-3.5' />
+              </button>
+              <button
+                type='button'
+                onClick={handleCopy}
+                className='border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-full border p-1.5 transition-colors'
+                title={t('Copy')}
+              >
+                <Copy className='size-3.5' />
+              </button>
+            </div>
+          </div>
+
+          <div className='mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs'>
+            {priceSummary}
+          </div>
         </div>
       </div>
 
-      {/* Description */}
-      <p className='text-muted-foreground mt-2 line-clamp-1 flex-1 text-[13px] leading-relaxed sm:mt-4 sm:line-clamp-2 sm:min-h-[2.5rem]'>
+      <p className='text-muted-foreground mt-4 line-clamp-3 min-h-[3.3rem] flex-1 text-[12.5px] leading-[17.75px]'>
         {props.model.description || t('No description available.')}
       </p>
 
-      {/* Footer: left metadata and right performance summary share row alignment */}
-      <div className='mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-1 sm:mt-4'>
-        <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
-          {primaryGroup && (
-            <span className='text-muted-foreground text-sm font-medium'>
-              {primaryGroup}
-            </span>
-          )}
-          <ModelBillingModeBadge model={props.model} />
-        </div>
-        <ModelPerfBadge perf={props.perf} className='row-span-2 self-start' />
-
-        <div className='flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 sm:gap-x-3 sm:gap-y-1'>
-          {bottomTags.map((item) => (
-            <span key={item} className='text-muted-foreground/70 text-xs'>
-              {item}
-            </span>
-          ))}
-          <span className='text-muted-foreground/50 text-xs'>
-            {tokenUnitLabel}
+      <div className='mt-3 flex items-end justify-between gap-2'>
+        <div className='flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium'>
+          {primaryGroup ? (
+            <span className='text-muted-foreground'>{primaryGroup}</span>
+          ) : null}
+          <span className='text-sky-500 dark:text-[#33b1ff]'>
+            {billingLabel(props.model, t)}
           </span>
-          {hiddenCount > 0 && (
-            <span className='text-muted-foreground/40 text-xs'>
-              +{hiddenCount}
-            </span>
-          )}
+        </div>
+
+        <div className='flex shrink-0 flex-col items-end gap-1'>
+          <ModelPerfBadge perf={props.perf} className='self-end' />
+          <div className='text-muted-foreground/70 flex max-w-[220px] flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[10px]'>
+            {bottomTags.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+            <span>{tokenUnitLabel}</span>
+            {hiddenCount > 0 ? <span>+{hiddenCount}</span> : null}
+          </div>
         </div>
       </div>
     </div>

@@ -104,7 +104,7 @@ function SegmentedControl(props: {
     <div
       role='group'
       aria-label={props.ariaLabel}
-      className='bg-muted/60 inline-flex h-8 items-center rounded-lg border p-0.5'
+      className='border-border/80 bg-muted/40 inline-flex h-8 items-center rounded-full border p-0.5'
     >
       {props.options.map((option) => {
         const Icon = option.icon
@@ -116,11 +116,11 @@ function SegmentedControl(props: {
             onClick={() => props.onChange(option.value)}
             aria-pressed={isActive}
             className={cn(
-              'inline-flex h-full items-center justify-center rounded-md text-xs font-medium transition-all',
-              Icon && !option.label ? 'w-7' : 'gap-1.5 px-3',
+              'inline-flex h-full items-center justify-center rounded-full text-xs transition-all',
+              Icon && !option.label ? 'size-7 p-0' : 'gap-1.5 px-4',
               isActive
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
+                : 'text-muted-foreground hover:text-foreground font-medium'
             )}
           >
             {Icon && <Icon className='size-3.5' />}
@@ -166,7 +166,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
   )
 
   return (
-    <div className='rounded-xl border p-3'>
+    <div className='border-border/80 rounded-[20px] border px-5 py-3'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
         <div className='flex items-center gap-2'>
           <Button
@@ -174,7 +174,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
             variant='outline'
             size='sm'
             onClick={() => setMobileFiltersOpen(true)}
-            className='gap-1.5 xl:hidden'
+            className='gap-1.5 rounded-full xl:hidden'
           >
             <Filter className='size-4' />
             {t('Filter')}
@@ -189,9 +189,11 @@ export function PricingToolbar(props: PricingToolbarProps) {
             <span className='text-foreground font-semibold tabular-nums'>
               {props.filteredCount.toLocaleString()}
             </span>
-            <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
-            {props.hasActiveFilters && props.totalCount && (
-              <span className='text-muted-foreground/60 text-xs'>
+            <span>
+              {props.filteredCount === 1 ? t('model') : t('models')}
+            </span>
+            {props.totalCount != null && (
+              <span className='text-muted-foreground'>
                 / {props.totalCount.toLocaleString()}
               </span>
             )}
@@ -227,7 +229,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
                   type='button'
                   variant='outline'
                   size='sm'
-                  className='h-8 gap-1.5 px-3 text-xs'
+                  className='border-border/80 h-8 gap-1.5 rounded-full px-3 text-xs'
                 />
               }
             >

@@ -41,6 +41,7 @@ type OAuthProvidersProps = {
   onWeChatLogin?: () => void
   isWeChatLoading?: boolean
   redirectTo?: string
+  layout?: 'stack' | 'icons'
 }
 
 type ProviderButton = {
@@ -58,6 +59,7 @@ export function OAuthProviders({
   onWeChatLogin,
   isWeChatLoading = false,
   redirectTo,
+  layout = 'stack',
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -83,7 +85,7 @@ export function OAuthProviders({
       key: 'wechat',
       label: t('Continue with WeChat'),
       onClick: onWeChatLogin,
-      icon: <IconWeChat className='h-4 w-4' />,
+      icon: <IconWeChat className='h-5 w-5' />,
       disabled: isWeChatLoading,
     })
   }
@@ -93,7 +95,7 @@ export function OAuthProviders({
       key: 'github',
       label: githubButtonText || t('Continue with GitHub'),
       onClick: handleGitHubLogin,
-      icon: <IconGithub className='h-4 w-4' />,
+      icon: <IconGithub className='h-5 w-5' />,
       disabled: githubButtonDisabled,
     })
   }
@@ -103,7 +105,7 @@ export function OAuthProviders({
       key: 'discord',
       label: t('Continue with Discord'),
       onClick: handleDiscordLogin,
-      icon: <IconDiscord className='h-4 w-4' />,
+      icon: <IconDiscord className='h-5 w-5' />,
     })
   }
 
@@ -123,7 +125,7 @@ export function OAuthProviders({
       key: 'linuxdo',
       label: t('Continue with LinuxDO'),
       onClick: handleLinuxDOLogin,
-      icon: <IconLinuxDo className='h-4 w-4' />,
+      icon: <IconLinuxDo className='h-5 w-5' />,
     })
   }
 
@@ -151,37 +153,65 @@ export function OAuthProviders({
 
   if (providerButtons.length === 0) return null
 
+  const orDivider = (
+    <div className='flex items-center gap-3'>
+      <span className='bg-border h-px min-w-0 flex-1' />
+      <span className='text-muted-foreground text-sm'>{t('or')}</span>
+      <span className='bg-border h-px min-w-0 flex-1' />
+    </div>
+  )
+
   return (
     <>
-      <div className={cn('space-y-3', className)}>
-        <div className='relative'>
-          <div className='absolute inset-0 flex items-center'>
-            <span className='w-full border-t' />
-          </div>
-          <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-background text-muted-foreground px-2'>
-              {t('Or continue with')}
-            </span>
-          </div>
-        </div>
-
-        <div className='flex flex-col gap-2'>
-          {providerButtons.map(
-            ({ key, label, onClick, icon, disabled: extraDisabled }) => (
-              <Button
-                key={key}
-                variant='outline'
-                type='button'
-                disabled={disabled || isLoading || extraDisabled}
-                onClick={onClick}
-                className='h-11 w-full justify-center gap-2 rounded-lg'
-              >
-                {icon}
-                {label}
-              </Button>
-            )
-          )}
-        </div>
+      <div className={cn('space-y-4', className)}>
+        {layout === 'icons' ? (
+          <>
+            <div className='flex h-10 items-center gap-4'>
+              {providerButtons.map(
+                ({ key, label, onClick, icon, disabled: extraDisabled }) => (
+                  <Button
+                    key={key}
+                    variant='outline'
+                    type='button'
+                    disabled={disabled || isLoading || extraDisabled}
+                    onClick={onClick}
+                    aria-label={label}
+                    title={label}
+                    className='bg-secondary h-10 min-w-0 flex-1 rounded-xl border-border shadow-none [&_svg]:size-[18px]'
+                  >
+                    {icon ?? (
+                      <span className='text-xs font-semibold'>
+                        {label.charAt(0)}
+                      </span>
+                    )}
+                  </Button>
+                )
+              )}
+            </div>
+            {orDivider}
+          </>
+        ) : (
+          <>
+            {orDivider}
+            <div className='flex flex-col gap-2'>
+              {providerButtons.map(
+                ({ key, label, onClick, icon, disabled: extraDisabled }) => (
+                  <Button
+                    key={key}
+                    variant='outline'
+                    type='button'
+                    disabled={disabled || isLoading || extraDisabled}
+                    onClick={onClick}
+                    className='h-11 w-full justify-center gap-2 rounded-lg'
+                  >
+                    {icon}
+                    {label}
+                  </Button>
+                )
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <TelegramLoginDialog

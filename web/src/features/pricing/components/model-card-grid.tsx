@@ -73,7 +73,7 @@ export function ModelCardGrid(props: ModelCardGridProps) {
 
   return (
     <div className='space-y-4 sm:space-y-5'>
-      <div className='grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {pagedModels.map((model) => (
           <ModelCard
             key={model.id ?? model.model_name}
@@ -90,7 +90,7 @@ export function ModelCardGrid(props: ModelCardGridProps) {
       </div>
 
       {totalPages > 1 && (
-        <div className='text-muted-foreground flex flex-col items-center justify-between gap-3 border-t px-4 py-3 text-sm sm:flex-row'>
+        <div className='border-border/80 text-muted-foreground flex flex-col items-center justify-between gap-3 rounded-[20px] border px-4 py-3 text-sm sm:flex-row'>
           <p className='text-muted-foreground'>
             {t('Page {{current}} of {{total}}', {
               current: currentPage,
@@ -104,7 +104,7 @@ export function ModelCardGrid(props: ModelCardGridProps) {
               size='sm'
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={currentPage <= 1}
-              className='gap-1.5'
+              className='gap-1.5 rounded-full'
             >
               <ChevronLeft className='size-4' />
               {t('Previous page')}
@@ -117,7 +117,7 @@ export function ModelCardGrid(props: ModelCardGridProps) {
                 setPage((current) => Math.min(totalPages, current + 1))
               }
               disabled={currentPage >= totalPages}
-              className='gap-1.5'
+              className='gap-1.5 rounded-full'
             >
               {t('Next page')}
               <ChevronRight className='size-4' />

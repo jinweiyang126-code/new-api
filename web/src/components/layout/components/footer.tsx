@@ -7,9 +7,9 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
@@ -20,13 +20,21 @@ import { Link } from '@tanstack/react-router'
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useTheme } from '@/context/theme-provider'
+import {
+  LANDING_BRAND_NAME,
+  LANDING_LOGO_LIGHT_SRC,
+  LANDING_LOGO_SRC,
+} from '@/features/home/lib/landing-brand'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { DEFAULT_LOGO, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 interface FooterLink {
   text: string
   href: string
+  onClick?: () => void
 }
 
 interface FooterColumnProps {
@@ -40,20 +48,39 @@ interface FooterProps {
   columns?: FooterColumnProps[]
   copyright?: string
   className?: string
+  /** Figma Home–aligned compact footer (brand + link rows). */
+  variant?: 'default' | 'landing'
+  onContactClick?: () => void
 }
 
-function FooterLinkItem(props: { link: FooterLink }) {
+function FooterLinkItem(props: { link: FooterLink; className?: string }) {
   const { t } = useTranslation()
-  const isExternal = props.link.href.startsWith('http')
   const label = t(props.link.text)
+  const className = cn(
+    'text-muted-foreground hover:text-foreground text-sm transition-colors duration-200',
+    props.className
+  )
 
+  if (props.link.onClick) {
+    return (
+      <button type='button' onClick={props.link.onClick} className={className}>
+        {label}
+      </button>
+    )
+  }
+
+  const isExternal =
+    props.link.href.startsWith('http') ||
+    props.link.href.startsWith('mailto:') ||
+    props.link.href.startsWith('tel:')
   if (isExternal) {
     return (
       <a
         href={props.link.href}
-        target='_blank'
-        rel='noopener noreferrer'
-        className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
+        {...(props.link.href.startsWith('http')
+          ? { target: '_blank', rel: 'noopener noreferrer' }
+          : {})}
+        className={className}
       >
         {label}
       </a>
@@ -61,19 +88,16 @@ function FooterLinkItem(props: { link: FooterLink }) {
   }
 
   return (
-    <Link
-      to={props.link.href}
-      className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
-    >
+    <Link to={props.link.href} className={className}>
       {label}
     </Link>
   )
 }
 
-// Renders User Agreement / Privacy Policy links inline with the parent's
-// copyright row when either is configured in System Settings → Site. Emits
-// fragmented siblings so the parent flex container's gap controls spacing.
-function LegalLinks(props: { leadingSeparator?: boolean }) {
+function LegalLinks(props: {
+  leadingSeparator?: boolean
+  className?: string
+}) {
   const { t } = useTranslation()
   const { status } = useStatus()
   const items: { key: string; label: string; href: string }[] = []
@@ -105,13 +129,122 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
           )}
           <Link
             to={item.href}
-            className='hover:text-foreground transition-colors duration-200'
+            className={cn(
+              'hover:text-foreground transition-colors duration-200',
+              props.className
+            )}
           >
             {item.label}
           </Link>
         </Fragment>
       ))}
     </>
+  )
+}
+
+function LandingFooter(props: FooterProps) {
+  const { t } = useTranslation()
+  const { resolvedTheme } = useTheme()
+  const { systemName, logo: systemLogo, footerHtml } = useSystemConfig()
+
+  const displayName = props.name || systemName || LANDING_BRAND_NAME
+  const usingDefaultLogo = !systemLogo || systemLogo === DEFAULT_LOGO
+  const defaultLandingLogo =
+    resolvedTheme === 'light' ? LANDING_LOGO_LIGHT_SRC : LANDING_LOGO_SRC
+  const brandLogo =
+    props.logo || (usingDefaultLogo ? defaultLandingLogo : systemLogo)
+  const currentYear = new Date().getFullYear()
+
+  const navLinkClass =
+    'text-muted-foreground hover:text-foreground text-xs leading-[18px] transition-colors duration-200'
+  const legalLinkClass =
+    'text-muted-foreground/70 hover:text-muted-foreground text-xs leading-[18px] transition-colors duration-200'
+
+  const topLinks: FooterLink[] = [
+    { text: 'Console', href: '/dashboard' },
+    { text: 'Model Square', href: '/pricing' },
+    { text: 'Rankings', href: '/rankings' },
+  ]
+
+  const bottomLinks: FooterLink[] = [
+    props.onContactClick
+      ? {
+          text: 'Contact Us',
+          href: '#contact',
+          onClick: props.onContactClick,
+        }
+      : { text: 'Contact Us', href: 'mailto:support@unionmeta.com' },
+    { text: 'Terms of Service', href: '/user-agreement' },
+    { text: 'Privacy Policy', href: '/privacy-policy' },
+  ]
+
+  if (footerHtml) {
+    return (
+      <footer className={cn('relative z-10', props.className)}>
+        <div className='mx-auto w-full max-w-[1200px] px-6 py-8'>
+          <div
+            className='custom-footer text-muted-foreground text-sm'
+            dangerouslySetInnerHTML={{ __html: footerHtml }}
+          />
+        </div>
+      </footer>
+    )
+  }
+
+  return (
+    <footer className={cn('relative z-10', props.className)}>
+      <div className='mx-auto max-w-[1200px] px-6 pt-16 pb-16 md:pt-[100px] md:pb-[100px]'>
+        <div className='flex flex-col gap-10 md:flex-row md:items-center md:justify-between'>
+          <div className='flex max-w-xs shrink-0 flex-col gap-4'>
+            <Link to='/' className='inline-flex h-8 items-center'>
+              <img
+                src={brandLogo}
+                alt={displayName}
+                className='h-5 w-auto max-w-[160px] object-contain object-left'
+                decoding='async'
+              />
+            </Link>
+            <p className='text-muted-foreground text-sm leading-[18px]'>
+              {t('Powerful API Management Platform')}
+            </p>
+          </div>
+
+          <nav
+            aria-label={t('Footer')}
+            className='flex flex-wrap items-center gap-x-8 gap-y-3 md:justify-end'
+          >
+            {topLinks.map((link) => (
+              <FooterLinkItem
+                key={link.text}
+                link={link}
+                className={navLinkClass}
+              />
+            ))}
+          </nav>
+        </div>
+
+        <div className='mt-12 h-px w-full bg-[#2e2e2e]/70' />
+
+        <div className='mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+          <p className='text-xs leading-[18px] text-[#828181]'>
+            &copy; {currentYear} {displayName}.{' '}
+            {props.copyright ?? t('footer.defaultCopyright')}
+          </p>
+          <nav
+            aria-label={t('Legal')}
+            className='flex flex-wrap items-center gap-x-6 gap-y-2 sm:justify-end'
+          >
+            {bottomLinks.map((link) => (
+              <FooterLinkItem
+                key={link.text}
+                link={link}
+                className={legalLinkClass}
+              />
+            ))}
+          </nav>
+        </div>
+      </div>
+    </footer>
   )
 }
 
@@ -124,8 +257,8 @@ export function Footer(props: FooterProps) {
     demoSiteEnabled,
   } = useSystemConfig()
 
-  const displayLogo = systemLogo || props.logo || '/logo.32cf2df4.png'
-  const displayName = systemName || props.name || 'New API'
+  const displayLogo = systemLogo || props.logo || DEFAULT_LOGO
+  const displayName = systemName || props.name || DEFAULT_SYSTEM_NAME
   const isDemoSiteMode = Boolean(demoSiteEnabled)
   const currentYear = new Date().getFullYear()
 
@@ -188,6 +321,10 @@ export function Footer(props: FooterProps) {
 
   const displayColumns = props.columns ?? fallbackColumns
 
+  if (props.variant === 'landing') {
+    return <LandingFooter {...props} />
+  }
+
   if (footerHtml) {
     return (
       <footer
@@ -217,7 +354,6 @@ export function Footer(props: FooterProps) {
     >
       <div className='mx-auto max-w-6xl px-6 py-16 md:py-20'>
         <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
-          {/* Brand column */}
           <div className='shrink-0'>
             <Link to='/' className='group flex items-center gap-2.5'>
               <img
@@ -234,7 +370,6 @@ export function Footer(props: FooterProps) {
             </p>
           </div>
 
-          {/* Links columns */}
           {isDemoSiteMode && (
             <div className='grid grid-cols-3 gap-8 md:gap-16'>
               {displayColumns.map((column, index) => (

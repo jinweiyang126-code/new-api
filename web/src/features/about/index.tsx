@@ -20,7 +20,10 @@ import { useQuery } from '@tanstack/react-query'
 import { Construction } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { PublicLayout } from '@/components/layout'
+import {
+  PublicLayout,
+  useLandingPublicLayoutProps,
+} from '@/components/layout'
 import { RichContent } from '@/components/rich-content'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isHttpUrl, isLikelyHtml } from '@/lib/content-format'
@@ -114,6 +117,9 @@ function EmptyAboutState() {
 
 export function About() {
   const { t } = useTranslation()
+  const landingLayout = useLandingPublicLayoutProps({
+    showMainContainer: true,
+  })
   const { data, isLoading } = useQuery({
     queryKey: ['about-content'],
     queryFn: getAboutContent,
@@ -126,7 +132,7 @@ export function About() {
 
   if (isLoading) {
     return (
-      <PublicLayout>
+      <PublicLayout {...landingLayout}>
         <div className='mx-auto flex max-w-4xl flex-col gap-4 py-12'>
           <Skeleton className='h-8 w-[45%]' />
           <Skeleton className='h-4 w-full' />
@@ -139,7 +145,7 @@ export function About() {
 
   if (!hasContent) {
     return (
-      <PublicLayout>
+      <PublicLayout {...landingLayout}>
         <EmptyAboutState />
       </PublicLayout>
     )
@@ -147,7 +153,7 @@ export function About() {
 
   if (isUrl) {
     return (
-      <PublicLayout showMainContainer={false}>
+      <PublicLayout {...landingLayout} showMainContainer={false}>
         <iframe
           src={rawContent}
           className='h-[calc(100vh-3.5rem)] w-full border-0'
@@ -160,7 +166,7 @@ export function About() {
 
   if (contentIsHtml) {
     return (
-      <PublicLayout showMainContainer={false}>
+      <PublicLayout {...landingLayout} showMainContainer={false}>
         <RichContent
           mode='html'
           htmlVariant='isolated'
@@ -172,7 +178,7 @@ export function About() {
   }
 
   return (
-    <PublicLayout>
+    <PublicLayout {...landingLayout}>
       <div className='mx-auto max-w-6xl px-4 py-8'>
         <RichContent
           mode='markdown'

@@ -1,11 +1,13 @@
 # 主页 Figma 重写评估
 
-> 状态：**待实施**  
+> 状态：**实施中（4C 首版已落地前端）**  
 > 设计稿：[UnionMeta-AI — Home](https://www.figma.com/design/r57a1aMxUHH5NvIBQRXJ43/UnionMeta-AI?node-id=55-3500)  
-> 评估日期：2026-08-27  
+> 评估日期：2026-08-27 · 决策确认：2026-08-28  
 > 结论：**中等难度（约 3/5）** — 非从零搭建，主要是视觉对齐与区块重组  
 > **约束：仅换 UI，不改后台逻辑**（见 §0）  
-> **规则：开工前先本地化 Figma 资源；导出文件默认勿手改**（见 §0.5）
+> **规则：开工前先本地化 Figma 资源；导出文件默认勿手改**（见 §0.5）  
+> **首版范围：4C** — Hero / Models / Enterprise / Footer + Get in Touch + 隐藏多余 section（见 §0.7）  
+> **相关：** 首页 JS 首包偏大的排查与优化方案见 [frontend-bundle-optimization.md](./frontend-bundle-optimization.md)（与本次切图无关，属原有依赖引入方式）
 
 ---
 
@@ -44,7 +46,7 @@
 ### 0.4 对评估的影响
 
 - 难度 **略降**：无需前后端联调、迁移、部署顺序
-- 「Get in Touch」弹窗：UI 新建即可，邮箱可 **前端写死或读现有 status 字段**；若现网无字段则用 Figma 稿 `support@unionmeta.com` 常量，**不新增后台配置**
+- 「Get in Touch」弹窗：邮箱 **写死** `support@unionmeta.com`（§0.7），**不新增后台配置**
 - 工作量仍主要在 CSS / 布局 / 响应式 / i18n
 
 ### 0.5 资源本地化规则（开工前必做）
@@ -239,7 +241,32 @@ Figma Home 画布底色为 **`#1e1e1e`**，文字主色约 **`#f4f4f4`**、次�
 - [ ] 首页背景目测 ≈ `#1e1e1e`，控制台/other 页不受影响
 - [ ] section 内无散落 `#1e1e1e` 硬编码（统一走变量）
 
+### 0.7 产品决策（2026-08-28 已确认）
+
+| # | 决策 | 结论 |
+|---|------|------|
+| **1A** | Figma 没有的 section | **隐藏** Showcase / Features / HowItWorks / CTA（组件文件可保留，仅 `home/index.tsx` 不渲染） |
+| **2A** | Get in Touch 邮箱 | **写死** `support@unionmeta.com`（不读 status、不新增后台项） |
+| **3A** | 移动端 | **开发自适应**（无单独 Figma 移动稿；按现网断点收拢） |
+| **4C** | 首版范围 | **完整对齐 Figma**：Hero + Models + Enterprise + Footer + Get in Touch 弹窗 + 1A 隐藏多余 section |
+
+#### 首版目标页面结构
+
+```
+PublicLayout + landing-theme
+  → PublicHeader（样式对齐 Figma）
+  → Hero（含 stats）
+  → ModelsStrip（散点 / 响应式）
+  → Enterprise
+  → Footer
+  → Get in Touch Dialog（邮箱常量）
+```
+
+不渲染：Showcase、Features、HowItWorks、CTA。
+
 ---
+
+## 1. Figma 与 MCP
 
 ### 1.1 链接解析
 
@@ -318,11 +345,11 @@ Hero
 | 模型 / 应用 | `ModelsStrip` | 中 | 文案一致；Figma 为散点布局，现为 pill badge 横排 |
 | Enterprise | `Enterprise` | 高 | 组织 / 工作区层级图已有，视觉需对齐 |
 | Footer | `Footer` | 高 | 链路与 demo 模式逻辑保留 |
-| Get in Touch 弹窗 | 无 | 新（纯 UI） | 仅前端 `Dialog`；邮箱写死或复用 status 已有字段，**不新增后台配置** |
-| Showcase 终端演示 | `Showcase` | — | **Figma 无**，需决定删除或保留 |
-| Features 六宫格 | `Features` | — | **Figma 无** |
-| How it works | `HowItWorks` | — | **Figma 无** |
-| 底部 CTA | `CTA` | — | **Figma 无** |
+| Get in Touch 弹窗 | 无 | 新（纯 UI） | `Dialog` + 邮箱常量 `support@unionmeta.com`（§0.7 / 2A） |
+| Showcase 终端演示 | `Showcase` | — | **首版不渲染**（§0.7 / 1A） |
+| Features 六宫格 | `Features` | — | **首版不渲染**（§0.7 / 1A） |
+| How it works | `HowItWorks` | — | **首版不渲染**（§0.7 / 1A） |
+| 底部 CTA | `CTA` | — | **首版不渲染**（§0.7 / 1A） |
 
 ### 3.1 文案（已基本对齐）
 
@@ -337,7 +364,7 @@ Hero
 ### 3.2 视觉差异（主要工作量）
 
 - 深色营销背景（Figma `#1e1e1e`）与背景光晕 ellipse
-- 字体 **Public Sans**（现网需确认是否已引入或需加 webfont）
+- 字体 **Public Sans**（现网 `theme.css` 已引入）
 - 渐变标题：`Better Models & Better Prices`（cyan → purple）
 - 品牌主色 pill 按钮（Figma `#7b50e3`）
 - 模型图标散点定位 vs 现有 flex-wrap
@@ -358,9 +385,9 @@ Hero
 
 | 因素 | 级别 | 说明 |
 |------|------|------|
-| 区块重组 | 中 | 删减 4 段 vs 保留并改样式，需产品确认 |
+| 区块重组 | 低 | 已确认 1A：隐藏 4 段，仅改 `home/index.tsx` 编排 |
 | 视觉还原 | 中 | 渐变、光晕、字体、按钮形态需逐段调 |
-| 响应式 | 中 | Figma 1920 桌面稿；移动端需额外设计 |
+| 响应式 | 中 | Figma 1920 桌面稿；3A 由开发自适应 |
 | i18n | 中 | 新文案需同步 7 个 locale 文件 |
 | 资源 | 低 | Figma MCP 导出 SVG **7 天过期**，需下载到 `web/src/assets` |
 | 全站 theme | 低–中 | 深色 landing 与控制台 theme 一致性 |
@@ -383,26 +410,40 @@ Hero
 2. **Hero + PublicHeader**：最快可见效果，可与 Figma 截图对比
 3. **ModelsStrip 布局**：散点 / 网格响应式（风险最高的一段）
 4. **Enterprise + Footer**：在现有组件上改视觉
-5. **Get in Touch 弹窗**：纯 UI `Dialog`，邮箱用常量或现有 `status` 字段
-6. **产品决策（仅前端）**：是否在 `home/index.tsx` 隐藏 Showcase / Features / HowItWorks / CTA（不删组件文件亦可，仅不渲染）
+5. **Get in Touch 弹窗**：纯 UI `Dialog`，邮箱常量 `support@unionmeta.com`（2A）
+6. **首页编排**：`home/index.tsx` 按 1A 不渲染 Showcase / Features / HowItWorks / CTA
 7. **i18n**：新/改文案同步 7 个 locale 文件
 
 **全程约束：** 所有 PR 仅含 `web/` 下文件，不含 `*.go`、路由定义变更、新 API。
 
-### 5.1 MVP 建议
+### 5.1 首版交付（已确认 4C）
 
-最小可交付：**Hero + Header 对齐 Figma**，其余 section 暂保留旧版，分 PR 迭代。
+一次交付对齐 Figma 的完整 landing：
+
+1. `landing-theme` + PublicHeader + Hero（含 stats）
+2. ModelsStrip + Enterprise + Footer
+3. Get in Touch 弹窗
+4. 隐藏 Showcase / Features / HowItWorks / CTA
+
+可按 section 拆 PR，但目标范围是 **4C 全量**，不是仅 Hero+Header。
 
 ---
 
-## 6. 实施前待确认（均为前端/UI 决策）
+## 6. 实施前检查清单
 
-- [ ] §0.5 资源本地化：`web/src/assets/landing/` 已就绪，且无 MCP 临时 URL
-- [ ] 是否在首页编排中隐藏 Figma 没有的 section（Showcase / Features / HowItWorks / CTA）？
-- [x] Landing 底色：**首页 scoped `landing-theme` 固定 Figma 深色**，不改全站 theme（见 §0.6）
-- [ ] `Get in Touch` 邮箱：写死 `support@unionmeta.com` 还是复用 status 某已有字段？（**不新增后台项**）
-- [ ] Public Sans 是否仅 landing 引入 webfont？
-- [ ] 移动端是否有单独 Figma 稿，还是由开发自适应？
+### 6.1 产品决策（已全部确认）
+
+- [x] **1A** 隐藏 Showcase / Features / HowItWorks / CTA
+- [x] **2A** Get in Touch 邮箱写死 `support@unionmeta.com`
+- [x] **3A** 移动端由开发自适应
+- [x] **4C** 首版完整对齐 Figma（含弹窗）
+- [x] Landing 底色：scoped `landing-theme` 固定深色（§0.6）
+- [x] Public Sans：现网已引入，无需另开 webfont 决策
+
+### 6.2 开工步骤 0（资源，动手前完成）
+
+- [x] §0.5：`web/src/assets/landing/` 已创建；Hero 等必要资源已入库
+- [x] 无 `figma.com/api/mcp/asset` 出现在将提交的 `web/src/**`
 
 ---
 

@@ -20,34 +20,35 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../auth-layout'
+import { AuthBrand } from '../components/auth-brand'
+import { AuthCard } from '../components/auth-card'
 import { OtpForm } from './components/otp-form'
 
 export function Otp() {
   const { t } = useTranslation()
   return (
     <AuthLayout>
-      <div className='w-full space-y-8'>
-        <div className='space-y-3'>
-          <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
+      <AuthCard className='space-y-6'>
+        <AuthBrand />
+        <div className='space-y-2 text-center'>
+          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
             {t('Two-factor Authentication')}
-          </h2>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          </h1>
+          <p className='text-muted-foreground text-sm'>
             {t('Please enter the authentication code.')}
           </p>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          <p className='text-muted-foreground text-sm'>
             {t('Session expired?')}{' '}
             <Link
               to='/sign-in'
-              className='hover:text-primary font-medium underline underline-offset-4'
+              className='text-foreground font-medium hover:underline'
             >
               {t('Re-login')}
             </Link>
-            .
           </p>
         </div>
-
         <OtpForm />
-      </div>
+      </AuthCard>
     </AuthLayout>
   )
 }

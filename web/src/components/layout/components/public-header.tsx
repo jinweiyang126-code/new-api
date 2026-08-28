@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { ArrowRight } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -27,6 +28,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTheme } from '@/context/theme-provider'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
@@ -58,23 +60,72 @@ export interface PublicHeaderProps {
   showNavigation?: boolean
   showAuthButtons?: boolean
   showNotifications?: boolean
+  /** Landing marketing header (Figma Home): flat bar, no Sign In, filter About. */
+  variant?: 'default' | 'landing' | 'auth'
+  /** Hide Sign in on unauthenticated CTA row (Figma Home only shows Sign Up). */
+  showSignIn?: boolean
   className?: string
+}
+
+const LANDING_ICON_TRIGGER =
+  'size-8 shrink-0 text-foreground hover:bg-transparent hover:opacity-80'
+const LANDING_ICON_IMG = 'size-4'
+
+function AuthEntryLinks({
+  pathname,
+  compact = false,
+  stacked = false,
+  onNavigate,
+}: {
+  pathname: string
+  compact?: boolean
+  stacked?: boolean
+  onNavigate?: () => void
+}) {
+  const { t } = useTranslation()
+  const isSignIn = pathname === '/sign-in' || pathname === '/login'
+  const to = isSignIn ? '/sign-up' : '/sign-in'
+  const label = isSignIn ? t('Sign up') : t('Log in')
+
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className={cn(
+        'inline-flex items-center gap-2 font-semibold text-foreground',
+        stacked && 'h-11 justify-center rounded-xl border border-border text-sm',
+        compact ? 'text-xs' : 'text-sm'
+      )}
+    >
+      {label}
+      <ArrowRight className='size-4' />
+    </Link>
+  )
 }
 
 export function PublicHeader(props: PublicHeaderProps) {
   const {
     navLinks = defaultTopNavLinks,
-    showThemeSwitch = true,
-    showLanguageSwitcher = true,
+    showThemeSwitch: showThemeSwitchProp = true,
+    showLanguageSwitcher: showLanguageSwitcherProp = true,
     logo: customLogo,
     siteName: customSiteName,
     homeUrl = '/',
     showAuthButtons = true,
     showNotifications = true,
+    variant = 'default',
+    showSignIn = true,
+    className,
   } = props
 
+  const isLanding = variant === 'landing'
+  const isAuth = variant === 'auth'
+  const isMarketing = isLanding || isAuth
+  const showThemeSwitch = isAuth ? false : showThemeSwitchProp
+  const showLanguageSwitcher = isAuth ? false : showLanguageSwitcherProp
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [authPromptTarget, setAuthPromptTarget] =
@@ -95,8 +146,15 @@ export function PublicHeader(props: PublicHeaderProps) {
 
   const user = auth.user
   const isAuthenticated = !!user
-  const displaySiteName = customSiteName || systemName
-  const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  const displaySiteName =
+    customSiteName !== undefined ? customSiteName : systemName
+  const rawLinks = dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  // Figma Home nav: Home / Console / Model Square / Rankings / Docs (no About)
+  const links = isMarketing
+    ? rawLinks.filter((link) => link.href !== '/about')
+    : rawLinks
+  const showSiteName = Boolean(displaySiteName)
+  const showSignInButton = showSignIn && !isLanding && !isAuth
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -173,49 +231,154 @@ export function PublicHeader(props: PublicHeaderProps) {
     [t]
   )
 
+  const navLinkClass = (isActive: boolean, disabled?: boolean) =>
+    cn(
+      isMarketing
+        ? 'text-sm font-semibold whitespace-nowrap transition-colors duration-200'
+        : 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
+      isActive
+        ? 'text-foreground'
+        : 'text-muted-foreground hover:text-foreground',
+      disabled && 'pointer-events-none opacity-50'
+    )
+
+  const landingIconSuffix = resolvedTheme === 'light' ? '-light' : ''
+  const langIcon = isMarketing ? (
+    <img
+      src={`/landing/icon-lang${landingIconSuffix}.svg`}
+      alt=''
+      className={LANDING_ICON_IMG}
+      aria-hidden
+    />
+  ) : undefined
+  const themeIcon = isMarketing ? (
+    <img
+      src={`/landing/icon-theme${landingIconSuffix}.svg`}
+      alt=''
+      className={LANDING_ICON_IMG}
+      aria-hidden
+    />
+  ) : undefined
+  const bellIcon = isMarketing ? (
+    <img
+      src={`/landing/icon-bell${landingIconSuffix}.svg`}
+      alt=''
+      className={LANDING_ICON_IMG}
+      aria-hidden
+    />
+  ) : undefined
+
+  function renderDesktopAuthActions() {
+    if (loading) {
+      return <Skeleton className='h-8 w-24 rounded-full' />
+    }
+    if (isAuthenticated) {
+      return <ProfileDropdown />
+    }
+    if (isAuth) {
+      return <AuthEntryLinks pathname={pathname} />
+    }
+    return (
+      <div className='flex items-center gap-1.5'>
+        {showSignInButton && (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='h-8 rounded-full px-3.5 text-xs font-medium'
+            render={<Link to='/sign-in' />}
+          >
+            {t('Sign in')}
+          </Button>
+        )}
+        {pathname !== '/sign-up' && (
+          <Button
+            size='sm'
+            className={cn(
+              'h-8 rounded-full text-xs font-semibold',
+              isLanding || pathname === '/'
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90 w-[120px] px-6'
+                : 'px-4'
+            )}
+            render={<Link to='/sign-up' />}
+          >
+            {isLanding || pathname === '/' ? t('Sign up') : t('Get Started')}
+          </Button>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
-      <header className='pointer-events-none fixed inset-x-0 top-0 z-50'>
+      <header
+        className={cn(
+          'pointer-events-none fixed inset-x-0 top-0 z-50',
+          className
+        )}
+      >
         <div
           className={cn(
             'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            scrolled ? 'max-w-6xl px-3 pt-3' : 'max-w-7xl px-4 pt-0 md:px-6'
+            isMarketing
+              ? 'max-w-[1200px] px-8 pt-0'
+              : scrolled
+                ? 'max-w-6xl px-3 pt-3'
+                : 'max-w-7xl px-4 pt-0 md:px-6'
           )}
         >
           <nav
             className={cn(
               'relative flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-              scrolled
-                ? 'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
-                : 'h-16 px-2'
+              isMarketing
+                ? 'h-16'
+                : scrolled
+                  ? 'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
+                  : 'h-16 px-2'
             )}
           >
-            {/* Logo */}
+            {/* Logo — customLogo may be a wide wordmark (e.g. landing UnionMeta) */}
             <Link
               to={homeUrl}
               className='group z-10 flex shrink-0 items-center gap-2.5'
             >
-              <div className='flex size-8 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
-                {loading ? (
-                  <Skeleton className='size-full rounded-lg' />
-                ) : customLogo ? (
-                  customLogo
-                ) : (
-                  <HeaderLogo
-                    src={systemLogo}
-                    loading={loading}
-                    logoLoaded={logoLoaded}
-                    className='size-full rounded-lg object-contain'
-                  />
-                )}
-              </div>
-              <span className='text-[15px] font-semibold tracking-tight'>
-                {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
-              </span>
+              {customLogo ? (
+                <div
+                  className={cn(
+                    'flex items-center transition-all duration-300 group-hover:scale-105',
+                    isMarketing ? 'h-8 w-[115px]' : 'h-8 max-w-[200px]'
+                  )}
+                >
+                  {customLogo}
+                </div>
+              ) : (
+                <div className='flex size-8 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
+                  {loading ? (
+                    <Skeleton className='size-full rounded-lg' />
+                  ) : (
+                    <HeaderLogo
+                      src={systemLogo}
+                      loading={loading}
+                      logoLoaded={logoLoaded}
+                      className='size-full rounded-lg object-contain'
+                    />
+                  )}
+                </div>
+              )}
+              {showSiteName ? (
+                <span className='text-[15px] font-semibold tracking-tight'>
+                  {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
+                </span>
+              ) : null}
             </Link>
 
-            {/* Centered desktop nav */}
-            <div className='absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 lg:flex'>
+            {/* Centered desktop nav — Figma auth header has logo + opposite CTA only */}
+            <div
+              className={cn(
+                'absolute left-1/2 hidden -translate-x-1/2 items-center lg:flex',
+                isAuth && 'lg:hidden',
+                isMarketing ? 'gap-7' : 'gap-0.5'
+              )}
+            >
               {links.map((link, i) => {
                 const isActive = pathname === link.href
                 if (link.external) {
@@ -228,10 +391,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                       aria-disabled={link.disabled}
                       tabIndex={link.disabled ? -1 : undefined}
                       onClick={(event) => handleNavLinkClick(event, link)}
-                      className={cn(
-                        'text-muted-foreground hover:text-foreground rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
-                        link.disabled && 'pointer-events-none opacity-50'
-                      )}
+                      className={navLinkClass(false, link.disabled)}
                     >
                       {t(link.title)}
                     </a>
@@ -243,13 +403,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                     to={link.href}
                     disabled={link.disabled}
                     onClick={(event) => handleNavLinkClick(event, link)}
-                    className={cn(
-                      'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
-                      isActive
-                        ? 'text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                      link.disabled && 'pointer-events-none opacity-50'
-                    )}
+                    className={navLinkClass(isActive, link.disabled)}
                   >
                     {t(link.title)}
                   </Link>
@@ -258,15 +412,31 @@ export function PublicHeader(props: PublicHeaderProps) {
             </div>
 
             {/* Desktop actions */}
-            <div className='hidden items-center gap-0.5 lg:flex'>
-              {(showLanguageSwitcher ||
-                showThemeSwitch ||
-                showNotifications) && (
-                <div className='bg-border/40 mx-1 hidden h-4 w-px lg:block' />
+            <div
+              className={cn(
+                'hidden items-center lg:flex',
+                isMarketing ? 'gap-4' : 'gap-0.5'
               )}
+            >
+              {!isMarketing &&
+                (showLanguageSwitcher ||
+                  showThemeSwitch ||
+                  showNotifications) && (
+                  <div className='bg-border/40 mx-1 hidden h-4 w-px lg:block' />
+                )}
 
-              {showLanguageSwitcher && <LanguageSwitcher />}
-              {showThemeSwitch && <ThemeSwitch />}
+              {showLanguageSwitcher && (
+                <LanguageSwitcher
+                  triggerClassName={isMarketing ? LANDING_ICON_TRIGGER : undefined}
+                  icon={langIcon}
+                />
+              )}
+              {showThemeSwitch && (
+                <ThemeSwitch
+                  triggerClassName={isMarketing ? LANDING_ICON_TRIGGER : undefined}
+                  icon={themeIcon}
+                />
+              )}
               {showNotifications && (
                 <NotificationPopover
                   open={notifications.popoverOpen}
@@ -277,57 +447,57 @@ export function PublicHeader(props: PublicHeaderProps) {
                   notice={notifications.notice}
                   announcements={notifications.announcements}
                   loading={notifications.loading}
+                  className={isMarketing ? LANDING_ICON_TRIGGER : undefined}
+                  icon={bellIcon}
                 />
               )}
 
               {showAuthButtons && (
                 <>
-                  <div className='bg-border/40 mx-1.5 h-4 w-px' />
-                  {loading ? (
-                    <Skeleton className='h-8 w-24 rounded-full' />
-                  ) : isAuthenticated ? (
-                    <ProfileDropdown />
-                  ) : (
-                    <div className='flex items-center gap-1.5'>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-8 rounded-full px-3.5 text-xs font-medium'
-                        render={<Link to='/sign-in' />}
-                      >
-                        {t('Sign in')}
-                      </Button>
-                      {pathname !== '/sign-up' && (
-                        <Button
-                          size='sm'
-                          className='h-8 rounded-full px-4 text-xs font-semibold'
-                          render={<Link to='/sign-up' />}
-                        >
-                          {t('Get Started')}
-                        </Button>
-                      )}
-                    </div>
+                  {!isMarketing && (
+                    <div className='bg-border/40 mx-1.5 h-4 w-px' />
                   )}
+                  {renderDesktopAuthActions()}
                 </>
               )}
             </div>
 
             {/* Mobile / tablet: compact actions + hamburger */}
             <div className='flex items-center gap-2 lg:hidden'>
-              {showLanguageSwitcher && <LanguageSwitcher />}
-              {showThemeSwitch && <ThemeSwitch />}
+              {showLanguageSwitcher && (
+                <LanguageSwitcher
+                  triggerClassName={isMarketing ? LANDING_ICON_TRIGGER : undefined}
+                  icon={langIcon}
+                />
+              )}
+              {showThemeSwitch && (
+                <ThemeSwitch
+                  triggerClassName={isMarketing ? LANDING_ICON_TRIGGER : undefined}
+                  icon={themeIcon}
+                />
+              )}
               {showAuthButtons && !loading && isAuthenticated && (
                 <ProfileDropdown />
               )}
               {showAuthButtons && !loading && !isAuthenticated && (
-                <Button
-                  size='sm'
-                  className='h-8 rounded-full px-3.5 text-xs font-semibold'
-                  render={<Link to='/sign-up' />}
-                >
-                  {t('Get Started')}
-                </Button>
+                isAuth ? (
+                  <AuthEntryLinks pathname={pathname} compact />
+                ) : (
+                  <Button
+                    size='sm'
+                    className={cn(
+                      'h-8 rounded-full text-xs font-semibold',
+                      isLanding
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 px-6'
+                        : 'px-3.5'
+                    )}
+                    render={<Link to='/sign-up' />}
+                  >
+                    {isLanding ? t('Sign up') : t('Get Started')}
+                  </Button>
+                )
               )}
+              {!isAuth && (
               <Button
                 type='button'
                 variant='ghost'
@@ -357,6 +527,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                   />
                 </div>
               </Button>
+              )}
             </div>
           </nav>
         </div>
@@ -429,22 +600,41 @@ export function PublicHeader(props: PublicHeaderProps) {
           >
             {showAuthButtons && (
               <>
-                {!isAuthenticated && (
-                  <Link
-                    to='/sign-in'
-                    onClick={() => setMobileOpen(false)}
-                    className='border-border/50 text-foreground inline-flex h-11 items-center justify-center rounded-full border text-sm font-medium transition-opacity hover:opacity-90'
-                  >
-                    {t('Sign in')}
-                  </Link>
+                {isAuth && !isAuthenticated ? (
+                  <AuthEntryLinks
+                    pathname={pathname}
+                    stacked
+                    onNavigate={() => setMobileOpen(false)}
+                  />
+                ) : (
+                  <>
+                    {!isAuthenticated && showSignInButton && (
+                      <Link
+                        to='/sign-in'
+                        onClick={() => setMobileOpen(false)}
+                        className='border-border/50 text-foreground inline-flex h-11 items-center justify-center rounded-full border text-sm font-medium transition-opacity hover:opacity-90'
+                      >
+                        {t('Sign in')}
+                      </Link>
+                    )}
+                    <Link
+                      to={isAuthenticated ? '/dashboard' : '/sign-up'}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        'inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-80',
+                        isLanding
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-foreground text-background'
+                      )}
+                    >
+                      {isAuthenticated
+                        ? t('Go to Dashboard')
+                        : isLanding
+                          ? t('Sign up')
+                          : t('Get Started')}
+                    </Link>
+                  </>
                 )}
-                <Link
-                  to={isAuthenticated ? '/dashboard' : '/sign-up'}
-                  onClick={() => setMobileOpen(false)}
-                  className='bg-foreground text-background inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-80'
-                >
-                  {isAuthenticated ? t('Go to Dashboard') : t('Get Started')}
-                </Link>
               </>
             )}
           </div>

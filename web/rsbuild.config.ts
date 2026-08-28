@@ -26,6 +26,8 @@ export default defineConfig(({ envMode }) => {
   return {
     plugins: [pluginReact(), pluginTailwindcss({ optimize: false })],
     // Rsbuild 2: replaces deprecated `performance.chunkSplit` (RSPack 2 aligned)
+    // Plan D: isolate heavy vendors for parallel download; never merge all
+    // @lobehub/icons into one async mega-chunk (that regressed to ~5MB earlier).
     splitChunks: {
       preset: 'default',
       cacheGroups: {
@@ -49,6 +51,63 @@ export default defineConfig(({ envMode }) => {
           chunks: 'all',
           priority: 0,
           enforce: true,
+        },
+        // Homepage ModelsStrip statically imports these brands. Home is an async
+        // route chunk in prod, so use `chunks: 'async'` + fixed name to merge only
+        // this short allowlist into one parallel download (not the whole icon set).
+        'vendor-lobehub-icons-home': {
+          test: /node_modules[\\/]@lobehub[\\/]icons[\\/]es[\\/](Claude|Cline|DeepSeek|Doubao|Gemini|Github|OpenAI|Qwen)[\\/]/,
+          name: 'vendor-lobehub-icons-home',
+          chunks: 'async',
+          priority: 35,
+          enforce: true,
+          reuseExistingChunk: true,
+        },
+        // Other icon `import()`s (LobeIcon): name by brand folder so icons stay
+        // separate. A single fixed `name` for all icons merges into one ~5MB chunk.
+        'vendor-lobehub-icons-async': {
+          test: /node_modules[\\/]@lobehub[\\/]icons[\\/]/,
+          chunks: 'async',
+          priority: 25,
+          enforce: true,
+          reuseExistingChunk: true,
+          name(module: {
+            nameForCondition?: () => string | undefined
+            identifier?: () => string
+          }) {
+            const id = module.nameForCondition?.() ?? module.identifier?.() ?? ''
+            const match = /[\\/]@lobehub[\\/]icons[\\/]es[\\/]([^\\/]+)/i.exec(id)
+            const key = match?.[1]
+            if (key && key !== 'components' && key !== 'features' && key !== 'utils') {
+              return `lobe-icon-${key}`
+            }
+            return 'vendor-lobehub-icons-shared'
+          },
+        },
+        // KaTeX only loads via dynamic import in katex-loader (plan C).
+        'vendor-katex': {
+          test: /node_modules[\\/]katex[\\/]/,
+          name: 'vendor-katex',
+          chunks: 'async',
+          priority: 20,
+          enforce: true,
+        },
+        // Stable names for lazy locale JSON (plan B).
+        'locale-json': {
+          test: /[\\/]i18n[\\/]locales[\\/].+\.json$/,
+          chunks: 'async',
+          priority: 30,
+          enforce: true,
+          name(module: {
+            nameForCondition?: () => string | undefined
+            identifier?: () => string
+          }) {
+            const id = module.nameForCondition?.() ?? module.identifier?.() ?? ''
+            const match = /locales[\\/]([^\\/?]+)\.json/.exec(id)
+            return match?.[1]
+              ? `locale-${match[1].replaceAll(/[^a-zA-Z0-9_-]/g, '')}`
+              : 'locale-unknown'
+          },
         },
       },
     },

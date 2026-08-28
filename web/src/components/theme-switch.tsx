@@ -30,7 +30,15 @@ import {
 import { useTheme } from '@/context/theme-provider'
 import { cn } from '@/lib/utils'
 
-export function ThemeSwitch() {
+type ThemeSwitchProps = {
+  triggerClassName?: string
+  iconClassName?: string
+  /** When set, replaces the default sun/moon pair (e.g. Figma landing moon). */
+  icon?: React.ReactNode
+}
+
+export function ThemeSwitch(props: ThemeSwitchProps = {}) {
+  const { triggerClassName, iconClassName, icon } = props
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
 
@@ -45,10 +53,30 @@ export function ThemeSwitch() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
-        render={<Button variant='ghost' size='icon' className='h-9 w-9' />}
+        render={
+          <Button
+            variant='ghost'
+            size='icon'
+            className={cn('h-9 w-9', triggerClassName)}
+          />
+        }
       >
-        <Sun className='size-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90' />
-        <Moon className='absolute size-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0' />
+        {icon ?? (
+          <>
+            <Sun
+              className={cn(
+                'size-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90',
+                iconClassName
+              )}
+            />
+            <Moon
+              className={cn(
+                'absolute size-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0',
+                iconClassName
+              )}
+            />
+          </>
+        )}
         <span className='sr-only'>{t('Toggle theme')}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>

@@ -26,7 +26,7 @@ import {
 
 const defaultSiteSettings: SiteSettings = {
   Notice: '',
-  SystemName: 'Token API',
+  SystemName: 'UnionMeta',
   Logo: '',
   Footer: '',
   FeedbackUrl: '',

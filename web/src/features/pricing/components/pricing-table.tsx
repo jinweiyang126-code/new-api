@@ -88,7 +88,7 @@ export function PricingTable(props: PricingTableProps) {
   )
 
   return (
-    <div className='space-y-4'>
+    <div className='border-border/80 space-y-4 overflow-hidden rounded-[20px] border p-2 sm:p-3'>
       <DataTableView
         table={table}
         isLoading={isLoading}

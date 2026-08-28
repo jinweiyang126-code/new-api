@@ -35,7 +35,14 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
-export function LanguageSwitcher() {
+type LanguageSwitcherProps = {
+  triggerClassName?: string
+  iconClassName?: string
+  icon?: React.ReactNode
+}
+
+export function LanguageSwitcher(props: LanguageSwitcherProps = {}) {
+  const { triggerClassName, iconClassName, icon } = props
   const { i18n, t } = useTranslation()
   const user = useAuthStore((s) => s.auth.user)
   const currentLanguage = normalizeInterfaceLanguage(i18n.language)
@@ -56,9 +63,15 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
-        render={<Button variant='ghost' size='icon' className='h-9 w-9' />}
+        render={
+          <Button
+            variant='ghost'
+            size='icon'
+            className={cn('h-9 w-9', triggerClassName)}
+          />
+        }
       >
-        <Languages className='size-[1.2rem]' />
+        {icon ?? <Languages className={cn('size-[1.2rem]', iconClassName)} />}
         <span className='sr-only'>{t('Change language')}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>

@@ -16,47 +16,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
-
-import { Skeleton } from '@/components/ui/skeleton'
+import { PublicHeader } from '@/components/layout'
+import { LandingHeaderLogo } from '@/features/home/lib/landing-header-logo'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { DEFAULT_LOGO, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 
 type AuthLayoutProps = {
   children: React.ReactNode
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
-  const { t } = useTranslation()
-  const { systemName, logo, loading } = useSystemConfig()
+  const { systemName, logo } = useSystemConfig()
+  const usingDefaultBrand =
+    (!logo || logo === DEFAULT_LOGO) &&
+    (!systemName || systemName === DEFAULT_SYSTEM_NAME)
 
   return (
-    <div className='relative grid h-svh max-w-none'>
-      <Link
-        to='/'
-        className='absolute top-4 left-4 z-10 flex items-center gap-2 transition-opacity hover:opacity-80 sm:top-8 sm:left-8'
-      >
-        <div className='relative h-8 w-8'>
-          {loading ? (
-            <Skeleton className='absolute inset-0 rounded-full' />
-          ) : (
-            <img
-              src={logo}
-              alt={t('Logo')}
-              className='h-8 w-8 rounded-full object-contain'
-            />
-          )}
-        </div>
-        {loading ? (
-          <Skeleton className='h-6 w-24' />
-        ) : (
-          <h1 className='text-xl font-medium'>{systemName}</h1>
-        )}
-      </Link>
-      <div className='container flex items-center pt-16 sm:pt-0'>
-        <div className='mx-auto flex w-full flex-col justify-center space-y-2 px-4 py-8 sm:w-[480px] sm:p-8'>
-          {children}
-        </div>
+    <div className='auth-theme relative min-h-svh overflow-x-clip'>
+      <div className='auth-glow pointer-events-none absolute inset-0' aria-hidden />
+      <PublicHeader
+        variant='auth'
+        showNotifications={false}
+        showThemeSwitch={false}
+        showLanguageSwitcher={false}
+        {...(usingDefaultBrand
+          ? { logo: <LandingHeaderLogo />, siteName: '' }
+          : {})}
+      />
+      <div className='relative z-10 flex min-h-svh items-center justify-center px-4 pt-20 pb-10'>
+        {children}
       </div>
     </div>
   )

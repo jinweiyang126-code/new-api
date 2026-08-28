@@ -31,6 +31,9 @@ import { api } from '@/lib/api'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 
 import { AuthLayout } from '../auth-layout'
+import { AuthBrand } from '../components/auth-brand'
+import { AuthCard } from '../components/auth-card'
+import { AuthSubmitButton } from '../components/auth-submit-button'
 
 export type ResetPasswordSearchParams = {
   email?: string
@@ -55,6 +58,15 @@ export function ResetPasswordConfirm({
   } = useCountdown({ initialSeconds: 30 })
 
   const isValidResetLink = Boolean(email && token)
+
+  let confirmLabel = t('auth.resetPasswordConfirm.confirm')
+  if (newPassword) {
+    confirmLabel = t('auth.resetPasswordConfirm.backToLogin')
+  } else if (isActive) {
+    confirmLabel = t('auth.resetPasswordConfirm.retry', {
+      seconds: secondsLeft,
+    })
+  }
 
   async function handleSubmit() {
     if (!isValidResetLink || !email || !token) {
@@ -107,12 +119,13 @@ export function ResetPasswordConfirm({
 
   return (
     <AuthLayout>
-      <div className='w-full space-y-8'>
-        <div className='space-y-2'>
-          <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
+      <AuthCard className='w-full max-w-[420px] space-y-6'>
+        <AuthBrand />
+        <div className='space-y-2 text-center'>
+          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
             {t('Reset password')}
-          </h2>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
+          </h1>
+          <p className='text-muted-foreground text-sm'>
             {newPassword
               ? t('auth.resetPasswordConfirm.success')
               : t('auth.resetPasswordConfirm.description')}
@@ -168,8 +181,7 @@ export function ResetPasswordConfirm({
             </div>
           )}
 
-          <Button
-            className='w-full'
+          <AuthSubmitButton
             onClick={
               newPassword
                 ? () => navigate({ to: '/sign-in', replace: true })
@@ -179,14 +191,8 @@ export function ResetPasswordConfirm({
               newPassword ? false : loading || isActive || !isValidResetLink
             }
           >
-            {newPassword
-              ? t('auth.resetPasswordConfirm.backToLogin')
-              : isActive
-                ? t('auth.resetPasswordConfirm.retry', {
-                    seconds: secondsLeft,
-                  })
-                : t('auth.resetPasswordConfirm.confirm')}
-          </Button>
+            {confirmLabel}
+          </AuthSubmitButton>
 
           {!newPassword && (
             <Button
@@ -198,7 +204,7 @@ export function ResetPasswordConfirm({
             </Button>
           )}
         </div>
-      </div>
+      </AuthCard>
     </AuthLayout>
   )
 }

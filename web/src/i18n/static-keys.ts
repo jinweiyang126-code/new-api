@@ -71,6 +71,7 @@ export const STATIC_I18N_KEYS = [
   'Sort',
   'All',
   'All Vendors',
+  'Vendors',
   'All Groups',
   'All Tags',
   'More...',
