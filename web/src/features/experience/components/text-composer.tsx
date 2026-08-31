@@ -81,7 +81,7 @@ export function TextComposer({
 
   return (
     <div className='mx-auto w-full max-w-3xl px-4 pb-4'>
-      <div className='border-border/70 bg-background focus-within:border-primary/40 flex items-end gap-2 rounded-[28px] border px-2 py-1.5 shadow-xs'>
+      <div className='border-border/70 bg-background focus-within:border-primary/40 flex items-end gap-3 rounded-[28px] border px-2 py-1.5 shadow-xs'>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -115,7 +115,7 @@ export function TextComposer({
         </DropdownMenu>
 
         <Textarea
-          className='placeholder:text-muted-foreground max-h-32 min-h-9 flex-1 resize-none border-0 bg-transparent px-0 py-2 shadow-none focus-visible:ring-0'
+          className='placeholder:text-muted-foreground field-sizing-fixed max-h-32 min-h-9 min-w-0 flex-1 resize-none border-0 bg-transparent px-2.5 py-2 shadow-none focus-visible:ring-0'
           disabled={disabled}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {

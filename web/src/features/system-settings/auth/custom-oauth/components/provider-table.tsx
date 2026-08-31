@@ -26,6 +26,7 @@ import { StaticDataTable } from '@/components/data-table/static/static-data-tabl
 import { StaticRowActions } from '@/components/data-table/static/static-row-actions'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
+import { renderOAuthProviderIcon } from '@/features/auth/lib/oauth-provider-icon'
 
 import { useDeleteProvider } from '../hooks/use-custom-oauth-mutations'
 import type { CustomOAuthProvider } from '../types'
@@ -71,10 +72,13 @@ export function ProviderTable(props: ProviderTableProps) {
             id: 'icon',
             header: t('Icon'),
             cell: (provider) =>
-              provider.icon ? (
-                <span className='text-lg'>{provider.icon}</span>
-              ) : (
-                <span className='text-muted-foreground text-sm'>--</span>
+              renderOAuthProviderIcon(
+                {
+                  name: provider.name,
+                  icon: provider.icon,
+                  slug: provider.slug,
+                },
+                'h-4 w-4'
               ),
           },
           {

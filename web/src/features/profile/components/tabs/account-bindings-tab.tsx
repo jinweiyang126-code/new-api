@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Mail, Shield, Send, Link2, Unlink } from 'lucide-react'
+import { Mail, Shield, Send, Unlink } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SiGithub, SiWechat, SiLinux } from 'react-icons/si'
@@ -33,6 +33,7 @@ import {
   OAUTH_BIND_RESULT_MESSAGE,
 } from '@/features/auth/constants'
 import { watchOAuthPopupClosed } from '@/features/auth/lib/oauth-bind-window'
+import { renderOAuthProviderIcon } from '@/features/auth/lib/oauth-provider-icon'
 import {
   getOAuthSessionStorage,
   markOAuthBindPopup,
@@ -485,7 +486,14 @@ export function AccountBindingsTab({
                 >
                   <div className='flex min-w-0 items-center gap-2.5 sm:gap-3'>
                     <div className='bg-muted shrink-0 rounded-md p-1.5 sm:p-2'>
-                      <Link2 className='h-4 w-4' />
+                      {renderOAuthProviderIcon(
+                        {
+                          name: provider.name,
+                          icon: provider.icon,
+                          slug: provider.slug,
+                        },
+                        'h-4 w-4'
+                      )}
                     </div>
                     <div className='min-w-0'>
                       <div className='flex items-center gap-1.5'>

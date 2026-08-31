@@ -181,7 +181,7 @@ export function ExperienceTextPage() {
             </Button>
           </div>
 
-          <div className='relative min-h-0 flex-1 overflow-hidden'>
+          <div className='relative flex min-h-0 flex-1 flex-col overflow-hidden'>
             <div
               aria-hidden
               className='pointer-events-none absolute inset-0 opacity-[0.4] dark:opacity-[0.22]'
@@ -190,21 +190,19 @@ export function ExperienceTextPage() {
                   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M14 9v10M9 14h10' stroke='%23888' stroke-width='1' fill='none'/%3E%3C/svg%3E\")",
               }}
             />
-            <div className='relative min-h-0 h-full'>
-              <PlaygroundChat
-                editingKey={editingMessageKey}
-                emptyState={<TextEmptyState />}
-                isGenerating={isGenerating}
-                isLoadingMessages={isLoadingSessions}
-                messages={active?.messages ?? []}
-                onCancelEdit={handleEditOpenChange}
-                onDeleteMessage={handleDeleteMessage}
-                onEditMessage={handleEditMessage}
-                onRegenerateMessage={handleRegenerateMessage}
-                onSaveEdit={(content) => applyEdit(content, false)}
-                onSaveEditAndSubmit={(content) => applyEdit(content, true)}
-              />
-            </div>
+            <PlaygroundChat
+              editingKey={editingMessageKey}
+              emptyState={<TextEmptyState />}
+              isGenerating={isGenerating}
+              isLoadingMessages={isLoadingSessions}
+              messages={active?.messages ?? []}
+              onCancelEdit={handleEditOpenChange}
+              onDeleteMessage={handleDeleteMessage}
+              onEditMessage={handleEditMessage}
+              onRegenerateMessage={handleRegenerateMessage}
+              onSaveEdit={(content) => applyEdit(content, false)}
+              onSaveEditAndSubmit={(content) => applyEdit(content, true)}
+            />
           </div>
 
           <TextComposer

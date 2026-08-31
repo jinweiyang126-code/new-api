@@ -1,0 +1,55 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+import type { SVGProps } from 'react'
+
+import { cn } from '@/lib/utils'
+
+/** Figma UnionMeta-AI icon-quick login Google (`111:23`). */
+export function IconGoogle({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      role='img'
+      viewBox='0 0 18 18'
+      xmlns='http://www.w3.org/2000/svg'
+      width='18'
+      height='18'
+      fill='none'
+      className={cn(className)}
+      {...props}
+    >
+      <title>Google</title>
+      <path
+        d='M3.76341 9C3.76341 8.4285 3.86091 7.88025 4.03341 7.3665L1.00491 5.1015C0.396431 6.31086 0.0804494 7.6462 0.0824065 9C0.0824065 10.401 0.413907 11.7225 1.00341 12.8955L4.03041 10.6268C3.85391 10.1025 3.76373 9.55313 3.76341 9Z'
+        fill='#FBBC05'
+      />
+      <path
+        d='M9.08275 3.8005C10.3502 3.8005 11.4955 4.24 12.3955 4.96L15.0137 2.40025C13.4185 1.0405 11.3732 0.2005 9.08275 0.2005C5.52625 0.2005 2.46925 2.19175 1.00525 5.10175L4.03525 7.36675C4.73275 5.29225 6.72175 3.8005 9.08275 3.8005Z'
+        fill='#EA4335'
+      />
+      <path
+        d='M9.08275 14.1996C6.721 14.1996 4.732 12.7079 4.03375 10.6334L1.00525 12.8984C2.4685 15.8084 5.5255 17.7996 9.08275 17.7996C11.2772 17.7996 13.3727 17.0369 14.9462 15.6066L12.0707 13.4301C11.26 13.9304 10.2385 14.1996 9.082 14.1996'
+        fill='#34A853'
+      />
+      <path
+        d='M17.6731 8.99987C17.6731 8.48012 17.5906 7.91987 17.4683 7.40012H9.08185V10.7999H13.9088C13.6681 11.9594 13.0111 12.8504 12.0713 13.4301L14.9461 15.6066C16.5983 14.1051 17.6731 11.8686 17.6731 8.99987Z'
+        fill='#4285F4'
+      />
+    </svg>
+  )
+}

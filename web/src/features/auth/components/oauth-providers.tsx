@@ -30,7 +30,10 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 import { useOAuthLogin } from '../hooks/use-oauth-login'
-import { renderOAuthProviderIcon } from '../lib/oauth-provider-icon'
+import {
+  OAUTH_ICON_SIZE_CLASS,
+  renderOAuthProviderIcon,
+} from '../lib/oauth-provider-icon'
 import type { SystemStatus } from '../types'
 import { TelegramLoginDialog } from './telegram-login-dialog'
 
@@ -85,7 +88,7 @@ export function OAuthProviders({
       key: 'wechat',
       label: t('Continue with WeChat'),
       onClick: onWeChatLogin,
-      icon: <IconWeChat className='h-5 w-5' />,
+      icon: <IconWeChat className={OAUTH_ICON_SIZE_CLASS} />,
       disabled: isWeChatLoading,
     })
   }
@@ -95,7 +98,7 @@ export function OAuthProviders({
       key: 'github',
       label: githubButtonText || t('Continue with GitHub'),
       onClick: handleGitHubLogin,
-      icon: <IconGithub className='h-5 w-5' />,
+      icon: <IconGithub className={OAUTH_ICON_SIZE_CLASS} />,
       disabled: githubButtonDisabled,
     })
   }
@@ -105,7 +108,7 @@ export function OAuthProviders({
       key: 'discord',
       label: t('Continue with Discord'),
       onClick: handleDiscordLogin,
-      icon: <IconDiscord className='h-5 w-5' />,
+      icon: <IconDiscord className={OAUTH_ICON_SIZE_CLASS} />,
     })
   }
 
@@ -117,6 +120,7 @@ export function OAuthProviders({
         name: oidcDisplayName,
       }),
       onClick: handleOIDCLogin,
+      icon: renderOAuthProviderIcon({ name: oidcDisplayName }),
     })
   }
 
@@ -125,7 +129,7 @@ export function OAuthProviders({
       key: 'linuxdo',
       label: t('Continue with LinuxDO'),
       onClick: handleLinuxDOLogin,
-      icon: <IconLinuxDo className='h-5 w-5' />,
+      icon: <IconLinuxDo className={OAUTH_ICON_SIZE_CLASS} />,
     })
   }
 
@@ -134,7 +138,12 @@ export function OAuthProviders({
       key: 'telegram',
       label: t('Continue with Telegram'),
       onClick: handleTelegramLogin,
-      icon: <IconTelegram data-icon='inline-start' />,
+      icon: (
+        <IconTelegram
+          className={OAUTH_ICON_SIZE_CLASS}
+          data-icon='inline-start'
+        />
+      ),
     })
   }
 
@@ -146,7 +155,11 @@ export function OAuthProviders({
         key: `custom-${provider.slug}`,
         label: t('Continue with {{name}}', { name: provider.name }),
         onClick: () => handleCustomOAuthLogin(provider),
-        icon: renderOAuthProviderIcon(provider.name, provider.icon),
+        icon: renderOAuthProviderIcon({
+          name: provider.name,
+          icon: provider.icon,
+          slug: provider.slug,
+        }),
       })
     }
   }
@@ -177,10 +190,15 @@ export function OAuthProviders({
                     onClick={onClick}
                     aria-label={label}
                     title={label}
-                    className='bg-secondary h-10 min-w-0 flex-1 rounded-xl border-border shadow-none [&_svg]:size-[18px]'
+                    className='bg-secondary h-10 min-w-0 flex-1 rounded-xl border-border shadow-none [&_svg]:size-[18px] [&_img]:size-[18px]'
                   >
                     {icon ?? (
-                      <span className='text-xs font-semibold'>
+                      <span
+                        className={cn(
+                          OAUTH_ICON_SIZE_CLASS,
+                          'inline-flex items-center justify-center text-xs font-semibold'
+                        )}
+                      >
                         {label.charAt(0)}
                       </span>
                     )}

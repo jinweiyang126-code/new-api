@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Checkbox } from '@/components/ui/checkbox'
@@ -29,7 +30,10 @@ interface LegalConsentProps {
   checked: boolean
   onCheckedChange: (nextValue: boolean) => void
   className?: string
-  variant?: 'sign-in' | 'sign-up'
+}
+
+function stopLabelToggle(event: MouseEvent<HTMLAnchorElement>) {
+  event.stopPropagation()
 }
 
 export function LegalConsent({
@@ -51,42 +55,42 @@ export function LegalConsent({
   }
 
   return (
-    <div className={cn('flex items-start gap-2', className)}>
+    <div className={cn('flex w-full items-center gap-2', className)}>
       <Checkbox
         id='legal-consent'
         checked={checked}
         onCheckedChange={handleChange}
-        className='mt-0.5'
+        className='size-4 rounded-[4.5px] border-border bg-input shadow-none data-checked:border-primary data-checked:bg-primary dark:bg-input'
       />
       <Label
         htmlFor='legal-consent'
-        className='text-muted-foreground items-start gap-1 text-left text-xs leading-5 font-normal'
+        className='text-muted-foreground block min-w-0 flex-1 text-left text-xs leading-normal font-normal'
       >
-        <span>
-          {t('I agree to the')}{' '}
-          {hasUserAgreement && (
-            <a
-              href='/user-agreement'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='auth-link'
-            >
-              {t('Terms of Service')}
-            </a>
-          )}
-          {hasUserAgreement && hasPrivacyPolicy && ` ${t('and')} `}
-          {hasPrivacyPolicy && (
-            <a
-              href='/privacy-policy'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='auth-link'
-            >
-              {t('Privacy Policy')}
-            </a>
-          )}
-          .
-        </span>
+        {t('I agree to the')}{' '}
+        {hasUserAgreement && (
+          <a
+            href='/user-agreement'
+            target='_blank'
+            rel='noopener noreferrer'
+            className='auth-link'
+            onClick={stopLabelToggle}
+          >
+            {t('Terms of Service')}
+          </a>
+        )}
+        {hasUserAgreement && hasPrivacyPolicy && ` ${t('and')} `}
+        {hasPrivacyPolicy && (
+          <a
+            href='/privacy-policy'
+            target='_blank'
+            rel='noopener noreferrer'
+            className='auth-link'
+            onClick={stopLabelToggle}
+          >
+            {t('Privacy Policy')}
+          </a>
+        )}
+        .
       </Label>
     </div>
   )

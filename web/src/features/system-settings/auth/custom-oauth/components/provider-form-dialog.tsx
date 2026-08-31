@@ -323,7 +323,9 @@ export function ProviderFormDialog(props: ProviderFormDialogProps) {
                     />
                   </FormControl>
                   <FormDescription>
-                    {t('Optional icon identifier for the login button')}
+                    {t(
+                      'Built-in brand key (github, gitlab) or an https:// image URL'
+                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

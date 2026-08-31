@@ -154,13 +154,15 @@ export function TurnstileLoadingPlaceholder({
   return (
     <div
       className={cn(
-        'bg-muted text-muted-foreground flex min-h-[65px] items-center justify-center gap-2 rounded-md border px-3 text-sm',
+        'bg-muted text-muted-foreground flex h-[65px] w-[300px] max-w-full items-center justify-center gap-2 rounded-md border px-3 text-sm',
         className
       )}
       aria-busy='true'
     >
       <Loader2 className='h-4 w-4 shrink-0 animate-spin' />
-      <span>{t('Please wait a moment, human check is initializing...')}</span>
+      <span className='min-w-0 leading-5'>
+        {t('Please wait a moment, human check is initializing...')}
+      </span>
     </div>
   )
 }
@@ -264,11 +266,11 @@ export function Turnstile({
   }, [siteKey, retryToken, unmountWidget])
 
   return (
-    <div className={cn('relative min-h-[65px]', className)}>
+    <div className={cn('relative h-[65px] w-[300px] max-w-full', className)}>
       {loadState === 'loading' ? (
         <div className='bg-muted text-muted-foreground absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-md border px-3 text-sm'>
           <Loader2 className='h-4 w-4 shrink-0 animate-spin' />
-          <span>
+          <span className='min-w-0 leading-5'>
             {t('Please wait a moment, human check is initializing...')}
           </span>
         </div>
@@ -285,7 +287,10 @@ export function Turnstile({
       ) : null}
       <div
         ref={ref}
-        className={cn(loadState !== 'ready' && 'invisible')}
+        className={cn(
+          'flex h-full w-full items-center justify-center',
+          loadState !== 'ready' && 'invisible'
+        )}
         aria-busy={loadState === 'loading'}
       />
     </div>

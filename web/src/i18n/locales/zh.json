@@ -672,6 +672,7 @@
         "Built for developers,": "为开发者打造，",
         "Built-in": "内置",
         "Built-in Device": "内置设备",
+        "Built-in brand key (github, gitlab) or an https:// image URL": "内置品牌标识（github、gitlab）或 https:// 图片地址",
         "Built-in: phone fingerprint/face, or Windows Hello; External: USB security key": "内置：手机指纹/面部，或 Windows Hello；外部：USB 安全密钥",
         "by": "由",
         "By category": "按行业",

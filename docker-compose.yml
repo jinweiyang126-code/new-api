@@ -10,9 +10,9 @@
 #   2. Uncomment the postgres service and PostgreSQL SQL_DSN
 #   3. Switch depends_on / volumes accordingly
 #
-# Source build: uses local Dockerfile (`build: .`) and tags as new-api:local
-# To use the official image instead, remove `build: .` and set:
-#   image: calciumion/new-api:latest
+# Production: pull the prebuilt image from Alibaba Cloud ACR (see
+# docs/installation/aliyun-acr-local-build.md). Do not set `build: .` here,
+# or ECS will compile again. Local source builds use docker-compose.dev.yml.
 #
 # ⚠️  IMPORTANT: Change all default passwords before deploying to production!
 
@@ -20,8 +20,9 @@ version: '3.4' # For compatibility with older Docker versions
 
 services:
   new-api:
-    build: .
-    image: new-api:local
+    image: crpi-4lxuxozna7pfuh5j.ap-southeast-1.personal.cr.aliyuncs.com/new-api-acr/new-api-acr:latest
+    pull_policy: always
+    # build: .  # local/ECS source build; omit so compose only pulls ACR
     container_name: new-api
     restart: always
     command: --log-dir /app/logs

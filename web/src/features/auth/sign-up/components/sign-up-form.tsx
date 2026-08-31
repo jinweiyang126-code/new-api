@@ -342,11 +342,6 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
   }
 
   const handleOpenWeChatDialog = () => {
-    if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(legalConsentErrorMessage)
-      return
-    }
-
     setIsWeChatDialogOpen(true)
   }
 
@@ -436,7 +431,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
               <OAuthProviders
                 status={status}
                 layout='icons'
-                disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+                disabled={isLoading}
                 onWeChatLogin={
                   hasWeChatLogin ? handleOpenWeChatDialog : undefined
                 }
@@ -505,12 +500,11 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
               status={status}
               checked={agreedToLegal}
               onCheckedChange={setAgreedToLegal}
-              variant='sign-up'
             />
 
             <AuthSubmitButton
               type='submit'
-              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+              disabled={isLoading}
             >
               {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
               {t('Continue')}
@@ -535,7 +529,6 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
           onCodeChange={setWeChatCode}
           onConfirm={handleWeChatLogin}
           submitting={isWeChatSubmitting}
-          confirmDisabled={requiresLegalConsent && !agreedToLegal}
         />
       )}
     </AuthCard>
