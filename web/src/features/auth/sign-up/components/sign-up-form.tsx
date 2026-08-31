@@ -378,36 +378,38 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
     }
   }
 
-  if (view === 'turnstile' && showTurnstileSlot) {
-    return (
-      <AuthTurnstileStep
-        key={turnstileWidgetKey}
-        siteKey={turnstileSiteKey}
-        enabled={isTurnstileEnabled}
-        onVerify={handleVerifiedTurnstile}
-        onExpire={() => setTurnstileToken('')}
-      />
-    )
-  }
-
-  if (view === 'verify' && emailVerificationRequired) {
-    return (
-      <AuthEmailVerifyStep
-        email={emailValue || ''}
-        code={verificationCode}
-        onCodeChange={setVerificationCode}
-        onSubmit={submitEmailVerification}
-        onResend={resendVerificationCode}
-        isSubmitting={isLoading}
-        isSending={isSendingCode}
-        secondsLeft={secondsLeft}
-        isResendActive={isActive}
-      />
-    )
-  }
-
   return (
-    <AuthCard className='flex flex-col items-center gap-6'>
+    <>
+      {showTurnstileSlot ? (
+        <AuthTurnstileStep
+          key={turnstileWidgetKey}
+          siteKey={turnstileSiteKey}
+          enabled={isTurnstileEnabled}
+          visible={view === 'turnstile'}
+          onVerify={handleVerifiedTurnstile}
+          onExpire={() => setTurnstileToken('')}
+        />
+      ) : null}
+
+      {view === 'verify' && emailVerificationRequired ? (
+        <AuthEmailVerifyStep
+          email={emailValue || ''}
+          code={verificationCode}
+          onCodeChange={setVerificationCode}
+          onSubmit={submitEmailVerification}
+          onResend={resendVerificationCode}
+          isSubmitting={isLoading}
+          isSending={isSendingCode}
+          secondsLeft={secondsLeft}
+          isResendActive={isActive}
+        />
+      ) : (
+        <AuthCard
+          className={cn(
+            'flex flex-col items-center gap-6',
+            view === 'turnstile' && 'hidden'
+          )}
+        >
       <div className='flex w-full flex-col items-center gap-6'>
         <div className='flex w-full flex-col items-center gap-4'>
           <AuthBrand />
@@ -532,5 +534,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
         />
       )}
     </AuthCard>
+      )}
+    </>
   )
 }

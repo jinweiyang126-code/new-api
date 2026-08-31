@@ -294,19 +294,24 @@ export function UserAuthForm({
     }
   }
 
-  if (view === 'turnstile' && showTurnstileSlot) {
-    return (
-      <AuthTurnstileStep
-        siteKey={turnstileSiteKey}
-        enabled={isTurnstileEnabled}
-        onVerify={handleTurnstileVerify}
-        onExpire={() => setTurnstileToken('')}
-      />
-    )
-  }
-
   return (
-    <AuthCard className='flex flex-col items-center gap-6'>
+    <>
+      {showTurnstileSlot ? (
+        <AuthTurnstileStep
+          siteKey={turnstileSiteKey}
+          enabled={isTurnstileEnabled}
+          visible={view === 'turnstile'}
+          onVerify={handleTurnstileVerify}
+          onExpire={() => setTurnstileToken('')}
+        />
+      ) : null}
+
+      <AuthCard
+        className={cn(
+          'flex flex-col items-center gap-6',
+          view === 'turnstile' && 'hidden'
+        )}
+      >
       <div className='flex w-full flex-col items-center gap-6'>
         <div className='flex w-full flex-col items-center gap-4'>
           <AuthBrand />
@@ -436,5 +441,6 @@ export function UserAuthForm({
         />
       )}
     </AuthCard>
+    </>
   )
 }

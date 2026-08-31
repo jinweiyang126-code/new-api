@@ -119,19 +119,24 @@ export function ForgotPasswordForm({
     }
   }
 
-  if (view === 'turnstile' && showTurnstileSlot) {
-    return (
-      <AuthTurnstileStep
-        siteKey={turnstileSiteKey}
-        enabled={isTurnstileEnabled}
-        onVerify={handleTurnstileVerify}
-        onExpire={() => setTurnstileToken('')}
-      />
-    )
-  }
-
   return (
-    <AuthCard className='flex flex-col items-center gap-6'>
+    <>
+      {showTurnstileSlot ? (
+        <AuthTurnstileStep
+          siteKey={turnstileSiteKey}
+          enabled={isTurnstileEnabled}
+          visible={view === 'turnstile'}
+          onVerify={handleTurnstileVerify}
+          onExpire={() => setTurnstileToken('')}
+        />
+      ) : null}
+
+      <AuthCard
+        className={cn(
+          'flex flex-col items-center gap-6',
+          view === 'turnstile' && 'hidden'
+        )}
+      >
       <div className='flex w-full flex-col items-center gap-4 text-center'>
         <AuthBrand />
         <div className='space-y-2'>
@@ -187,5 +192,6 @@ export function ForgotPasswordForm({
         </Link>
       </p>
     </AuthCard>
+    </>
   )
 }

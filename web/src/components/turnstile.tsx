@@ -22,18 +22,10 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (
-        element: HTMLElement,
-        options: Record<string, unknown>
-      ) => string
-      remove?: (widgetId: string) => void
-      reset?: (widgetId?: string) => void
-    }
-  }
-}
+import {
+  loadTurnstileScript,
+  removeTurnstileScript,
+} from './turnstile-script'
 
 interface TurnstileProps {
   siteKey: string
@@ -45,71 +37,10 @@ interface TurnstileProps {
 
 type LoadState = 'loading' | 'ready' | 'error'
 
-const SCRIPT_ID = 'cf-turnstile'
-const SCRIPT_SRC =
-  'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 const MAX_AUTO_RETRIES = 3
 const RETRY_DELAYS_MS = [1000, 2000, 4000]
 /** After render(), keep our overlay until the widget DOM appears (or timeout). */
 const WIDGET_VISIBLE_TIMEOUT_MS = 8000
-
-function removeTurnstileScript() {
-  const existing = document.getElementById(SCRIPT_ID)
-  if (existing) existing.remove()
-}
-
-function loadTurnstileScript(forceReload = false): Promise<void> {
-  if (typeof window === 'undefined') {
-    return Promise.reject(new Error('window unavailable'))
-  }
-  if (window.turnstile && !forceReload) return Promise.resolve()
-
-  if (forceReload) {
-    removeTurnstileScript()
-    try {
-      delete (window as { turnstile?: unknown }).turnstile
-    } catch {
-      window.turnstile = undefined
-    }
-  }
-
-  const existing = document.getElementById(
-    SCRIPT_ID
-  ) as HTMLScriptElement | null
-  if (existing) {
-    return new Promise((resolve, reject) => {
-      if (window.turnstile) {
-        resolve()
-        return
-      }
-      const onLoad = () => {
-        cleanup()
-        resolve()
-      }
-      const onError = () => {
-        cleanup()
-        reject(new Error('Failed to load Turnstile'))
-      }
-      const cleanup = () => {
-        existing.removeEventListener('load', onLoad)
-        existing.removeEventListener('error', onError)
-      }
-      existing.addEventListener('load', onLoad)
-      existing.addEventListener('error', onError)
-    })
-  }
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.id = SCRIPT_ID
-    script.src = SCRIPT_SRC
-    script.async = true
-    script.defer = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Failed to load Turnstile'))
-    document.head.appendChild(script)
-  })
-}
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

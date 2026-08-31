@@ -17,9 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import i18next from 'i18next'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { preloadTurnstileScript } from '@/components/turnstile-script'
 import { useStatus } from '@/hooks/use-status'
 
 /**
@@ -39,6 +40,13 @@ export function useTurnstile() {
   const turnstileReady =
     !isTurnstileStatusPending &&
     (!isTurnstileEnabled || Boolean(turnstileToken))
+
+  useEffect(() => {
+    if (!showTurnstileSlot) return
+    void preloadTurnstileScript().catch(() => {
+      /* Widget mount retries the script load. */
+    })
+  }, [showTurnstileSlot])
 
   /**
    * Validate if turnstile is ready when required
