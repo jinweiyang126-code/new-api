@@ -1,0 +1,6 @@
+# Maps local-source backend to :3001 so web/.env.development proxy keeps working
+# while rsbuild stays on :3000.
+services:
+  new-api:
+    ports:
+      - "3001:3000"

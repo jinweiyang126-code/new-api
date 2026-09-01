@@ -19,8 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import glowLeft from '@/assets/pricing/glow-left.svg'
-import glowRight from '@/assets/pricing/glow-right.svg'
 import {
   PublicLayout,
   useLandingPublicLayoutProps,
@@ -169,20 +167,8 @@ export function Pricing() {
       <div className='relative overflow-hidden'>
         <div
           aria-hidden
-          className='pointer-events-none absolute inset-x-0 top-0 h-[520px] overflow-hidden'
-        >
-          <img
-            src={glowLeft}
-            alt=''
-            className='absolute -top-24 -left-16 h-[420px] w-auto max-w-none opacity-80 dark:opacity-100'
-          />
-          <img
-            src={glowRight}
-            alt=''
-            className='absolute -top-16 -right-8 h-[320px] w-auto max-w-none opacity-70 dark:opacity-100'
-          />
-          <div className='absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background' />
-        </div>
+          className='landing-glow pointer-events-none absolute inset-x-0 top-0 h-[520px]'
+        />
 
         <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-6 max-w-3xl pt-6 text-center sm:mb-10 sm:pt-10'>

@@ -190,7 +190,7 @@ export function OAuthProviders({
                     onClick={onClick}
                     aria-label={label}
                     title={label}
-                    className='bg-secondary h-10 min-w-0 flex-1 rounded-xl border-border shadow-none [&_svg]:size-[18px] [&_img]:size-[18px]'
+                    className='h-10 min-w-0 flex-1 rounded-[12px] border-[#2E2E2E] bg-white text-foreground shadow-none hover:bg-white/90 dark:bg-[#1e1e1e] dark:hover:bg-[#1e1e1e]/90 [&_svg]:size-[18px] [&_img]:size-[18px]'
                   >
                     {icon ?? (
                       <span
@@ -220,7 +220,7 @@ export function OAuthProviders({
                     type='button'
                     disabled={disabled || isLoading || extraDisabled}
                     onClick={onClick}
-                    className='h-11 w-full justify-center gap-2 rounded-lg'
+                    className='h-11 w-full justify-center gap-2 rounded-[12px] border-[#2E2E2E] bg-white text-foreground shadow-none hover:bg-white/90 dark:bg-[#1e1e1e] dark:hover:bg-[#1e1e1e]/90'
                   >
                     {icon}
                     {label}

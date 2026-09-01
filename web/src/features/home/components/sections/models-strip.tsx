@@ -24,65 +24,162 @@ import Gemini from '@lobehub/icons/es/Gemini'
 import Github from '@lobehub/icons/es/Github'
 import OpenAI from '@lobehub/icons/es/OpenAI'
 import Qwen from '@lobehub/icons/es/Qwen'
-import { Box } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ComponentType } from 'react'
 
 import { AnimateInView } from '@/components/animate-in-view'
 import { cn } from '@/lib/utils'
 
+import { IconCursorCube } from '../landing-figma-icons'
+
 type IconComponent = ComponentType<{ size?: number; className?: string }>
 
 type IconItem = {
   Icon: IconComponent
   label: string
-  /** Desktop arc offset — higher = lower on curve */
-  arc: 'high' | 'mid' | 'low'
+  /** Figma arc offset from the highest tile in the row */
+  offsetY: number
   custom?: 'cursor'
 }
 
+/** Figma Hero Compatible models — tops 348 / 366 / 399 → offsets 0 / 18 / 51 */
 const MODEL_ITEMS: IconItem[] = [
-  { Icon: Qwen.Color ?? Qwen, label: 'Qwen', arc: 'low' },
-  { Icon: Gemini.Color ?? Gemini, label: 'Gemini', arc: 'mid' },
-  { Icon: Claude.Color ?? Claude, label: 'Claude', arc: 'high' },
-  { Icon: OpenAI, label: 'OpenAI', arc: 'high' },
-  { Icon: DeepSeek.Color ?? DeepSeek, label: 'DeepSeek', arc: 'mid' },
-  { Icon: Doubao.Color ?? Doubao, label: 'Doubao', arc: 'low' },
+  { Icon: Qwen.Color ?? Qwen, label: 'Qwen', offsetY: 51 },
+  { Icon: Gemini.Color ?? Gemini, label: 'Gemini', offsetY: 18 },
+  { Icon: Claude.Color ?? Claude, label: 'Claude', offsetY: 0 },
+  { Icon: OpenAI, label: 'OpenAI', offsetY: 0 },
+  { Icon: DeepSeek.Color ?? DeepSeek, label: 'DeepSeek', offsetY: 18 },
+  { Icon: Doubao.Color ?? Doubao, label: 'Doubao', offsetY: 51 },
 ]
 
+/** Figma apps — tops 594 / 603 / 629 → offsets 0 / 9 / 35 */
 const APP_ITEMS: IconItem[] = [
-  { Icon: Github, label: 'GitHub Copilot', arc: 'low' },
-  { Icon: Claude.Color ?? Claude, label: 'Claude Code', arc: 'mid' },
-  { Icon: OpenAI, label: 'Cursor', arc: 'high', custom: 'cursor' },
-  { Icon: OpenAI, label: 'Codex', arc: 'mid' },
-  { Icon: Cline, label: 'Cline', arc: 'low' },
+  { Icon: Github, label: 'GitHub Copilot', offsetY: 35 },
+  { Icon: Claude.Color ?? Claude, label: 'Claude Code', offsetY: 9 },
+  { Icon: OpenAI, label: 'Cursor', offsetY: 0, custom: 'cursor' },
+  { Icon: OpenAI, label: 'Codex', offsetY: 9 },
+  { Icon: Cline, label: 'Cline', offsetY: 35 },
 ]
 
-const ARC_CLASS: Record<IconItem['arc'], string> = {
-  high: 'md:mt-0',
-  mid: 'md:mt-4',
-  low: 'md:mt-10',
+const TILE = 64
+/** Figma spacing between tile left edges is 184 → gap = 120 */
+const TILE_GAP = 120
+/** How far the dashed arc continues past the end icons (bezier t). Keep short to avoid scroll. */
+const ARC_OVERSHOOT_T = 0.05
+
+function quadPoint(
+  t: number,
+  p0: { x: number; y: number },
+  c: { x: number; y: number },
+  p2: { x: number; y: number }
+) {
+  const mt = 1 - t
+  return {
+    x: mt * mt * p0.x + 2 * mt * t * c.x + t * t * p2.x,
+    y: mt * mt * p0.y + 2 * mt * t * c.y + t * t * p2.y,
+  }
+}
+
+/** Smooth Figma arc through end-icon centers, extended past both sides. */
+function figmaArcPath(args: {
+  p0: { x: number; y: number }
+  p2: { x: number; y: number }
+  peakY: number
+}) {
+  const c = {
+    x: (args.p0.x + args.p2.x) / 2,
+    y: 2 * args.peakY - args.p0.y,
+  }
+  const t0 = -ARC_OVERSHOOT_T
+  const t1 = 1 + ARC_OVERSHOOT_T
+  const steps = 24
+  const parts: string[] = []
+  for (let i = 0; i <= steps; i++) {
+    const t = t0 + ((t1 - t0) * i) / steps
+    const p = quadPoint(t, args.p0, c, args.p2)
+    parts.push(`${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+  }
+  const start = quadPoint(t0, args.p0, c, args.p2)
+  const end = quadPoint(t1, args.p0, c, args.p2)
+  return { d: parts.join(' '), start, end }
 }
 
 function BrandTile(props: IconItem) {
   const Icon = props.Icon
   return (
     <div
-      className={cn(
-        'flex w-16 flex-col items-center gap-3 sm:w-[4.5rem]',
-        ARC_CLASS[props.arc]
-      )}
+      className='flex w-16 shrink-0 flex-col items-center gap-4'
+      style={{ transform: `translateY(${props.offsetY}px)` }}
     >
-      <div className='border-border bg-card flex size-14 items-center justify-center rounded-xl border sm:size-16'>
+      <div
+        className={cn(
+          'bg-card relative z-[1] flex size-16 items-center justify-center rounded-[12px] border',
+          'border-[color:var(--border)] shadow-[var(--landing-tile-shadow)]'
+        )}
+      >
         {props.custom === 'cursor' ? (
-          <Box className='text-foreground size-7' strokeWidth={1.5} />
+          <IconCursorCube className='text-foreground size-7' />
         ) : (
           <Icon size={32} />
         )}
       </div>
-      <p className='text-foreground text-center text-xs leading-snug sm:text-sm'>
+      <p className='text-foreground relative z-[1] text-center text-base leading-none whitespace-nowrap'>
         {props.label}
       </p>
+    </div>
+  )
+}
+
+function BrandArc(props: {
+  items: IconItem[]
+  className?: string
+  /** Extra bottom padding so translateY tiles aren't clipped */
+  padBottom: number
+}) {
+  const maxOffset = Math.max(...props.items.map((item) => item.offsetY), 0)
+  const minOffset = Math.min(...props.items.map((item) => item.offsetY), 0)
+  const width =
+    props.items.length * TILE + Math.max(props.items.length - 1, 0) * TILE_GAP
+
+  const p0 = { x: TILE / 2, y: maxOffset + TILE / 2 }
+  const p2 = { x: width - TILE / 2, y: maxOffset + TILE / 2 }
+  const peakY = minOffset + TILE / 2
+  const { d, start, end } = figmaArcPath({ p0, p2, peakY })
+
+  const svgLeft = Math.min(0, start.x)
+  const svgRight = Math.max(width, end.x)
+  const svgWidth = svgRight - svgLeft
+  const svgTop = Math.min(0, start.y, end.y, peakY)
+  const svgBottom = Math.max(TILE + maxOffset, start.y, end.y) + 1
+  const svgHeight = svgBottom - svgTop
+
+  return (
+    <div
+      className={cn('relative mx-auto', props.className)}
+      style={{ width, paddingBottom: props.padBottom }}
+    >
+      <svg
+        aria-hidden
+        className='pointer-events-none absolute overflow-visible'
+        style={{ left: svgLeft, top: svgTop, width: svgWidth, height: svgHeight }}
+        width={svgWidth}
+        height={svgHeight}
+        viewBox={`${svgLeft} ${svgTop} ${svgWidth} ${svgHeight}`}
+        fill='none'
+      >
+        <path
+          d={d}
+          stroke='var(--border)'
+          strokeWidth={1}
+          strokeDasharray='3 5'
+          strokeLinecap='butt'
+        />
+      </svg>
+      <div className='relative flex flex-nowrap items-start justify-center gap-[120px]'>
+        {props.items.map((item) => (
+          <BrandTile key={item.label} {...item} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -97,36 +194,29 @@ export function ModelsStrip() {
         className='pointer-events-none absolute inset-x-0 top-1/3 -z-10 mx-auto h-[60%] max-w-5xl rounded-[100%] bg-[radial-gradient(ellipse_at_center,rgba(123,80,227,0.08),transparent_70%)]'
       />
 
-      <div className='mx-auto max-w-5xl'>
-        <AnimateInView className='mb-6 text-center md:mb-8'>
-          <p className='text-muted-foreground mb-3 text-sm uppercase'>
+      <div className='mx-auto max-w-[1200px]'>
+        <AnimateInView className='mb-10 text-center md:mb-12'>
+          <p className='text-muted-foreground mb-4 text-sm uppercase'>
             {t('Compatible models')}
           </p>
-          <h2 className='text-foreground text-[clamp(1.75rem,4vw,2.875rem)] leading-tight font-semibold tracking-[-0.02em]'>
+          <h2 className='text-foreground text-[clamp(1.75rem,4vw,46px)] leading-[1.13] font-semibold tracking-[-0.02em]'>
             {t('One protocol')}
           </h2>
-          <p className='text-muted-foreground mx-auto mt-4 max-w-md text-sm'>
+          <p className='text-muted-foreground mx-auto mt-5 max-w-[488px] text-base whitespace-nowrap max-sm:whitespace-normal'>
             {t('Models from OpenAI, Claude, Gemini, DeepSeek, Qwen, and more')}
           </p>
         </AnimateInView>
 
-        <AnimateInView
-          delay={80}
-          className='flex flex-wrap items-start justify-center gap-x-6 gap-y-8 sm:gap-x-10 md:gap-x-14'
-        >
-          {MODEL_ITEMS.map((item) => (
-            <BrandTile key={item.label} {...item} />
-          ))}
+        <AnimateInView delay={80} className='overflow-x-hidden pb-2'>
+          <BrandArc items={MODEL_ITEMS} padBottom={51} />
         </AnimateInView>
 
         <AnimateInView delay={140} className='mt-14 md:mt-16'>
-          <p className='text-muted-foreground mb-8 text-center text-sm capitalize'>
+          <p className='text-muted-foreground mb-10 text-center text-sm capitalize'>
             {t('Supported Applications')}
           </p>
-          <div className='flex flex-wrap items-start justify-center gap-x-6 gap-y-8 sm:gap-x-10 md:gap-x-14'>
-            {APP_ITEMS.map((item) => (
-              <BrandTile key={item.label} {...item} />
-            ))}
+          <div className='overflow-x-hidden pb-2'>
+            <BrandArc items={APP_ITEMS} padBottom={35} />
           </div>
         </AnimateInView>
       </div>

@@ -165,7 +165,7 @@ export function ForgotPasswordForm({
                 <AuthFieldLabel label={t('Email')} />
                 <FormControl>
                   <AuthTextField
-                    placeholder={t('Email')}
+                    placeholder={t('Enter your email address')}
                     type='email'
                     autoComplete='email'
                     {...field}

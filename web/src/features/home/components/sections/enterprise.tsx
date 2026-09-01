@@ -17,28 +17,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import {
-  ArrowRight,
-  Building2,
-  Check,
-  Layers,
-  Shield,
-  ShieldCheck,
-  Wallet,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { AnimateInView } from '@/components/animate-in-view'
 import { Button } from '@/components/ui/button'
+import { LANDING_LOGO_MARK_SRC } from '@/features/home/lib/landing-brand'
+
+import {
+  IconFeatureAccess,
+  IconFeatureCost,
+  IconFeatureReliability,
+  IconFigmaCheckBadge,
+  IconLayers,
+  IconVerify,
+} from '../landing-figma-icons'
 
 interface EnterpriseProps {
   isAuthenticated?: boolean
-  onContactClick?: () => void
 }
 
 const FEATURE_CARDS = [
   {
-    icon: Shield,
+    icon: IconFeatureReliability,
     title: 'Enterprise Grade Reliability',
     bullets: [
       'Complete monitoring system for approved AI model traffic',
@@ -47,21 +48,21 @@ const FEATURE_CARDS = [
     ],
   },
   {
-    icon: Wallet,
-    title: 'Cost Governance Without Chaos',
-    bullets: [
-      'Customer-level budgets, prepaid balances, and approval thresholds',
-      'Usage ledgers that connect consumption to billing and settlement',
-      'Cost review workflows that prevent runaway spend before it happens',
-    ],
-  },
-  {
-    icon: ShieldCheck,
+    icon: IconFeatureAccess,
     title: 'Access Controls for Every Customer',
     bullets: [
       'Per-customer budgets, model permissions, and workspace policies',
       'Rate limits, allowlists, prepaid balances, and approval workflows',
       'Operational support for onboarding, exceptions, and incident review',
+    ],
+  },
+  {
+    icon: IconFeatureCost,
+    title: 'Cost Governance Without Chaos',
+    bullets: [
+      'Customer-level budgets, prepaid balances, and approval thresholds',
+      'Usage ledgers that connect consumption to billing and settlement',
+      'Cost review workflows that prevent runaway spend before it happens',
     ],
   },
 ] as const
@@ -83,7 +84,7 @@ export function Enterprise(props: EnterpriseProps) {
           <h2 className='text-foreground text-[clamp(1.75rem,4vw,2.875rem)] leading-tight font-semibold tracking-[-0.02em]'>
             {t('Customers and workspaces')}
           </h2>
-          <p className='text-muted-foreground mx-auto mt-4 max-w-2xl text-base md:text-xl'>
+          <p className='text-muted-foreground mx-auto mt-4 max-w-2xl text-base md:text-base'>
             {t(
               'For companies that need isolation, shared budgets, and team collaboration.'
             )}
@@ -96,15 +97,6 @@ export function Enterprise(props: EnterpriseProps) {
               {primaryLabel}
               <ArrowRight className='ml-1.5 size-5 transition-transform duration-200 group-hover:translate-x-0.5' />
             </Button>
-            {props.onContactClick ? (
-              <Button
-                variant='outline'
-                className='border-border text-foreground hover:bg-muted/40 h-12 rounded-full px-8 text-base font-semibold sm:h-14 sm:text-lg'
-                onClick={props.onContactClick}
-              >
-                {t('Get in Touch')}
-              </Button>
-            ) : null}
           </div>
         </AnimateInView>
 
@@ -112,12 +104,23 @@ export function Enterprise(props: EnterpriseProps) {
           <div className='border-border bg-card overflow-hidden rounded-[20px] border'>
             <div className='grid lg:grid-cols-12'>
               <div className='border-border flex flex-col items-center gap-5 px-6 py-10 md:px-10 lg:col-span-5 lg:border-r'>
-                <div className='border-border bg-background flex size-[50px] items-center justify-center rounded-xl border'>
-                  <Building2 className='text-primary size-6' />
+                <div className='border-border bg-background flex size-[50px] items-center justify-center rounded-[12px] border p-3'>
+                  <img
+                    src={LANDING_LOGO_MARK_SRC}
+                    alt=''
+                    className='size-6 object-contain'
+                    decoding='async'
+                  />
                 </div>
                 <div className='bg-border h-8 w-px' />
-                <div className='border-border bg-card flex w-full max-w-sm items-center gap-3 rounded-xl border px-4 py-3'>
-                  <ShieldCheck className='text-primary size-5 shrink-0' />
+                <div
+                  className='flex w-full max-w-sm items-center gap-3 rounded-[12px] border px-4 py-3'
+                  style={{
+                    backgroundColor: 'var(--landing-org-bg)',
+                    borderColor: 'var(--landing-org-border)',
+                  }}
+                >
+                  <IconVerify className='size-5 shrink-0 text-[#33b1ff]' />
                   <div>
                     <p className='text-foreground text-sm font-semibold'>
                       {t('Organization')}
@@ -132,9 +135,9 @@ export function Enterprise(props: EnterpriseProps) {
                   {['A', 'B'].map((id) => (
                     <div
                       key={id}
-                      className='border-border bg-background flex items-center gap-2 rounded-xl border px-3 py-3'
+                      className='border-border bg-background flex items-center gap-2 rounded-[12px] border px-3 py-3'
                     >
-                      <Layers className='text-muted-foreground size-4 shrink-0' />
+                      <IconLayers className='text-muted-foreground size-4 shrink-0' />
                       <div>
                         <p className='text-foreground text-sm font-semibold'>
                           {t('Workspace')} {id}
@@ -150,11 +153,11 @@ export function Enterprise(props: EnterpriseProps) {
 
               <div className='flex flex-col justify-center gap-8 px-6 py-10 md:px-10 lg:col-span-7'>
                 <div>
-                  <ShieldCheck className='mb-3 size-6 text-sky-400' />
+                  <IconVerify className='mb-3 size-6 text-[#33b1ff]' />
                   <h3 className='text-foreground text-base font-semibold'>
                     {t('Organization')}
                   </h3>
-                  <p className='text-muted-foreground mt-2 text-sm leading-relaxed'>
+                  <p className='text-muted-foreground mt-2 text-base leading-relaxed'>
                     {t(
                       'A contracted tenant. We open the account and top up the pool. Customer admins create workspaces, invite members, and allocate quota. Optional dedicated upstream or BYOK.'
                     )}
@@ -162,11 +165,11 @@ export function Enterprise(props: EnterpriseProps) {
                 </div>
                 <div className='border-border border-t' />
                 <div>
-                  <Layers className='text-muted-foreground mb-3 size-6' />
+                  <IconLayers className='text-muted-foreground mb-3 size-6' />
                   <h3 className='text-foreground text-base font-semibold'>
                     {t('Workspace')}
                   </h3>
-                  <p className='text-muted-foreground mt-2 text-sm leading-relaxed'>
+                  <p className='text-muted-foreground mt-2 text-base leading-relaxed'>
                     {t(
                       'A business line or environment. Members issue workspace tokens. Calls deduct the workspace pool only — never the personal wallet.'
                     )}
@@ -181,7 +184,7 @@ export function Enterprise(props: EnterpriseProps) {
           <h2 className='text-foreground mx-auto max-w-2xl text-[clamp(1.75rem,4vw,2.875rem)] leading-tight font-semibold tracking-[-0.02em]'>
             {t('Enterprise-grade AI governance & control')}
           </h2>
-          <p className='text-muted-foreground mx-auto mt-4 max-w-3xl text-sm leading-relaxed md:text-base'>
+          <p className='text-muted-foreground mx-auto mt-4 max-w-3xl text-base leading-relaxed'>
             {t(
               'Take full control of your AI infrastructure with comprehensive traffic monitoring, proactive cost management, audit-ready compliance frameworks, and granular per-customer access policies.'
             )}
@@ -192,8 +195,8 @@ export function Enterprise(props: EnterpriseProps) {
           {FEATURE_CARDS.map((card, index) => (
             <AnimateInView key={card.title} delay={140 + index * 60}>
               <div className='border-border bg-card flex h-full flex-col gap-6 rounded-[20px] border p-8'>
-                <div className='border-border bg-background flex size-12 items-center justify-center rounded-full border'>
-                  <card.icon className='text-foreground size-5' />
+                <div className='bg-background flex size-12 items-center justify-center rounded-full border border-[#e8e8e8] dark:border-border'>
+                  <card.icon className='text-muted-foreground size-5' />
                 </div>
                 <div>
                   <h3 className='text-foreground mb-6 text-lg font-medium capitalize'>
@@ -203,9 +206,9 @@ export function Enterprise(props: EnterpriseProps) {
                     {card.bullets.map((bullet) => (
                       <li
                         key={bullet}
-                        className='text-muted-foreground flex gap-2 text-sm leading-snug'
+                        className='text-muted-foreground flex gap-2 text-base leading-snug'
                       >
-                        <Check className='mt-0.5 size-3.5 shrink-0 text-sky-400' />
+                        <IconFigmaCheckBadge className='mt-0.5 size-3.5 shrink-0 text-[#33b1ff]' />
                         <span>{t(bullet)}</span>
                       </li>
                     ))}

@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ChevronRight, Copy } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { memo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -89,15 +89,13 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     : null
 
   const primaryGroup = groups[0]
-  const bottomTags = [
+  const bottomTagPool = [
     props.model.vendor_name,
-    ...endpoints.slice(0, 1),
-    ...tags.slice(0, 2),
+    ...endpoints,
+    ...tags,
   ].filter(Boolean) as string[]
-  const hiddenCount =
-    Math.max(groups.length - 1, 0) +
-    Math.max(endpoints.length - 1, 0) +
-    Math.max(tags.length - 2, 0)
+  const bottomTags = bottomTagPool.slice(0, 3)
+  const hiddenCount = Math.max(bottomTagPool.length - 3, 0)
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -208,13 +206,23 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
 
   return (
     <div
+      role='button'
+      tabIndex={0}
+      onClick={props.onClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          props.onClick()
+        }
+      }}
       className={cn(
-        'group border-border/80 bg-card/40 relative flex min-h-[200px] flex-col rounded-[20px] border p-[19px] transition-colors',
-        'hover:bg-muted/20'
+        'group relative flex min-h-[230px] cursor-pointer flex-col rounded-[20px] border border-[#e8e8e8] bg-white p-[19px] transition-colors',
+        'hover:bg-[#f9f9f9]',
+        'dark:border-border/80 dark:bg-card/40 dark:hover:border-border dark:hover:bg-muted/20'
       )}
     >
       <div className='flex items-start gap-3'>
-        <div className='bg-muted/50 flex size-[30px] shrink-0 items-center justify-center rounded-full p-[5px]'>
+        <div className='flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] p-[5px] dark:bg-muted/50'>
           {modelIcon || (
             <span className='text-muted-foreground text-xs font-bold'>
               {initial}
@@ -227,24 +235,14 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             <h3 className='text-foreground truncate text-sm leading-tight font-semibold'>
               {props.model.model_name}
             </h3>
-            <div className='flex shrink-0 items-center gap-1.5'>
-              <button
-                type='button'
-                onClick={props.onClick}
-                className='border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex h-7 items-center gap-0.5 rounded-full border py-0.5 pr-1 pl-2 text-[11px] transition-colors'
-              >
-                {t('Details')}
-                <ChevronRight className='size-3.5' />
-              </button>
-              <button
-                type='button'
-                onClick={handleCopy}
-                className='border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-full border p-1.5 transition-colors'
-                title={t('Copy')}
-              >
-                <Copy className='size-3.5' />
-              </button>
-            </div>
+            <button
+              type='button'
+              onClick={handleCopy}
+              className='border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-full border p-1.5 opacity-0 transition-all group-hover:opacity-100'
+              title={t('Copy')}
+            >
+              <Copy className='size-3.5' />
+            </button>
           </div>
 
           <div className='mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs'>
@@ -262,14 +260,14 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           {primaryGroup ? (
             <span className='text-muted-foreground'>{primaryGroup}</span>
           ) : null}
-          <span className='text-sky-500 dark:text-[#33b1ff]'>
+          <span className='text-[#33b1ff]'>
             {billingLabel(props.model, t)}
           </span>
         </div>
 
         <div className='flex shrink-0 flex-col items-end gap-1'>
           <ModelPerfBadge perf={props.perf} className='self-end' />
-          <div className='text-muted-foreground/70 flex max-w-[220px] flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[10px]'>
+          <div className='text-[#919191] flex max-w-[220px] flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[10px] dark:text-muted-foreground/70'>
             {bottomTags.map((item) => (
               <span key={item}>{item}</span>
             ))}

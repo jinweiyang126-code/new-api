@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 const fieldClass =
-  'h-11 rounded-xl border-border bg-input px-3 text-sm shadow-none md:text-sm'
+  'h-11 rounded-[12px] border-border bg-input px-3 text-sm shadow-none md:text-sm focus-visible:border-[#A3A3A3] focus-visible:ring-0 focus-visible:ring-offset-0'
 
 type AuthTextFieldProps = React.ComponentProps<typeof Input> & {
   icon?: ReactNode

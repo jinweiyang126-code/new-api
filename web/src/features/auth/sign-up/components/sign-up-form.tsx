@@ -32,7 +32,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
-import { login, register, wechatLoginByCode } from '@/features/auth/api'
+import { login, register, wechatLoginByCode, checkEmailAvailable } from '@/features/auth/api'
 import { AuthBrand } from '@/features/auth/components/auth-brand'
 import { AuthCard } from '@/features/auth/components/auth-card'
 import { AuthEmailVerifyStep } from '@/features/auth/components/auth-email-verify-step'
@@ -50,6 +50,7 @@ import { registerFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useEmailVerification } from '@/features/auth/hooks/use-email-verification'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
+import { useAuthChrome } from '@/features/auth/lib/auth-chrome-context'
 import { setSignupOnboardingPending } from '@/features/auth/lib/signup-onboarding'
 import {
   getAffiliateCode,
@@ -83,6 +84,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
   const { status } = useStatus()
+  const { setAction: setAuthChromeAction } = useAuthChrome()
   const {
     isTurnstileEnabled,
     showTurnstileSlot,
@@ -128,6 +130,45 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
   const isInviteSignup = Boolean(invite?.trim())
   const shouldOnboardAfterSignup =
     customerSelfRegisterEnabled && !isInviteSignup
+
+  const goBackToForm = useCallback(() => {
+    setView('form')
+    setPendingAction(null)
+  }, [])
+
+  useEffect(() => {
+    if (view === 'verify') {
+      setAuthChromeAction({
+        label: t('Back'),
+        onClick: goBackToForm,
+      })
+      return () => setAuthChromeAction(null)
+    }
+    setAuthChromeAction(null)
+    return () => setAuthChromeAction(null)
+  }, [view, setAuthChromeAction, t, goBackToForm])
+
+  async function ensureEmailAvailable(email: string) {
+    const trimmed = email.trim()
+    if (!trimmed) return true
+    try {
+      const res = await checkEmailAvailable(trimmed)
+      if (res?.success && res.data?.available === false) {
+        form.setError('email', {
+          type: 'manual',
+          message: t('Email address is already in use'),
+        })
+        return false
+      }
+      if (res?.success) {
+        form.clearErrors('email')
+      }
+      return true
+    } catch {
+      // Network errors should not block signup; register/send-code still validates.
+      return true
+    }
+  }
 
   const wechatQrCodeUrl = useMemo(() => {
     return (
@@ -279,6 +320,9 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
         toast.error(t('Please enter your email'))
         return
       }
+      if (!(await ensureEmailAvailable(data.email))) {
+        return
+      }
       if (!verificationCode) {
         if (showTurnstileSlot && !turnstileToken) {
           setPendingAction('send-code')
@@ -317,18 +361,20 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
     }
   }
 
-  function submitEmailVerification() {
-    if (!verificationCode) {
+  function submitEmailVerification(code: string) {
+    const trimmed = code.trim()
+    if (!trimmed) {
       toast.error(t('Please enter the verification code'))
       return
     }
+    setVerificationCode(trimmed)
     if (showTurnstileSlot && !turnstileToken) {
       setPendingAction('register')
       setView('turnstile')
       return
     }
     if (!validateTurnstile()) return
-    void performRegister(form.getValues(), verificationCode)
+    void performRegister(form.getValues(), trimmed)
   }
 
   function resendVerificationCode() {
@@ -398,6 +444,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
           onCodeChange={setVerificationCode}
           onSubmit={submitEmailVerification}
           onResend={resendVerificationCode}
+          onEditEmail={goBackToForm}
           isSubmitting={isLoading}
           isSending={isSendingCode}
           secondsLeft={secondsLeft}
@@ -449,7 +496,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
                   <AuthFieldLabel label={t('User name')} />
                   <FormControl>
                     <AuthTextField
-                      placeholder={t('User name')}
+                      placeholder={t('Enter your user name')}
                       autoComplete='username'
                       {...field}
                     />
@@ -468,10 +515,17 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
                     <AuthFieldLabel label={t('Email')} />
                     <FormControl>
                       <AuthTextField
-                        placeholder={t('Email')}
+                        placeholder={t('Enter your email address')}
                         type='email'
                         autoComplete='email'
                         {...field}
+                        onBlur={async (event) => {
+                          field.onBlur()
+                          const value = event.target.value
+                          if (value?.trim()) {
+                            await ensureEmailAvailable(value)
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -488,7 +542,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
                   <AuthFieldLabel label={t('Password')} />
                   <FormControl>
                     <AuthPasswordField
-                      placeholder={t('Enter password')}
+                      placeholder={t('Create a password')}
                       autoComplete='new-password'
                       {...field}
                     />

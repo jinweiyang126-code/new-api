@@ -124,10 +124,10 @@ export function Features(_props: FeaturesProps) {
             >
               <Link
                 to={card.href}
-                className='border-border/40 bg-muted/10 hover:bg-muted/20 group flex h-full flex-col rounded-2xl border p-7 transition-colors md:p-8'
+                className='border-border bg-card hover:bg-muted/30 group flex h-full flex-col rounded-[20px] border p-7 transition-colors md:p-8'
               >
                 <div className='mb-6 flex items-center justify-between gap-3'>
-                  <span className='border-border/40 bg-background text-foreground/80 flex size-11 items-center justify-center rounded-xl border'>
+                  <span className='border-border bg-background text-muted-foreground flex size-11 items-center justify-center rounded-[12px] border'>
                     {card.icon}
                   </span>
                   <ArrowUpRight className='text-muted-foreground/40 group-hover:text-foreground size-4 transition-colors' />

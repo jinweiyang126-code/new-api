@@ -28,7 +28,7 @@ export function AuthSubmitButton({
   return (
     <Button
       className={cn(
-        'h-11 w-full rounded-xl text-sm font-semibold shadow-none',
+        'h-11 w-full rounded-full text-sm font-semibold shadow-none',
         className
       )}
       {...props}

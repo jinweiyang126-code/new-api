@@ -17,13 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import {
-  Check,
   ChevronDown,
-  Layers,
   RotateCcw,
-  Tag,
-  Users,
-  Waypoints,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -46,6 +41,13 @@ import {
 } from '../constants'
 import { parseTags } from '../lib/filters'
 import type { PricingModel, PricingVendor } from '../types'
+import {
+  FilterIconEndpointType,
+  FilterIconGroups,
+  FilterIconPricingType,
+  FilterIconTags,
+  FilterIconVendors,
+} from './filter-section-icons'
 
 type FilterOption = {
   value: string
@@ -123,11 +125,27 @@ function FilterRow(props: {
           'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
           props.active
             ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-border bg-background'
+            : 'border-[#dbdbdb] bg-[#fdfdfd] dark:border-border dark:bg-background'
         )}
         aria-hidden
       >
-        {props.active ? <Check className='size-2.5 stroke-[3]' /> : null}
+        {props.active ? (
+          <svg
+            viewBox='0 0 11 8'
+            width='10'
+            height='8'
+            fill='none'
+            aria-hidden
+          >
+            <path
+              d='M9.90765 0.857143L3.68543 7.07937L0.857143 4.25108'
+              stroke='currentColor'
+              strokeWidth='1.71429'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            />
+          </svg>
+        ) : null}
       </span>
       {props.option.icon ? (
         <span className='shrink-0'>{props.option.icon}</span>
@@ -153,8 +171,10 @@ function FilterSection(props: FilterSectionProps) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const preview = props.collapsedPreview ?? 0
-  const needsMore =
-    preview > 0 && props.options.length > preview && !expanded
+  // Show all options when count is small (<=6); otherwise collapse to preview (default 4)
+  const shouldCollapse =
+    preview > 0 && props.options.length > Math.max(preview, 6)
+  const needsMore = shouldCollapse && !expanded
   const visibleOptions = needsMore
     ? props.options.slice(0, preview)
     : props.options
@@ -288,7 +308,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
   return (
     <aside
       className={cn(
-        'border-border/80 rounded-[20px] border p-5',
+        'rounded-[20px] border border-[#e8e8e8] bg-white p-5 dark:border-border/80 dark:bg-transparent',
         props.className
       )}
     >
@@ -317,14 +337,15 @@ export function PricingSidebar(props: PricingSidebarProps) {
       <div className='space-y-3'>
         <FilterSection
           title={t('Groups')}
-          icon={<Users className='size-4' />}
+          icon={<FilterIconGroups className='size-4' />}
           value={props.groupFilter}
           options={groupOptions}
           onChange={props.onGroupChange}
+          collapsedPreview={4}
         />
         <FilterSection
           title={t('Vendors')}
-          icon={<Layers className='size-4' />}
+          icon={<FilterIconVendors className='size-4' />}
           value={props.vendorFilter}
           options={vendorOptions}
           onChange={props.onVendorChange}
@@ -332,27 +353,30 @@ export function PricingSidebar(props: PricingSidebarProps) {
         />
         <FilterSection
           title={t('Model Tags')}
-          icon={<Tag className='size-4' />}
+          icon={<FilterIconTags className='size-4' />}
           value={props.tagFilter}
           options={tagOptions}
           onChange={props.onTagChange}
           defaultOpen={false}
+          collapsedPreview={4}
         />
         <FilterSection
           title={t('Pricing Type')}
-          icon={<Waypoints className='size-4' />}
+          icon={<FilterIconPricingType className='size-4' />}
           value={props.quotaTypeFilter}
           options={quotaOptions}
           onChange={props.onQuotaTypeChange}
           defaultOpen={false}
+          collapsedPreview={4}
         />
         <FilterSection
           title={t('Endpoint Type')}
-          icon={<Waypoints className='size-4' />}
+          icon={<FilterIconEndpointType className='size-4' />}
           value={props.endpointTypeFilter}
           options={endpointOptions}
           onChange={props.onEndpointTypeChange}
           defaultOpen={false}
+          collapsedPreview={4}
         />
       </div>
     </aside>

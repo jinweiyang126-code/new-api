@@ -194,24 +194,21 @@ function LandingFooter(props: FooterProps) {
   return (
     <footer className={cn('relative z-10', props.className)}>
       <div className='mx-auto max-w-[1200px] px-6 pt-16 pb-16 md:pt-[100px] md:pb-[100px]'>
-        <div className='flex flex-col gap-10 md:flex-row md:items-center md:justify-between'>
-          <div className='flex max-w-xs shrink-0 flex-col gap-4'>
-            <Link to='/' className='inline-flex h-8 items-center'>
-              <img
-                src={brandLogo}
-                alt={displayName}
-                className='h-5 w-auto max-w-[160px] object-contain object-left'
-                decoding='async'
-              />
-            </Link>
-            <p className='text-muted-foreground text-sm leading-[18px]'>
-              {t('Powerful API Management Platform')}
-            </p>
-          </div>
-
+        <div className='grid gap-x-8 gap-y-4 md:grid-cols-[1fr_auto] md:items-center'>
+          <Link to='/' className='inline-flex h-8 items-center md:col-start-1 md:row-start-1'>
+            <img
+              src={brandLogo}
+              alt={displayName}
+              className='h-5 w-auto max-w-[160px] object-contain object-left'
+              decoding='async'
+            />
+          </Link>
+          <p className='text-muted-foreground text-sm leading-[18px] md:col-start-1 md:row-start-2'>
+            {t('Powerful API Management Platform')}
+          </p>
           <nav
             aria-label={t('Footer')}
-            className='flex flex-wrap items-center gap-x-8 gap-y-3 md:justify-end'
+            className='flex flex-wrap items-center gap-x-8 gap-y-3 md:col-start-2 md:row-start-2 md:justify-end'
           >
             {topLinks.map((link) => (
               <FooterLinkItem
@@ -223,7 +220,7 @@ function LandingFooter(props: FooterProps) {
           </nav>
         </div>
 
-        <div className='mt-12 h-px w-full bg-[#2e2e2e]/70' />
+        <div className='mt-10 h-px w-full bg-border opacity-70' />
 
         <div className='mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
           <p className='text-xs leading-[18px] text-[#828181]'>

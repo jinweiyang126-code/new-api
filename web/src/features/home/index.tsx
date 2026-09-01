@@ -30,7 +30,15 @@ import { isLikelyHtml } from '@/lib/content-format'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { GetInTouchDialog } from './components/get-in-touch-dialog'
-import { Enterprise, Hero, ModelsStrip } from './components'
+import {
+  CTA,
+  Enterprise,
+  Features,
+  Hero,
+  HowItWorks,
+  ModelsStrip,
+  Showcase,
+} from './components'
 import { useHomePageContent } from './hooks'
 
 export function Home() {
@@ -129,11 +137,12 @@ export function Home() {
   return (
     <PublicLayout {...landingLayout}>
       <Hero isAuthenticated={isAuthenticated} />
+      <Showcase isAuthenticated={isAuthenticated} />
       <ModelsStrip />
-      <Enterprise
-        isAuthenticated={isAuthenticated}
-        onContactClick={() => setContactOpen(true)}
-      />
+      <Features />
+      <Enterprise isAuthenticated={isAuthenticated} />
+      <HowItWorks />
+      <CTA isAuthenticated={isAuthenticated} />
       <Footer variant='landing' onContactClick={() => setContactOpen(true)} />
       <GetInTouchDialog open={contactOpen} onOpenChange={setContactOpen} />
     </PublicLayout>

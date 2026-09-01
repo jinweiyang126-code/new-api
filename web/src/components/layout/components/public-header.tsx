@@ -34,6 +34,7 @@ import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
+import { useAuthChromeOptional } from '@/features/auth/lib/auth-chrome-context'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
@@ -155,6 +156,8 @@ export function PublicHeader(props: PublicHeaderProps) {
     : rawLinks
   const showSiteName = Boolean(displaySiteName)
   const showSignInButton = showSignIn && !isLanding && !isAuth
+  const authChrome = useAuthChromeOptional()
+  const authChromeAction = isAuth ? authChrome?.action : null
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -276,6 +279,18 @@ export function PublicHeader(props: PublicHeaderProps) {
       return <ProfileDropdown />
     }
     if (isAuth) {
+      if (authChromeAction) {
+        return (
+          <Button
+            variant='ghost'
+            size='sm'
+            className='h-8 rounded-full px-3.5 text-xs font-medium'
+            onClick={authChromeAction.onClick}
+          >
+            {authChromeAction.label}
+          </Button>
+        )
+      }
       return <AuthEntryLinks pathname={pathname} />
     }
     return (
@@ -330,7 +345,11 @@ export function PublicHeader(props: PublicHeaderProps) {
             className={cn(
               'relative flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
               isMarketing
-                ? 'h-16'
+                ? cn(
+                    'h-16',
+                    scrolled &&
+                      'bg-white/85 shadow-[0_1px_0_0_rgba(0,0,0,0.06)] backdrop-blur-xl dark:bg-background/80 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]'
+                  )
                 : scrolled
                   ? 'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
                   : 'h-16 px-2'
@@ -481,7 +500,18 @@ export function PublicHeader(props: PublicHeaderProps) {
               )}
               {showAuthButtons && !loading && !isAuthenticated && (
                 isAuth ? (
-                  <AuthEntryLinks pathname={pathname} compact />
+                  authChromeAction ? (
+                    <button
+                      type='button'
+                      onClick={authChromeAction.onClick}
+                      className='inline-flex items-center gap-2 text-xs font-semibold text-foreground'
+                    >
+                      {authChromeAction.label}
+                      <ArrowRight className='size-4' />
+                    </button>
+                  ) : (
+                    <AuthEntryLinks pathname={pathname} compact />
+                  )
                 ) : (
                   <Button
                     size='sm'
@@ -601,11 +631,25 @@ export function PublicHeader(props: PublicHeaderProps) {
             {showAuthButtons && (
               <>
                 {isAuth && !isAuthenticated ? (
-                  <AuthEntryLinks
-                    pathname={pathname}
-                    stacked
-                    onNavigate={() => setMobileOpen(false)}
-                  />
+                  authChromeAction ? (
+                    <button
+                      type='button'
+                      onClick={() => {
+                        authChromeAction.onClick()
+                        setMobileOpen(false)
+                      }}
+                      className='border-border inline-flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold'
+                    >
+                      {authChromeAction.label}
+                      <ArrowRight className='size-4' />
+                    </button>
+                  ) : (
+                    <AuthEntryLinks
+                      pathname={pathname}
+                      stacked
+                      onNavigate={() => setMobileOpen(false)}
+                    />
+                  )
                 ) : (
                   <>
                     {!isAuthenticated && showSignInButton && (

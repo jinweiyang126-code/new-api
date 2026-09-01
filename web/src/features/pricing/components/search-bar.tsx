@@ -59,9 +59,10 @@ export function SearchBar(props: SearchBarProps) {
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}
         className={cn(
-          'border-border/80 bg-card/80 placeholder:text-muted-foreground/50',
+          'border-[#e8e8e8] bg-white placeholder:text-muted-foreground/50',
           'hover:border-border',
-          'focus:border-primary/40 focus:ring-primary/15 focus:ring-2',
+          'focus:border-[#fff] focus:bg-white focus:shadow-[0_0_0_1px_#fff,0_0_0_3px_rgba(0,0,0,0.12)] focus:ring-0',
+          'dark:border-border/80 dark:bg-card/80 dark:focus:border-white dark:focus:shadow-[0_0_0_1px_#fff] dark:focus:ring-1 dark:focus:ring-white/80',
           'h-10 w-full rounded-[18px] border pr-16 pl-9 text-sm transition-all outline-none'
         )}
         aria-label={t('Search models')}

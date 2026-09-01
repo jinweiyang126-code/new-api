@@ -33,11 +33,11 @@ Tokens follow html.light / html.dark from ThemeProvider.
 /* Light — Figma Home / Light */
 .light .landing-theme {
   --background: #ffffff;
-  --foreground: #141b25;
-  --card: #f7f7f8;
-  --card-foreground: #141b25;
+  --foreground: #000000;
+  --card: #fdfdfd;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #141b25;
+  --popover-foreground: #000000;
   --primary: #7b50e3;
   --primary-foreground: #ffffff;
   --secondary: #f0f0f2;
@@ -46,12 +46,23 @@ Tokens follow html.light / html.dark from ThemeProvider.
   --muted-foreground: #606060;
   --accent: #f0f0f2;
   --accent-foreground: #141b25;
-  --border: #e5e5e7;
-  --input: #e5e5e7;
+  --border: #e8e8e8;
+  --input: #e8e8e8;
   --ring: #7b50e3;
+  --landing-org-bg: #f3f7ff;
+  --landing-org-border: #cbddfe;
+  --landing-tile-shadow: 0 0 13.15px rgba(0, 0, 0, 0.06);
+  --landing-outline: #3a3a3a;
 
   background-color: var(--background);
   color: var(--foreground);
+}
+
+.dark .landing-theme {
+  --landing-org-bg: color-mix(in srgb, #33b1ff 12%, var(--card));
+  --landing-org-border: color-mix(in srgb, #33b1ff 35%, var(--border));
+  --landing-tile-shadow: none;
+  --landing-outline: var(--border);
 }
 
 .landing-theme .landing-hero-gradient {
@@ -64,6 +75,9 @@ Tokens follow html.light / html.dark from ThemeProvider.
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* Keep paint box >= glyph ink so trailing letters are not clipped */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .dark .landing-theme .landing-glow {

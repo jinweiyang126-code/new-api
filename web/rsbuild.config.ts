@@ -126,7 +126,8 @@ export default defineConfig(({ envMode }) => {
       favicon: './public/favicon.e86aaa02.ico',
     },
     server: {
-      host: '0.0.0.0',
+      // '::' so localhost (IPv6 ::1) works on Windows; dual-stack also covers IPv4
+      host: '::',
       strictPort: false,
       proxy: devProxy,
     },

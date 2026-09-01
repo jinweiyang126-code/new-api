@@ -214,6 +214,28 @@ type registerRequest struct {
 	InviteEmails     []string `json:"invite_emails"`
 }
 
+type checkEmailRequest struct {
+	Email string `json:"email"`
+}
+
+// CheckEmail reports whether an email address is available for registration.
+// Always returns HTTP 200 with { available: bool } on valid input so clients
+// can show field errors early. CriticalRateLimit on the route mitigates probing.
+func CheckEmail(c *gin.Context) {
+	var req checkEmailRequest
+	if err := common.DecodeJson(c.Request.Body, &req); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	email := model.NormalizeEmail(req.Email)
+	if email == "" || !strings.Contains(email, "@") {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	available := !model.IsEmailAlreadyTaken(email)
+	common.ApiSuccess(c, gin.H{"available": available})
+}
+
 func Register(c *gin.Context) {
 	if !common.RegisterEnabled {
 		common.ApiErrorI18n(c, i18n.MsgUserRegisterDisabled)

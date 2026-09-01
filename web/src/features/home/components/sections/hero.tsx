@@ -7,9 +7,9 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU Affero General Public License for more details.
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
@@ -47,7 +47,7 @@ export function Hero(props: HeroProps) {
     >
       <div aria-hidden className='landing-glow pointer-events-none absolute inset-0 -z-10' />
 
-      <div className='mx-auto flex w-full max-w-5xl flex-col items-center text-center'>
+      <div className='mx-auto flex w-full max-w-[1200px] flex-col items-center text-center'>
         <p
           className='landing-animate-fade-up text-muted-foreground mb-5 text-sm leading-[26px] opacity-0'
           style={{ animationDelay: '0ms' }}
@@ -56,19 +56,19 @@ export function Hero(props: HeroProps) {
         </p>
 
         <h1
-          className='landing-animate-fade-up max-w-4xl text-[clamp(2.25rem,6.5vw,4.5rem)] leading-[1.08] font-bold tracking-tight capitalize opacity-0'
+          className='landing-animate-fade-up text-[clamp(1.75rem,calc((100vw-3rem)/14.5),72px)] leading-[1.08] font-bold tracking-tight capitalize opacity-0'
           style={{ animationDelay: '70ms' }}
         >
-          <span className='text-foreground block'>
+          <span className='text-foreground block whitespace-nowrap'>
             {t('One Gateway to Global AI')}
           </span>
-          <span className='landing-hero-gradient mt-1 block'>
+          <span className='landing-hero-gradient mt-1 inline-block whitespace-nowrap px-[0.08em]'>
             {t('Better Models & Better Prices')}
           </span>
         </h1>
 
         <p
-          className='landing-animate-fade-up text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed tracking-[-0.01em] opacity-0 md:text-2xl md:leading-8'
+          className='landing-animate-fade-up text-muted-foreground mt-6 max-w-3xl text-base leading-relaxed tracking-[-0.01em] opacity-0 md:text-2xl md:leading-8 md:whitespace-nowrap'
           style={{ animationDelay: '140ms' }}
         >
           {t(
@@ -77,20 +77,20 @@ export function Hero(props: HeroProps) {
         </p>
 
         <div
-          className='landing-animate-fade-up mt-10 flex flex-wrap items-center justify-center gap-4 opacity-0 sm:gap-5'
+          className='landing-animate-fade-up mt-10 flex flex-row flex-nowrap items-center justify-center gap-5 opacity-0'
           style={{ animationDelay: '200ms' }}
         >
           <Button
-            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-[min(100%,12.5rem)] rounded-full px-6 text-base font-semibold sm:h-14 sm:text-lg'
+            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-14 w-[200px] shrink-0 rounded-full px-6 text-lg font-semibold'
             render={<Link to={primaryTo} />}
           >
             {primaryLabel}
-            <ArrowRight className='ml-1 size-5 transition-transform duration-200 group-hover:translate-x-0.5' />
+            <ArrowRight className='ml-1 size-[22px] transition-transform duration-200 group-hover:translate-x-0.5' />
           </Button>
           {!props.isAuthenticated && (
             <Button
               variant='outline'
-              className='border-border text-foreground hover:bg-muted/40 h-12 w-[min(100%,12.5rem)] rounded-full px-6 text-base font-semibold sm:h-14 sm:text-lg'
+              className='border-[color:var(--landing-outline)] text-foreground hover:bg-muted/40 h-14 w-[200px] shrink-0 rounded-full px-6 text-lg font-semibold'
               render={<Link to='/pricing' />}
             >
               {t('View Pricing')}

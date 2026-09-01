@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 .auth-theme {
-  --background: #f4f4f5;
+  --background: #ffffff;
   --foreground: #141b25;
   --card: #ffffff;
   --card-foreground: #141b25;
@@ -33,8 +33,9 @@ For commercial licensing, please contact support@quantumnous.com
   --accent-foreground: #141b25;
   --border: #e5e5e7;
   --input: #ffffff;
-  --ring: #7b50e3;
+  --ring: #a3a3a3;
   --auth-link: #33b1ff;
+  --auth-placeholder: #a3a3a3;
 
   background-color: var(--background);
   color: var(--foreground);
@@ -57,24 +58,52 @@ For commercial licensing, please contact support@quantumnous.com
   --accent-foreground: #ffffff;
   --border: #2e2e2e;
   --input: #212121;
-  --ring: #7b50e3;
+  --ring: #a3a3a3;
   --auth-link: #33b1ff;
+  --auth-placeholder: #a3a3a3;
 }
 
 .auth-theme .auth-link {
   color: var(--auth-link);
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
 .auth-theme .auth-link:hover {
   color: var(--auth-link);
   opacity: 0.85;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-theme input::placeholder,
+.auth-theme textarea::placeholder {
+  color: var(--auth-placeholder);
+  opacity: 1;
+}
+
+.dark .auth-theme input::placeholder,
+.dark .auth-theme textarea::placeholder {
+  color: var(--auth-placeholder);
+  opacity: 0.5;
 }
 
 .auth-theme .auth-glow {
-  background: none;
+  background:
+    radial-gradient(
+      ellipse 55% 40% at 50% 0%,
+      rgba(123, 80, 227, 0.12) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 35% at 8% 70%,
+      rgba(0, 189, 255, 0.08) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 35% at 92% 55%,
+      rgba(218, 86, 220, 0.08) 0%,
+      transparent 70%
+    );
 }
 
 .dark .auth-theme .auth-glow {

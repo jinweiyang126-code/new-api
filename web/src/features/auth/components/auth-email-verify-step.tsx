@@ -16,7 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Loader2 } from 'lucide-react'
+import { Loader2, Pencil } from 'lucide-react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -28,14 +29,14 @@ import { OTP_LENGTH } from '@/features/auth/constants'
 
 import { AuthBrand } from './auth-brand'
 import { AuthCard } from './auth-card'
-import { AuthSubmitButton } from './auth-submit-button'
 
 type AuthEmailVerifyStepProps = {
   email: string
   code: string
   onCodeChange: (value: string) => void
-  onSubmit: () => void
+  onSubmit: (code: string) => void
   onResend: () => void
+  onEditEmail?: () => void
   isSubmitting: boolean
   isSending: boolean
   secondsLeft: number
@@ -48,21 +49,32 @@ export function AuthEmailVerifyStep({
   onCodeChange,
   onSubmit,
   onResend,
+  onEditEmail,
   isSubmitting,
   isSending,
   secondsLeft,
   isResendActive,
 }: AuthEmailVerifyStepProps) {
   const { t } = useTranslation()
-  const canSubmit = code.length === OTP_LENGTH && !isSubmitting
+  const autoSubmittedForRef = useRef<string | null>(null)
 
   let resendLabel = t("Didn't receive a code? Resend")
-  if (isResendActive) {
-    resendLabel = t("Didn't receive a code? Resend ({{seconds}})", {
-      seconds: secondsLeft,
-    })
-  } else if (isSending) {
+  if (isSending) {
     resendLabel = t('Sending...')
+  } else if (isResendActive) {
+    // Concatenate seconds so countdown always renders (avoids i18n interpolation misses)
+    resendLabel = `${t("Didn't receive a code? Resend")} (${secondsLeft}s)`
+  }
+
+  function handleCodeChange(value: string) {
+    onCodeChange(value)
+    if (value.length < OTP_LENGTH) {
+      autoSubmittedForRef.current = null
+      return
+    }
+    if (isSubmitting || autoSubmittedForRef.current === value) return
+    autoSubmittedForRef.current = value
+    onSubmit(value)
   }
 
   return (
@@ -75,38 +87,52 @@ export function AuthEmailVerifyStep({
         <p className='text-muted-foreground text-xs leading-5'>
           {t('Enter the 6-digit verification code sent to your email')}
         </p>
-        <p className='text-foreground text-xs font-medium'>{email}</p>
+        <p className='text-foreground inline-flex items-center justify-center gap-1.5 text-xs font-medium'>
+          <span>{email}</span>
+          {onEditEmail ? (
+            <button
+              type='button'
+              onClick={onEditEmail}
+              className='text-muted-foreground hover:text-foreground inline-flex size-5 items-center justify-center rounded-md'
+              aria-label={t('Edit email')}
+              title={t('Edit email')}
+            >
+              <Pencil className='size-3.5' />
+            </button>
+          ) : null}
+        </p>
       </div>
-      <InputOTP
-        maxLength={OTP_LENGTH}
-        value={code}
-        onChange={onCodeChange}
-        inputMode='numeric'
-        pattern='[0-9]*'
-        containerClassName='justify-center gap-2'
-      >
-        <InputOTPGroup className='gap-2'>
-          {Array.from({ length: OTP_LENGTH }, (_, index) => (
-            <InputOTPSlot
-              key={index}
-              index={index}
-              className='size-14 rounded-xl border text-lg'
-            />
-          ))}
-        </InputOTPGroup>
-      </InputOTP>
-      <AuthSubmitButton
-        type='button'
-        disabled={!canSubmit}
-        onClick={onSubmit}
-      >
-        {isSubmitting ? <Loader2 className='size-4 animate-spin' /> : null}
-        {t('Continue')}
-      </AuthSubmitButton>
+      <div className='relative flex flex-col items-center gap-3'>
+        <InputOTP
+          maxLength={OTP_LENGTH}
+          value={code}
+          onChange={handleCodeChange}
+          inputMode='numeric'
+          pattern='[0-9]*'
+          containerClassName='justify-center gap-2'
+          disabled={isSubmitting}
+        >
+          <InputOTPGroup className='gap-2'>
+            {Array.from({ length: OTP_LENGTH }, (_, index) => (
+              <InputOTPSlot
+                key={index}
+                index={index}
+                className='size-14 rounded-[12px] border border-border text-lg data-[active=true]:border-[#A3A3A3] data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E]'
+              />
+            ))}
+          </InputOTPGroup>
+        </InputOTP>
+        {isSubmitting ? (
+          <p className='text-muted-foreground inline-flex items-center gap-1.5 text-xs'>
+            <Loader2 className='size-3.5 animate-spin' />
+            {t('Submitting...')}
+          </p>
+        ) : null}
+      </div>
       <button
         type='button'
         className='text-muted-foreground hover:text-foreground text-xs disabled:opacity-50'
-        disabled={isSending || isResendActive}
+        disabled={isSending || isResendActive || isSubmitting}
         onClick={onResend}
       >
         {resendLabel}

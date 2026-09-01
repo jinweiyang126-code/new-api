@@ -189,6 +189,22 @@ export async function register(payload: RegisterPayload): Promise<ApiResponse> {
   return res.data
 }
 
+/** Check whether an email can be used for registration (rate-limited). */
+export async function checkEmailAvailable(
+  email: string
+): Promise<ApiResponse<{ available: boolean }>> {
+  const res = await api.post(
+    '/api/user/check-email',
+    { email },
+    {
+      skipAuthRefresh: true,
+      skipBusinessError: true,
+      skipErrorHandler: true,
+    }
+  )
+  return res.data
+}
+
 // Send email verification code
 export async function sendEmailVerification(
   email: string,

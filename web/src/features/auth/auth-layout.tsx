@@ -21,6 +21,8 @@ import { LandingHeaderLogo } from '@/features/home/lib/landing-header-logo'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { DEFAULT_LOGO, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 
+import { AuthChromeProvider } from './lib/auth-chrome-context'
+
 type AuthLayoutProps = {
   children: React.ReactNode
 }
@@ -32,20 +34,23 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     (!systemName || systemName === DEFAULT_SYSTEM_NAME)
 
   return (
-    <div className='auth-theme relative min-h-svh overflow-x-clip'>
-      <div className='auth-glow pointer-events-none absolute inset-0' aria-hidden />
-      <PublicHeader
-        variant='auth'
-        showNotifications={false}
-        showThemeSwitch={false}
-        showLanguageSwitcher={false}
-        {...(usingDefaultBrand
-          ? { logo: <LandingHeaderLogo />, siteName: '' }
-          : {})}
-      />
-      <div className='relative z-10 flex min-h-svh items-center justify-center px-4 pt-20 pb-10'>
-        {children}
+    <AuthChromeProvider>
+      <div className='auth-theme relative min-h-svh overflow-x-clip'>
+        <div className='auth-glow pointer-events-none absolute inset-0' aria-hidden />
+        <PublicHeader
+          variant='auth'
+          showNotifications={false}
+          showThemeSwitch={false}
+          showLanguageSwitcher={false}
+          {...(usingDefaultBrand
+            ? { logo: <LandingHeaderLogo />, siteName: '' }
+            : {})}
+        />
+        {/* Top content offset 128px per Figma / Excel auth spacing */}
+        <div className='relative z-10 flex min-h-svh items-start justify-center px-4 pt-32 pb-10'>
+          {children}
+        </div>
       </div>
-    </div>
+    </AuthChromeProvider>
   )
 }
