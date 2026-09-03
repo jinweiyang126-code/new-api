@@ -123,7 +123,7 @@ export function Home() {
 
     return (
       <PublicLayout {...landingLayout} showMainContainer>
-        <div className='mx-auto max-w-6xl px-4 py-8'>
+        <div className='mx-auto max-w-[1200px] px-4 py-8'>
           <RichContent
             mode='markdown'
             content={content}

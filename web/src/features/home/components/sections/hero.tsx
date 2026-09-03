@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 import { getDefaultStats } from '../../constants'
+import { StatCounter } from '../stat-counter'
 
 interface HeroProps {
   className?: string
@@ -41,7 +42,7 @@ export function Hero(props: HeroProps) {
   return (
     <section
       className={cn(
-        'relative z-10 flex min-h-[min(92svh,975px)] flex-col items-center overflow-hidden px-6 pt-28 pb-16 md:pt-32 md:pb-20',
+        'relative z-10 flex min-h-svh flex-col items-center justify-center overflow-hidden px-6',
         props.className
       )}
     >
@@ -68,7 +69,7 @@ export function Hero(props: HeroProps) {
         </h1>
 
         <p
-          className='landing-animate-fade-up text-muted-foreground mt-6 max-w-3xl text-base leading-relaxed tracking-[-0.01em] opacity-0 md:text-2xl md:leading-8 md:whitespace-nowrap'
+          className='landing-animate-fade-up text-muted-foreground mt-10 max-w-3xl text-base leading-relaxed tracking-[-0.01em] opacity-0 md:text-2xl md:leading-8 md:whitespace-nowrap'
           style={{ animationDelay: '140ms' }}
         >
           {t(
@@ -77,11 +78,11 @@ export function Hero(props: HeroProps) {
         </p>
 
         <div
-          className='landing-animate-fade-up mt-10 flex flex-row flex-nowrap items-center justify-center gap-5 opacity-0'
+          className='landing-animate-fade-up mt-[68px] flex flex-row flex-nowrap items-center justify-center gap-5 opacity-0'
           style={{ animationDelay: '200ms' }}
         >
           <Button
-            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-14 w-[200px] shrink-0 rounded-full px-6 text-lg font-semibold'
+            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-14 shrink-0 rounded-full px-[40px] text-lg font-normal'
             render={<Link to={primaryTo} />}
           >
             {primaryLabel}
@@ -90,7 +91,7 @@ export function Hero(props: HeroProps) {
           {!props.isAuthenticated && (
             <Button
               variant='outline'
-              className='border-[color:var(--landing-outline)] text-foreground hover:bg-muted/40 h-14 w-[200px] shrink-0 rounded-full px-6 text-lg font-semibold'
+              className='border-[#CDCDCD] text-foreground hover:bg-muted/40 h-14 shrink-0 rounded-full px-[40px] text-lg font-normal'
               render={<Link to='/pricing' />}
             >
               {t('View Pricing')}
@@ -99,14 +100,13 @@ export function Hero(props: HeroProps) {
         </div>
 
         <div
-          className='landing-animate-fade-up mt-14 grid w-full max-w-4xl grid-cols-2 gap-8 opacity-0 md:mt-20 md:grid-cols-4 md:gap-10'
+          className='landing-animate-fade-up mt-[132px] grid w-full max-w-4xl grid-cols-2 gap-8 opacity-0 md:grid-cols-4 md:gap-10'
           style={{ animationDelay: '280ms' }}
         >
           {stats.map((stat) => (
             <div key={stat.description} className='text-center'>
               <p className='text-foreground text-[clamp(1.75rem,4vw,2.875rem)] leading-tight font-semibold tracking-[-0.02em]'>
-                {stat.value}
-                {stat.suffix}
+                <StatCounter end={stat.end} suffix={stat.suffix} />
               </p>
               <p className='text-muted-foreground mt-1 text-xs leading-[22px] md:text-sm'>
                 {stat.description}

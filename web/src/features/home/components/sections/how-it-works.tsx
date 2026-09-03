@@ -51,7 +51,7 @@ export function HowItWorks() {
 
   return (
     <section className='relative z-10 px-6 py-20 md:py-28 lg:py-32'>
-      <div className='mx-auto max-w-6xl'>
+      <div className='mx-auto max-w-[1200px]'>
         <AnimateInView className='mb-16 text-center md:mb-20'>
           <p className='text-muted-foreground mb-4 text-xs font-medium tracking-[0.18em] uppercase'>
             {t('How It Works')}

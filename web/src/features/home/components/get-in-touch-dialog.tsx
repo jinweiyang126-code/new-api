@@ -20,11 +20,9 @@ import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '@/components/dialog'
 import { Button } from '@/components/ui/button'
-import { useTheme } from '@/context/theme-provider'
 import {
   LANDING_BRAND_NAME,
-  LANDING_LOGO_LIGHT_SRC,
-  LANDING_LOGO_SRC,
+  LANDING_LOGO_MARK_SRC,
 } from '@/features/home/lib/landing-brand'
 
 import { IconSecuritySetting } from './landing-figma-icons'
@@ -39,61 +37,62 @@ type GetInTouchDialogProps = {
 
 export function GetInTouchDialog(props: GetInTouchDialogProps) {
   const { t } = useTranslation()
-  const { resolvedTheme } = useTheme()
-  const logoSrc =
-    resolvedTheme === 'light' ? LANDING_LOGO_LIGHT_SRC : LANDING_LOGO_SRC
   const title = t('Get in Touch')
-  const description = t(
-    'Reach out to us directly via email. Our support team typically responds within 24 hours.'
-  )
 
   return (
     <Dialog
       open={props.open}
       onOpenChange={props.onOpenChange}
       title={<span className='sr-only'>{title}</span>}
-      contentClassName='landing-theme gap-0 overflow-hidden rounded-[16px] border-border bg-background p-0 sm:max-w-[758px] sm:rounded-[20px] sm:p-0'
+      /* Figma 305:7391 / 305:7392 — black 70% scrim, 758px card, no ring */
+      overlayClassName='bg-black/70 supports-backdrop-filter:backdrop-blur-none'
+      contentClassName='landing-theme bg-background gap-0 overflow-hidden rounded-t-[16px] rounded-b-[20px] border-0 p-0 ring-0 sm:max-w-[758px] [&_[data-slot=dialog-close]]:top-6 [&_[data-slot=dialog-close]]:right-9 [&_[data-slot=dialog-close]]:size-4 [&_[data-slot=dialog-close]]:p-0 [&_[data-slot=dialog-close]]:hover:bg-transparent [&_[data-slot=dialog-close]]:hover:opacity-80'
       contentHeight='auto'
       headerClassName='sr-only'
       bodyClassName='px-0 py-0'
-      footerClassName='sm:mx-0 sm:mb-0 sm:justify-center sm:border-0 sm:p-0 sm:pb-16'
-      footer={
-        <div className='flex w-full justify-center pb-4 sm:pb-0'>
-          <Button
-            className='bg-primary text-primary-foreground hover:bg-primary/90 h-9 w-[140px] rounded-full px-6 text-xs font-semibold'
-            render={<a href={`mailto:${LANDING_CONTACT_EMAIL}`} />}
-          >
-            {t('Contact Us')}
-          </Button>
-        </div>
-      }
     >
-      <div className='flex flex-col items-center gap-8 px-9 pt-10 pb-6 sm:gap-11 sm:pt-4 sm:pb-0'>
-        <div className='flex flex-col items-center gap-6 sm:gap-8'>
+      {/* Figma: topbar close only; body gap 44 / pb 64 / pt 16 */}
+      <div className='flex flex-col items-center gap-11 px-9 pt-4 pb-16'>
+        <div className='flex flex-col items-center gap-6'>
           <img
-            src={logoSrc}
+            src={LANDING_LOGO_MARK_SRC}
             alt={LANDING_BRAND_NAME}
             className='size-9 object-contain'
             decoding='async'
           />
-          <div className='flex flex-col items-center gap-4 sm:gap-8'>
-            <div className='flex max-w-[420px] flex-col items-center gap-4 text-center'>
-              <h2 className='text-foreground text-[28px] leading-none font-semibold sm:text-[32px]'>
+          <div className='flex flex-col items-center gap-8'>
+            <div className='flex w-[420px] max-w-full flex-col items-center gap-4 text-center'>
+              <h2 className='text-foreground text-[32px] leading-none font-semibold'>
                 {title}
               </h2>
+              {/* Figma breaks after "email." — keep two explicit lines */}
               <p className='text-muted-foreground text-xs leading-normal'>
-                {description}
+                <span className='block'>
+                  {t('Reach out to us directly via email.')}
+                </span>
+                <span className='block'>
+                  {t(
+                    'Our support team typically responds within 24 hours.'
+                  )}
+                </span>
               </p>
             </div>
             <a
               href={`mailto:${LANDING_CONTACT_EMAIL}`}
-              className='border-border bg-card text-foreground hover:bg-muted/40 inline-flex items-center gap-3 rounded-[12px] border px-8 py-4 text-base transition-colors'
+              className='bg-card text-foreground hover:bg-muted/40 inline-flex items-center gap-3 rounded-[12px] border border-[#e8e8e8] px-8 py-4 text-base transition-colors dark:border-[#2e2e2e]'
             >
-              <IconSecuritySetting className='text-muted-foreground size-5 shrink-0' />
+              <IconSecuritySetting className='text-foreground size-5 shrink-0' />
               <span>{LANDING_CONTACT_EMAIL}</span>
             </a>
           </div>
         </div>
+
+        <Button
+          className='bg-primary text-primary-foreground hover:bg-primary/90 h-9 w-[140px] shrink-0 rounded-full px-6 text-xs font-normal'
+          render={<a href={`mailto:${LANDING_CONTACT_EMAIL}`} />}
+        >
+          {t('Contact Us')}
+        </Button>
       </div>
     </Dialog>
   )

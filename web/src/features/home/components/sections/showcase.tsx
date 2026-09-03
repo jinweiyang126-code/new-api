@@ -34,7 +34,7 @@ export function Showcase(props: ShowcaseProps) {
 
   return (
     <section className='relative z-10 px-6 py-20 md:py-28 lg:py-32'>
-      <div className='mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-12 lg:gap-16'>
+      <div className='mx-auto grid max-w-[1200px] items-center gap-12 lg:grid-cols-12 lg:gap-16'>
         <AnimateInView className='lg:col-span-5'>
           <p className='text-muted-foreground mb-4 text-xs font-medium tracking-[0.18em] uppercase'>
             {t('OpenAI-compatible /v1')}

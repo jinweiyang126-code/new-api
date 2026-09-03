@@ -93,7 +93,7 @@ function AuthEntryLinks({
       to={to}
       onClick={onNavigate}
       className={cn(
-        'inline-flex items-center gap-2 font-semibold text-foreground',
+        'inline-flex items-center gap-2 font-normal text-foreground',
         stacked && 'h-11 justify-center rounded-xl border border-border text-sm',
         compact ? 'text-xs' : 'text-sm'
       )}
@@ -237,7 +237,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   const navLinkClass = (isActive: boolean, disabled?: boolean) =>
     cn(
       isMarketing
-        ? 'text-sm font-semibold whitespace-nowrap transition-colors duration-200'
+        ? 'text-sm font-normal whitespace-nowrap transition-colors duration-200'
         : 'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
       isActive
         ? 'text-foreground'
@@ -284,7 +284,7 @@ export function PublicHeader(props: PublicHeaderProps) {
           <Button
             variant='ghost'
             size='sm'
-            className='h-8 rounded-full px-3.5 text-xs font-medium'
+            className='h-8 rounded-full px-3.5 text-xs font-normal'
             onClick={authChromeAction.onClick}
           >
             {authChromeAction.label}
@@ -299,7 +299,7 @@ export function PublicHeader(props: PublicHeaderProps) {
           <Button
             variant='ghost'
             size='sm'
-            className='h-8 rounded-full px-3.5 text-xs font-medium'
+            className='h-8 rounded-full px-3.5 text-xs font-normal'
             render={<Link to='/sign-in' />}
           >
             {t('Sign in')}
@@ -309,7 +309,7 @@ export function PublicHeader(props: PublicHeaderProps) {
           <Button
             size='sm'
             className={cn(
-              'h-8 rounded-full text-xs font-semibold',
+              'h-8 rounded-full text-xs font-normal',
               isLanding || pathname === '/'
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90 w-[120px] px-6'
                 : 'px-4'
@@ -335,7 +335,7 @@ export function PublicHeader(props: PublicHeaderProps) {
           className={cn(
             'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
             isMarketing
-              ? 'max-w-[1200px] px-8 pt-0'
+              ? 'w-full max-w-[1200px] px-0 pt-0'
               : scrolled
                 ? 'max-w-6xl px-3 pt-3'
                 : 'max-w-7xl px-4 pt-0 md:px-6'
@@ -504,7 +504,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                     <button
                       type='button'
                       onClick={authChromeAction.onClick}
-                      className='inline-flex items-center gap-2 text-xs font-semibold text-foreground'
+                      className='inline-flex items-center gap-2 text-xs font-normal text-foreground'
                     >
                       {authChromeAction.label}
                       <ArrowRight className='size-4' />
@@ -516,7 +516,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                   <Button
                     size='sm'
                     className={cn(
-                      'h-8 rounded-full text-xs font-semibold',
+                      'h-8 rounded-full text-xs font-normal',
                       isLanding
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90 px-6'
                         : 'px-3.5'
@@ -577,7 +577,8 @@ export function PublicHeader(props: PublicHeaderProps) {
             {links.map((link, i) => {
               const isActive = pathname === link.href
               const linkClassName = cn(
-                'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                'flex items-center gap-3 py-3 text-base tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                isMarketing ? 'font-normal' : 'font-medium',
                 mobileOpen
                   ? 'translate-y-0 opacity-100'
                   : 'translate-y-4 opacity-0',
@@ -638,7 +639,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                         authChromeAction.onClick()
                         setMobileOpen(false)
                       }}
-                      className='border-border inline-flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold'
+                      className='border-border inline-flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-normal'
                     >
                       {authChromeAction.label}
                       <ArrowRight className='size-4' />
@@ -656,7 +657,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                       <Link
                         to='/sign-in'
                         onClick={() => setMobileOpen(false)}
-                        className='border-border/50 text-foreground inline-flex h-11 items-center justify-center rounded-full border text-sm font-medium transition-opacity hover:opacity-90'
+                        className='border-border/50 text-foreground inline-flex h-11 items-center justify-center rounded-full border text-sm font-normal transition-opacity hover:opacity-90'
                       >
                         {t('Sign in')}
                       </Link>
@@ -665,7 +666,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                       to={isAuthenticated ? '/dashboard' : '/sign-up'}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        'inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-80',
+                        'inline-flex h-11 items-center justify-center rounded-full text-sm font-normal transition-opacity hover:opacity-90 active:opacity-80',
                         isLanding
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-foreground text-background'

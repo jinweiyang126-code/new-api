@@ -76,7 +76,7 @@ export function Enterprise(props: EnterpriseProps) {
 
   return (
     <section className='relative z-10 px-6 py-16 md:py-24'>
-      <div className='mx-auto max-w-6xl'>
+      <div className='mx-auto max-w-[1200px]'>
         <AnimateInView className='mb-8 text-center md:mb-10'>
           <p className='text-muted-foreground mb-3 text-sm uppercase'>
             {t('Enterprise plan')}
@@ -91,7 +91,7 @@ export function Enterprise(props: EnterpriseProps) {
           </p>
           <div className='mt-8 flex flex-wrap items-center justify-center gap-3'>
             <Button
-              className='group bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-full px-8 text-base font-semibold sm:h-14 sm:text-lg'
+              className='group bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-full px-8 text-base font-normal sm:h-14 sm:text-lg'
               render={<Link to={primaryTo} />}
             >
               {primaryLabel}
@@ -180,7 +180,7 @@ export function Enterprise(props: EnterpriseProps) {
           </div>
         </AnimateInView>
 
-        <AnimateInView delay={120} className='mt-16 text-center md:mt-20'>
+        <AnimateInView delay={120} className='mt-[160px] text-center'>
           <h2 className='text-foreground mx-auto max-w-2xl text-[clamp(1.75rem,4vw,2.875rem)] leading-tight font-semibold tracking-[-0.02em]'>
             {t('Enterprise-grade AI governance & control')}
           </h2>

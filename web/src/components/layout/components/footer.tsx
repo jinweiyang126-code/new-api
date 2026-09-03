@@ -156,9 +156,9 @@ function LandingFooter(props: FooterProps) {
   const currentYear = new Date().getFullYear()
 
   const navLinkClass =
-    'text-muted-foreground hover:text-foreground text-xs leading-[18px] transition-colors duration-200'
+    'text-muted-foreground hover:text-foreground text-[14px] leading-[18px] transition-colors duration-200'
   const legalLinkClass =
-    'text-muted-foreground/70 hover:text-muted-foreground text-xs leading-[18px] transition-colors duration-200'
+    'text-[14px] leading-[18px] text-[#696969] transition-colors duration-200 hover:text-[#696969]/hover:opacity-80'
 
   const topLinks: FooterLink[] = [
     { text: 'Console', href: '/dashboard' },
@@ -195,16 +195,16 @@ function LandingFooter(props: FooterProps) {
     <footer className={cn('relative z-10', props.className)}>
       <div className='mx-auto max-w-[1200px] px-6 pt-16 pb-16 md:pt-[100px] md:pb-[100px]'>
         <div className='grid gap-x-8 gap-y-4 md:grid-cols-[1fr_auto] md:items-center'>
-          <Link to='/' className='inline-flex h-8 items-center md:col-start-1 md:row-start-1'>
+          <Link to='/' className='inline-flex h-10 items-center md:col-start-1 md:row-start-1'>
             <img
               src={brandLogo}
               alt={displayName}
-              className='h-5 w-auto max-w-[160px] object-contain object-left'
+              className='h-8 w-auto max-w-[220px] object-contain object-left'
               decoding='async'
             />
           </Link>
-          <p className='text-muted-foreground text-sm leading-[18px] md:col-start-1 md:row-start-2'>
-            {t('Powerful API Management Platform')}
+          <p className='text-muted-foreground text-[16px] leading-[18px] md:col-start-1 md:row-start-2'>
+            {t('One gateway to global AI')}
           </p>
           <nav
             aria-label={t('Footer')}
@@ -223,7 +223,7 @@ function LandingFooter(props: FooterProps) {
         <div className='mt-10 h-px w-full bg-border opacity-70' />
 
         <div className='mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-          <p className='text-xs leading-[18px] text-[#828181]'>
+          <p className='text-[14px] leading-[18px] text-[#696969]'>
             &copy; {currentYear} {displayName}.{' '}
             {props.copyright ?? t('footer.defaultCopyright')}
           </p>
@@ -363,7 +363,7 @@ export function Footer(props: FooterProps) {
               </span>
             </Link>
             <p className='text-muted-foreground/70 mt-4 max-w-[240px] text-sm leading-relaxed'>
-              {t('Powerful API Management Platform')}
+              {t('One gateway to global AI')}
             </p>
           </div>
 
