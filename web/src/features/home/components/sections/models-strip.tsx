@@ -182,7 +182,7 @@ function BrandArc(props: {
     >
       <svg
         aria-hidden
-        className='pointer-events-none absolute overflow-visible text-[#E9E9E9]'
+        className='pointer-events-none absolute overflow-visible text-[#C8C8C8] dark:text-[#3A3A3A]'
         style={{ left: svgLeft, top: svgTop, width: svgWidth, height: svgHeight }}
         width={svgWidth}
         height={svgHeight}

@@ -1,5 +1,3 @@
-# Privacy Policy
-
 Last Updated: August 31, 2026
 
 UnionMeta, Inc. ("we", "us" or "our") respects your privacy and we are committed to protecting it through our compliance with this Privacy Policy. We have created this Privacy Policy to inform you of our policies regarding the collection, use and disclosure of personal data and the choices you have associated with that information. Capitalized terms used but not defined in this Privacy Policy have the meaning given to them in our Terms of Service.
@@ -226,6 +224,7 @@ The GDPR and some U.S. state privacy laws require specific disclosures. The belo
 ### Categories of Personal Data
 
 We collect the following information, as described above:
+
 - Identifiers, such as your name, contact details, IP address, and other device identifiers
 - Commercial information, such as your transaction history
 - Network activity information, such as how you interact with our Service
@@ -236,6 +235,7 @@ We collect the following information, as described above:
 ### Use of Personal Data
 
 We use this information for the following purposes, as described above:
+
 - Provide, analyze, and maintain our Service, and where applicable, for Model training and improvement by Model Providers. The legal basis is to perform a contract with you.
 - Improve and develop our Service and conduct research. The legal basis is a legitimate interest.
 - Communicate with you, including to send you information about our Service and events. The legal basis is your consent.
@@ -245,6 +245,7 @@ We use this information for the following purposes, as described above:
 ### Disclosure of Personal Data
 
 We may disclose this information in the following circumstances, as described above:
+
 - Vendors, service providers, and affiliates to process in accordance with our instructions, including to Model Providers
 - Government authorities or other third parties for the legal reasons described above
 - Parties involved in corporate transactions

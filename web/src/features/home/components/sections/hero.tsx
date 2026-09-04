@@ -42,7 +42,7 @@ export function Hero(props: HeroProps) {
   return (
     <section
       className={cn(
-        'relative z-10 flex min-h-svh flex-col items-center justify-center overflow-hidden px-6',
+        'relative z-10 flex min-h-svh flex-col items-center justify-start overflow-hidden px-6 pt-20 md:justify-center md:pt-0',
         props.className
       )}
     >
@@ -78,11 +78,11 @@ export function Hero(props: HeroProps) {
         </p>
 
         <div
-          className='landing-animate-fade-up mt-[68px] flex flex-row flex-nowrap items-center justify-center gap-5 opacity-0'
+          className='landing-animate-fade-up mt-[68px] flex flex-col items-center justify-center gap-3 opacity-0 md:flex-row md:flex-nowrap md:gap-5'
           style={{ animationDelay: '200ms' }}
         >
           <Button
-            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-14 shrink-0 rounded-full px-[40px] text-lg font-normal'
+            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-12 shrink-0 rounded-full px-[40px] text-base font-normal md:h-14 md:text-lg'
             render={<Link to={primaryTo} />}
           >
             {primaryLabel}
@@ -91,7 +91,7 @@ export function Hero(props: HeroProps) {
           {!props.isAuthenticated && (
             <Button
               variant='outline'
-              className='border-[#CDCDCD] text-foreground hover:bg-muted/40 h-14 shrink-0 rounded-full px-[40px] text-lg font-normal'
+              className='border-[#CDCDCD] text-foreground hover:bg-muted/40 h-12 shrink-0 rounded-full px-[40px] text-base font-normal md:h-14 md:text-lg'
               render={<Link to='/pricing' />}
             >
               {t('View Pricing')}
