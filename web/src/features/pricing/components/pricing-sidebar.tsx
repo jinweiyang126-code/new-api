@@ -20,7 +20,7 @@ import {
   ChevronDown,
   RotateCcw,
 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
@@ -86,6 +86,7 @@ export interface PricingSidebarProps {
   hasActiveFilters: boolean
   onClearFilters: () => void
   className?: string
+  style?: CSSProperties
 }
 
 function countBy(
@@ -307,12 +308,13 @@ export function PricingSidebar(props: PricingSidebarProps) {
 
   return (
     <aside
+      style={props.style}
       className={cn(
-        'rounded-[20px] border border-[#e8e8e8] bg-white p-5 dark:border-border/80 dark:bg-transparent',
+        'flex flex-col overflow-hidden rounded-[20px] border border-[#e8e8e8] bg-white p-5 dark:border-border/80 dark:bg-transparent',
         props.className
       )}
     >
-      <div className='mb-4 flex items-start justify-between gap-2'>
+      <div className='mb-4 flex shrink-0 items-start justify-between gap-2'>
         <div className='min-w-0'>
           <h2 className='text-foreground text-[15px] font-semibold'>
             {t('Filter')}
@@ -334,7 +336,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
         </Button>
       </div>
 
-      <div className='space-y-3'>
+      <div className='hover-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain'>
         <FilterSection
           title={t('Groups')}
           icon={<FilterIconGroups className='size-4' />}

@@ -23,6 +23,11 @@ import { toast } from 'sonner'
 
 import { Dialog } from '@/components/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  readStatusFromLocalStorage,
+  resolvePublicApiAddress,
+  resolveServerAddress,
+} from '@/lib/public-api-address'
 import { ComboboxInput } from '@/components/ui/combobox-input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -53,17 +58,12 @@ const APP_CONFIGS = {
 
 type AppType = keyof typeof APP_CONFIGS
 
-function getServerAddress(): string {
-  try {
-    const raw = localStorage.getItem('status')
-    if (raw) {
-      const status = JSON.parse(raw)
-      if (status.server_address) return status.server_address
-    }
-  } catch {
-    /* empty */
-  }
-  return window.location.origin
+function getPublicApiAddress(): string {
+  return resolvePublicApiAddress(readStatusFromLocalStorage())
+}
+
+function getSiteAddress(): string {
+  return resolveServerAddress(readStatusFromLocalStorage())
 }
 
 function buildCCSwitchURL(
@@ -72,8 +72,9 @@ function buildCCSwitchURL(
   models: Record<string, string>,
   apiKey: string
 ): string {
-  const serverAddress = getServerAddress()
-  const endpoint = app === 'codex' ? serverAddress + '/v1' : serverAddress
+  const apiAddress = getPublicApiAddress()
+  const siteAddress = getSiteAddress()
+  const endpoint = app === 'codex' ? apiAddress + '/v1' : apiAddress
   const params = new URLSearchParams()
   params.set('resource', 'provider')
   params.set('app', app)
@@ -83,7 +84,7 @@ function buildCCSwitchURL(
   for (const [k, v] of Object.entries(models)) {
     if (v) params.set(k, v)
   }
-  params.set('homepage', serverAddress)
+  params.set('homepage', siteAddress)
   params.set('enabled', 'true')
   return `ccswitch://v1/import?${params.toString()}`
 }

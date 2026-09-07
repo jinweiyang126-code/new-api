@@ -54,6 +54,26 @@ export async function login(payload: LoginPayload) {
   return res.data
 }
 
+/** Verify credentials without creating a session (before Turnstile). */
+export async function loginPrecheck(payload: {
+  username: string
+  password: string
+}): Promise<ApiResponse> {
+  const res = await api.post(
+    '/api/user/login/precheck',
+    {
+      username: payload.username,
+      password: payload.password,
+    },
+    {
+      skipAuthRefresh: true,
+      skipBusinessError: true,
+      skipErrorHandler: true,
+    }
+  )
+  return res.data
+}
+
 // Two-factor authentication login
 export async function login2fa(payload: TwoFAPayload) {
   const res = await api.post<Login2FAResponse>('/api/user/login/2fa', payload, {
@@ -196,6 +216,39 @@ export async function checkEmailAvailable(
   const res = await api.post(
     '/api/user/check-email',
     { email },
+    {
+      skipAuthRefresh: true,
+      skipBusinessError: true,
+      skipErrorHandler: true,
+    }
+  )
+  return res.data
+}
+
+/** Check whether a username can be used for registration (rate-limited). */
+export async function checkUsernameAvailable(
+  username: string
+): Promise<ApiResponse<{ available: boolean }>> {
+  const res = await api.post(
+    '/api/user/check-username',
+    { username },
+    {
+      skipAuthRefresh: true,
+      skipBusinessError: true,
+      skipErrorHandler: true,
+    }
+  )
+  return res.data
+}
+
+/** Verify registration email code without consuming it (rate-limited). */
+export async function checkVerificationCode(
+  email: string,
+  code: string
+): Promise<ApiResponse<{ valid: boolean }>> {
+  const res = await api.post(
+    '/api/user/check-verification-code',
+    { email, code },
     {
       skipAuthRefresh: true,
       skipBusinessError: true,

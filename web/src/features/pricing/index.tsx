@@ -35,7 +35,7 @@ import {
   ModelCardGrid,
   ModelDetailsDrawer,
 } from './components'
-import { EXCLUDED_GROUPS, VIEW_MODES } from './constants'
+import { EXCLUDED_GROUPS, VIEW_MODES, getPricingSidebarHeightPx } from './constants'
 import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
 
@@ -45,6 +45,7 @@ export function Pricing() {
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   )
+  const sidebarHeightPx = useMemo(() => getPricingSidebarHeightPx(), [])
 
   const {
     models,
@@ -215,7 +216,8 @@ export function Pricing() {
               models={models || []}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
-              className='hover-scrollbar sticky top-4 hidden max-h-[calc(100dvh-2rem)] self-start overflow-y-auto xl:block'
+              className='sticky top-4 hidden self-start xl:flex'
+              style={{ height: sidebarHeightPx }}
             />
 
             <main className='min-w-0 space-y-4'>

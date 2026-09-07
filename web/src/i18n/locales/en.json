@@ -4172,6 +4172,8 @@
     "Separate multiple rules with English commas. For regex patterns that need commas, switch to JSON Text.": "Separate multiple rules with English commas. For regex patterns that need commas, switch to JSON Text.",
     "Serve multiple users or teams with billing and quota control.": "Serve multiple users or teams with billing and quota control.",
     "Server Address": "Server Address",
+    "Public API Address": "Public API Address",
+    "Base URL for model relay (/v1). Leave empty to use Server Address. Example: https://api.unionmeta.ai": "Base URL for model relay (/v1). Leave empty to use Server Address. Example: https://api.unionmeta.ai",
     "Server IP": "Server IP",
     "Server Log Management": "Server Log Management",
     "Server logging is not enabled (log directory not configured)": "Server logging is not enabled (log directory not configured)",
@@ -5752,6 +5754,8 @@
     "Terms of Service": "Terms of Service",
     "Edit email": "Edit email",
     "Email address is already in use": "Email address is already in use",
+    "Username is already taken": "Username is already taken",
+    "Invalid verification code": "Invalid verification code",
     "Enter your user name": "Enter your user name",
     "Enter your email address": "Enter your email address",
     "Create a password": "Create a password"

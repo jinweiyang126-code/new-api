@@ -60,15 +60,7 @@ func Login(c *gin.Context) {
 	}
 	err = user.ValidateAndFill()
 	if err != nil {
-		switch {
-		case errors.Is(err, model.ErrDatabase):
-			common.SysLog(fmt.Sprintf("Login database error for user %s: %v", username, err))
-			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
-		case errors.Is(err, model.ErrUserEmptyCredentials):
-			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		default:
-			common.ApiErrorI18n(c, i18n.MsgUserUsernameOrPasswordError)
-		}
+		writeLoginCredentialError(c, username, err)
 		return
 	}
 
@@ -112,11 +104,56 @@ func Login(c *gin.Context) {
 	setupLogin(&user, c)
 }
 
+// LoginPrecheck verifies username/password without issuing a session, 2FA flow,
+// or login audit. Used so the client can fail fast before Turnstile.
+func LoginPrecheck(c *gin.Context) {
+	if !common.PasswordLoginEnabled {
+		common.ApiErrorI18n(c, i18n.MsgUserPasswordLoginDisabled)
+		return
+	}
+	var loginRequest LoginRequest
+	err := common.DecodeJson(c.Request.Body, &loginRequest)
+	if err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	username := loginRequest.Username
+	password := loginRequest.Password
+	if username == "" || password == "" {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	user := model.User{
+		Username: username,
+		Password: password,
+	}
+	err = user.ValidateAndFill()
+	if err != nil {
+		writeLoginCredentialError(c, username, err)
+		return
+	}
+	common.ApiSuccess(c, nil)
+}
+
+func writeLoginCredentialError(c *gin.Context, username string, err error) {
+	switch {
+	case errors.Is(err, model.ErrDatabase):
+		common.SysLog(fmt.Sprintf("Login database error for user %s: %v", username, err))
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+	case errors.Is(err, model.ErrUserEmptyCredentials):
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+	default:
+		common.ApiErrorI18n(c, i18n.MsgUserUsernameOrPasswordError)
+	}
+}
+
 // loginMethodFromContext 根据请求路径推导登录方式，用于登录审计日志。
 func loginMethodFromContext(c *gin.Context) string {
 	switch c.FullPath() {
 	case "/api/user/login":
 		return "password"
+	case "/api/user/login/precheck":
+		return "password-precheck"
 	case "/api/user/login/2fa":
 		return "2fa"
 	case "/api/user/passkey/login/finish":
@@ -218,6 +255,15 @@ type checkEmailRequest struct {
 	Email string `json:"email"`
 }
 
+type checkUsernameRequest struct {
+	Username string `json:"username"`
+}
+
+type checkVerificationCodeRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
 // CheckEmail reports whether an email address is available for registration.
 // Always returns HTTP 200 with { available: bool } on valid input so clients
 // can show field errors early. CriticalRateLimit on the route mitigates probing.
@@ -234,6 +280,49 @@ func CheckEmail(c *gin.Context) {
 	}
 	available := !model.IsEmailAlreadyTaken(email)
 	common.ApiSuccess(c, gin.H{"available": available})
+}
+
+// CheckUsername reports whether a username is available for registration.
+// Mirrors CheckEmail: CriticalRateLimit on the route mitigates probing; no Turnstile.
+func CheckUsername(c *gin.Context) {
+	var req checkUsernameRequest
+	if err := common.DecodeJson(c.Request.Body, &req); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	username := strings.TrimSpace(req.Username)
+	if username == "" {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	exist, err := model.CheckUserExistOrDeleted(username, "")
+	if err != nil {
+		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"available": !exist})
+}
+
+// CheckVerificationCode verifies a registration email code without consuming it.
+// CriticalRateLimit on the route mitigates probing; no Turnstile (formal register
+// still requires Turnstile).
+func CheckVerificationCode(c *gin.Context) {
+	var req checkVerificationCodeRequest
+	if err := common.DecodeJson(c.Request.Body, &req); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	email := model.NormalizeEmail(req.Email)
+	code := strings.TrimSpace(req.Code)
+	if email == "" || !strings.Contains(email, "@") || code == "" {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	if !common.VerifyCodeWithKey(email, code, common.EmailVerificationPurpose) {
+		common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
+		return
+	}
+	common.ApiSuccess(c, gin.H{"valid": true})
 }
 
 func Register(c *gin.Context) {

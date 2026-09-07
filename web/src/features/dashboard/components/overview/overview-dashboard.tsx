@@ -39,6 +39,11 @@ import {
 import { motion, useReducedMotion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+
+import {
+  readStatusFromLocalStorage,
+  resolvePublicApiAddress,
+} from '@/lib/public-api-address'
 import { toast } from 'sonner'
 
 import {
@@ -143,7 +148,9 @@ function getCurrentOrigin(): string {
 }
 
 function normalizeEndpoint(sourceUrl?: string): string {
-  const fallback = `${getCurrentOrigin()}/v1/chat/completions`
+  const fallbackBase =
+    resolvePublicApiAddress(readStatusFromLocalStorage()) || getCurrentOrigin()
+  const fallback = `${fallbackBase}/v1/chat/completions`
   const trimmed = sourceUrl?.trim()
   if (!trimmed) return fallback
 

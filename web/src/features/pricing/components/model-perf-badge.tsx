@@ -74,23 +74,23 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
   return (
     <div
       className={cn(
-        'hidden w-[132px] grid-cols-[38px_48px_30px] gap-x-2 text-right tabular-nums min-[460px]:grid',
+        'flex shrink-0 items-end gap-4 text-left tabular-nums',
         props.className
       )}
     >
       <div title={t('Average latency')} className='min-w-0'>
-        <div className='text-muted-foreground/55 text-[10px] leading-4'>
+        <div className='text-[12px] leading-none font-light text-[#919191] dark:text-[#77777a]'>
           {t('Latency short')}
         </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
+        <div className='mt-2 text-[12px] leading-none font-medium whitespace-nowrap text-[#606060] dark:text-[#a3a3a3]'>
           {formatCompactLatency(avg_latency_ms)}
         </div>
       </div>
       <div title={t('Throughput')} className='min-w-0'>
-        <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
+        <div className='text-[12px] leading-none font-light text-[#919191] dark:text-[#77777a]'>
           {t('Throughput short')}
         </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
+        <div className='mt-2 text-[12px] leading-none font-medium whitespace-nowrap text-[#606060] dark:text-[#a3a3a3]'>
           {formatCompactThroughput(avg_tps)}
         </div>
       </div>
@@ -98,10 +98,10 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         title={`${t('Success rate')}: ${success_rate.toFixed(1)}%`}
         className='min-w-0'
       >
-        <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
+        <div className='text-[12px] leading-none font-light text-[#919191] dark:text-[#77777a]'>
           {t('Status short')}
         </div>
-        <div className='flex h-4 items-center justify-end gap-0.5'>
+        <div className='mt-2 flex h-[14px] items-end gap-0.5 py-px'>
           {statusBars.map((rate, index) => (
             <span
               key={`${index}-${rate ?? 'empty'}`}
@@ -111,9 +111,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
                 index === 1 && 'h-2.5',
                 index === 2 && 'h-3',
                 rate == null
-                  ? index === 0
-                    ? 'bg-muted-foreground/10'
-                    : 'bg-muted-foreground/15'
+                  ? 'bg-[#c2c1c1] dark:bg-[#545454]'
                   : getSuccessRateDotClass(rate)
               )}
             />

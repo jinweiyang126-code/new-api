@@ -32,7 +32,14 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
-import { login, register, wechatLoginByCode, checkEmailAvailable } from '@/features/auth/api'
+import {
+  login,
+  register,
+  wechatLoginByCode,
+  checkEmailAvailable,
+  checkUsernameAvailable,
+  checkVerificationCode,
+} from '@/features/auth/api'
 import { AuthBrand } from '@/features/auth/components/auth-brand'
 import { AuthCard } from '@/features/auth/components/auth-card'
 import { AuthEmailVerifyStep } from '@/features/auth/components/auth-email-verify-step'
@@ -167,6 +174,44 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
     } catch {
       // Network errors should not block signup; register/send-code still validates.
       return true
+    }
+  }
+
+  async function ensureUsernameAvailable(username: string) {
+    const trimmed = username.trim()
+    if (!trimmed) return true
+    try {
+      const res = await checkUsernameAvailable(trimmed)
+      if (res?.success && res.data?.available === false) {
+        form.setError('username', {
+          type: 'manual',
+          message: t('Username is already taken'),
+        })
+        return false
+      }
+      if (res?.success) {
+        form.clearErrors('username')
+      }
+      return true
+    } catch {
+      return true
+    }
+  }
+
+  async function ensureVerificationCodeValid(email: string, code: string) {
+    const trimmedEmail = email.trim()
+    const trimmedCode = code.trim()
+    if (!trimmedEmail || !trimmedCode) return false
+    try {
+      const res = await checkVerificationCode(trimmedEmail, trimmedCode)
+      if (res?.success && res.data?.valid) {
+        return true
+      }
+      toast.error(res?.message || t('Invalid verification code'))
+      return false
+    } catch {
+      toast.error(t('Invalid verification code'))
+      return false
     }
   }
 
@@ -315,6 +360,10 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
       return
     }
 
+    if (!(await ensureUsernameAvailable(data.username))) {
+      return
+    }
+
     if (emailVerificationRequired) {
       if (!data.email) {
         toast.error(t('Please enter your email'))
@@ -330,6 +379,9 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
           return
         }
         await requestVerificationCode(data.email)
+        return
+      }
+      if (!(await ensureVerificationCodeValid(data.email, verificationCode))) {
         return
       }
     }
@@ -356,16 +408,30 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
     }
     if (pendingAction === 'register') {
       setPendingAction(null)
+      if (
+        emailVerificationRequired &&
+        data.email &&
+        !(await ensureVerificationCodeValid(data.email, verificationCode))
+      ) {
+        setView(emailVerificationRequired ? 'verify' : 'form')
+        return
+      }
       await performRegister(data, verificationCode, token)
       setView(emailVerificationRequired ? 'verify' : 'form')
     }
   }
 
-  function submitEmailVerification(code: string) {
+  async function submitEmailVerification(code: string) {
     const trimmed = code.trim()
     if (!trimmed) {
       toast.error(t('Please enter the verification code'))
       return
+    }
+    const data = form.getValues()
+    if (emailVerificationRequired && data.email) {
+      if (!(await ensureVerificationCodeValid(data.email, trimmed))) {
+        return
+      }
     }
     setVerificationCode(trimmed)
     if (showTurnstileSlot && !turnstileToken) {
@@ -499,6 +565,13 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
                       placeholder={t('Enter your user name')}
                       autoComplete='username'
                       {...field}
+                      onBlur={async (event) => {
+                        field.onBlur()
+                        const value = event.target.value
+                        if (value?.trim()) {
+                          await ensureUsernameAvailable(value)
+                        }
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

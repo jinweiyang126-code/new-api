@@ -20,6 +20,7 @@ import { useMemo } from 'react'
 
 import type { SystemStatus } from '@/features/auth/types'
 import { useStatus } from '@/hooks/use-status'
+import { resolvePublicApiAddress } from '@/lib/public-api-address'
 
 import {
   type ChatPreset,
@@ -40,21 +41,7 @@ function getStoredStatusChats(): RawChatConfig {
 }
 
 function extractServerAddress(status: SystemStatus | null) {
-  const fromStatus =
-    (status?.server_address as string | undefined) ??
-    (status?.serverAddress as string | undefined) ??
-    status?.data?.server_address ??
-    (status?.data as Record<string, unknown> | undefined)?.serverAddress
-
-  if (fromStatus && typeof fromStatus === 'string') {
-    return fromStatus
-  }
-
-  if (typeof window !== 'undefined') {
-    return window.location.origin
-  }
-
-  return ''
+  return resolvePublicApiAddress(status as Record<string, unknown> | null)
 }
 
 function extractChats(status: SystemStatus | null): RawChatConfig {

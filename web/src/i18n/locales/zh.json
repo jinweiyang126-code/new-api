@@ -4172,6 +4172,8 @@
     "Separate multiple rules with English commas. For regex patterns that need commas, switch to JSON Text.": "多个规则用英文逗号分隔。正则里需要逗号时，请切换到 JSON 文本。",
     "Serve multiple users or teams with billing and quota control.": "为多个用户或团队提供计费和配额管理服务。",
     "Server Address": "服务器地址",
+    "Public API Address": "公开 API 地址",
+    "Base URL for model relay (/v1). Leave empty to use Server Address. Example: https://api.unionmeta.ai": "模型中转（/v1）对外 Base URL。留空则使用服务器地址。示例：https://api.unionmeta.ai",
     "Server IP": "服务器 IP",
     "Server Log Management": "服务器日志管理",
     "Server logging is not enabled (log directory not configured)": "服务器日志功能未启用（未配置日志目录）",
@@ -5753,6 +5755,8 @@
     "Terms of Service": "服务条款",
     "Edit email": "修改邮箱",
     "Email address is already in use": "邮箱地址已被占用",
+    "Username is already taken": "用户名已被占用",
+    "Invalid verification code": "验证码无效",
     "Enter your user name": "请输入用户名",
     "Enter your email address": "请输入邮箱地址",
     "Create a password": "创建密码"

@@ -48,6 +48,7 @@ import { useUpdateOption } from '../hooks/use-update-option'
 const _systemInfoSchema = z.object({
   SystemName: z.string().min(1),
   ServerAddress: z.string().optional(),
+  PublicApiAddress: z.string().optional(),
   Logo: z.string().url().optional().or(z.literal('')),
   Footer: z.string().optional(),
   FeedbackUrl: z.string().optional(),
@@ -77,6 +78,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
   const normalizedDefaults: SystemInfoFormValues = {
     SystemName: normalizeValue(defaultValues.SystemName),
     ServerAddress: normalizeValue(defaultValues.ServerAddress),
+    PublicApiAddress: normalizeValue(defaultValues.PublicApiAddress),
     Logo: normalizeValue(defaultValues.Logo),
     Footer: normalizeValue(defaultValues.Footer),
     FeedbackUrl: normalizeValue(defaultValues.FeedbackUrl),
@@ -93,6 +95,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
       error: () => t('System name is required'),
     }),
     ServerAddress: z.string().optional(),
+    PublicApiAddress: z.string().optional(),
     Logo: z.string().url().optional().or(z.literal('')),
     Footer: z.string().optional(),
     FeedbackUrl: z.string().optional(),
@@ -115,7 +118,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
       onSubmit: async (_data, changedFields) => {
         for (const [key, value] of Object.entries(changedFields)) {
           let v = normalizeValue(value)
-          if (key === 'ServerAddress') {
+          if (key === 'ServerAddress' || key === 'PublicApiAddress') {
             v = v.replace(/\/+$/, '')
           }
           await updateOption.mutateAsync({
@@ -170,6 +173,28 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                     <FormDescription>
                       {t(
                         'The public URL of your server, used for OAuth callbacks, webhooks, and other external integrations'
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='PublicApiAddress'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Public API Address')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='https://api.yourdomain.com'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Base URL for model relay (/v1). Leave empty to use Server Address. Example: https://api.unionmeta.ai'
                       )}
                     </FormDescription>
                     <FormMessage />

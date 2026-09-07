@@ -23,11 +23,10 @@ RUN mkdir -p web/dist && \
 
 RUN go build -ldflags "-s -w -X 'github.com/QuantumNous/new-api/common.Version=$(cat VERSION)'" -o new-api
 
-FROM debian:bookworm-slim
+# Alpine runtime avoids pulling debian from Docker Hub (TLS/proxy issues on some networks).
+FROM golang:1.26.1-alpine
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates tzdata wget \
-    && rm -rf /var/lib/apt/lists/* \
+RUN apk add --no-cache ca-certificates tzdata wget \
     && update-ca-certificates
 
 COPY --from=builder /build/new-api /

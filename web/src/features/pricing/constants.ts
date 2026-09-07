@@ -143,3 +143,28 @@ export type ViewMode = (typeof VIEW_MODES)[keyof typeof VIEW_MODES]
 
 /** Default page size for pricing table */
 export const DEFAULT_PRICING_PAGE_SIZE = 20
+
+/**
+ * Desktop Model Square layout: sidebar height aligns with the toolbar + N card
+ * rows so opening/closing filter sections does not stretch the page.
+ * Keep in sync with ModelCard / ModelCardGrid Tailwind sizes (h / gap-4).
+ */
+export const PRICING_MODEL_CARD_HEIGHT_PX = 230
+export const PRICING_CARD_GRID_GAP_PX = 16
+export const PRICING_SIDEBAR_ALIGN_CARD_ROWS = 4
+/** Desktop toolbar: py-3 + h-8 controls + border ≈ 58px */
+export const PRICING_TOOLBAR_HEIGHT_PX = 58
+/** main `space-y-4` between toolbar and card grid */
+export const PRICING_MAIN_STACK_GAP_PX = 16
+
+/** Fixed sidebar height on xl+: flush with the bottom of N card rows. */
+export function getPricingSidebarHeightPx(
+  rows: number = PRICING_SIDEBAR_ALIGN_CARD_ROWS
+): number {
+  return (
+    PRICING_TOOLBAR_HEIGHT_PX +
+    PRICING_MAIN_STACK_GAP_PX +
+    rows * PRICING_MODEL_CARD_HEIGHT_PX +
+    Math.max(0, rows - 1) * PRICING_CARD_GRID_GAP_PX
+  )
+}

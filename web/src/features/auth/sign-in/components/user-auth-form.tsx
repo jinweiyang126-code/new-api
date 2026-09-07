@@ -33,7 +33,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
-import { login, wechatLoginByCode } from '@/features/auth/api'
+import { login, loginPrecheck, wechatLoginByCode } from '@/features/auth/api'
 import { AuthBrand } from '@/features/auth/components/auth-brand'
 import { AuthCard } from '@/features/auth/components/auth-card'
 import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
@@ -172,6 +172,23 @@ export function UserAuthForm({
   }
 
   async function onSubmit(data: z.infer<typeof loginFormSchema>) {
+    setIsLoading(true)
+    try {
+      const precheck = await loginPrecheck({
+        username: data.username,
+        password: data.password,
+      })
+      if (!precheck?.success) {
+        toast.error(precheck?.message || loginFailedMessage)
+        return
+      }
+    } catch {
+      toast.error(loginFailedMessage)
+      return
+    } finally {
+      setIsLoading(false)
+    }
+
     if (showTurnstileSlot && !turnstileToken) {
       setPendingSubmit(data)
       setView('turnstile')

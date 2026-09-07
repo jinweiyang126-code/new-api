@@ -64,7 +64,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const usdExchangeRate = props.usdExchangeRate ?? 1
   const showRechargePrice = props.showRechargePrice ?? false
   const isTokenBased = isTokenBasedModel(props.model)
-  const tokenUnitLabel = tokenUnit === 'K' ? '1K' : '1M'
   const tags = parseTags(props.model.tags)
   const groups = props.model.enable_groups || []
   const endpoints = props.model.supported_endpoint_types || []
@@ -216,13 +215,13 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         }
       }}
       className={cn(
-        'group relative flex min-h-[230px] cursor-pointer flex-col rounded-[20px] border border-[#e8e8e8] bg-white p-[19px] transition-colors',
-        'hover:bg-[#f9f9f9]',
-        'dark:border-border/80 dark:bg-card/40 dark:hover:border-border dark:hover:bg-muted/20'
+        'group relative flex h-[230px] cursor-pointer flex-col overflow-hidden rounded-[20px] border border-[#e8e8e8] bg-white p-[19px] transition-colors',
+        'hover:bg-[#f7f7f7]',
+        'dark:border-white/10 dark:bg-[#1e1e1f] dark:hover:bg-[#262525]'
       )}
     >
       <div className='flex items-start gap-3'>
-        <div className='flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] p-[5px] dark:bg-muted/50'>
+        <div className='flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] p-[5px] dark:bg-[#252526]'>
           {modelIcon || (
             <span className='text-muted-foreground text-xs font-bold'>
               {initial}
@@ -238,10 +237,10 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             <button
               type='button'
               onClick={handleCopy}
-              className='border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-full border p-1.5 opacity-0 transition-all group-hover:opacity-100'
+              className='text-muted-foreground hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100'
               title={t('Copy')}
             >
-              <Copy className='size-3.5' />
+              <Copy className='size-4' />
             </button>
           </div>
 
@@ -251,30 +250,35 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         </div>
       </div>
 
-      <p className='text-muted-foreground mt-4 line-clamp-3 min-h-[3.3rem] flex-1 text-[12.5px] leading-[17.75px]'>
+      <p className='mt-4 line-clamp-3 min-h-[3.3rem] flex-1 text-[12px] leading-[18px] text-[#606060] dark:text-[#a3a3a3]'>
         {props.model.description || t('No description available.')}
       </p>
 
-      <div className='mt-3 flex items-end justify-between gap-2'>
-        <div className='flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium'>
-          {primaryGroup ? (
-            <span className='text-muted-foreground'>{primaryGroup}</span>
-          ) : null}
-          <span className='text-[#33b1ff]'>
-            {billingLabel(props.model, t)}
-          </span>
+      <div className='mt-3 flex items-end justify-between gap-3'>
+        <div className='flex min-w-0 flex-col gap-2'>
+          <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium'>
+            {primaryGroup ? (
+              <span className='text-[#606060] dark:text-[#a3a3a3]'>
+                {primaryGroup}
+              </span>
+            ) : null}
+            <span className='text-[#33b1ff]'>
+              {billingLabel(props.model, t)}
+            </span>
+          </div>
+          {(bottomTags.length > 0 || hiddenCount > 0) && (
+            <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-light text-[#919191] dark:text-[#77777a]'>
+              {bottomTags.map((item) => (
+                <span key={item} className='truncate'>
+                  {item}
+                </span>
+              ))}
+              {hiddenCount > 0 ? <span>+{hiddenCount}</span> : null}
+            </div>
+          )}
         </div>
 
-        <div className='flex shrink-0 flex-col items-end gap-1'>
-          <ModelPerfBadge perf={props.perf} className='self-end' />
-          <div className='text-[#919191] flex max-w-[220px] flex-wrap items-center justify-end gap-x-2 gap-y-0.5 text-[10px] dark:text-muted-foreground/70'>
-            {bottomTags.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-            <span>{tokenUnitLabel}</span>
-            {hiddenCount > 0 ? <span>+{hiddenCount}</span> : null}
-          </div>
-        </div>
+        <ModelPerfBadge perf={props.perf} />
       </div>
     </div>
   )
