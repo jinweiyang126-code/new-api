@@ -40,6 +40,7 @@ import {
   normalizeUpstreamSource,
 } from '../../lib/format'
 import { FailReasonDialog } from '../dialogs/fail-reason-dialog'
+import { useUsageLogsContext } from '../usage-logs-provider'
 
 /**
  * Cache tooltip component for token display
@@ -167,9 +168,10 @@ export function createDurationColumn<T>(config: {
 }
 
 /**
- * Create a channel column (admin only) - #id badge matching common logs
+ * Create a channel column (admin only) - #id badge + optional channel name,
+ * matching common usage logs layout.
  */
-export function createChannelColumn<T>(config: {
+export function createChannelColumn<T extends { channel_name?: string | null }>(config: {
   accessorKey?: string
   headerLabel: string
 }): ColumnDef<T> {
@@ -180,20 +182,46 @@ export function createChannelColumn<T>(config: {
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={headerLabel} />
     ),
-    cell: ({ row }) => {
+    cell: function ChannelCell({ row }) {
+      const { sensitiveVisible } = useUsageLogsContext()
       const channelId = row.getValue(accessorKey) as number
+      const channelNameRaw = row.original.channel_name?.trim() || ''
       if (!channelId) {
         return <span className='text-muted-foreground/60 text-xs'>-</span>
       }
+      const channelIdDisplay = `#${channelId}`
+      const channelDisplay = channelNameRaw
+        ? `${channelNameRaw} ${channelIdDisplay}`
+        : channelIdDisplay
+      const channelName = sensitiveVisible ? channelNameRaw : '••••'
+
       return (
-        <StatusBadge
-          label={`#${channelId}`}
-          autoColor={String(channelId)}
-          copyText={String(channelId)}
-          size='sm'
-          showDot={false}
-          className='font-mono'
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={<div className='flex max-w-[160px] flex-col gap-0.5' />}
+            >
+              <StatusBadge
+                label={channelIdDisplay}
+                autoColor={String(channelId)}
+                copyText={String(channelId)}
+                size='sm'
+                showDot={false}
+                className='font-mono'
+              />
+              {channelNameRaw && (
+                <span className='text-muted-foreground/70 truncate [font-family:var(--font-body)] !text-xs'>
+                  {channelName}
+                </span>
+              )}
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {sensitiveVisible ? channelDisplay : channelIdDisplay}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )
     },
     meta: { label: headerLabel },

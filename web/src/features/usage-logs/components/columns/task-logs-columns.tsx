@@ -57,6 +57,70 @@ function parseTaskData(data: unknown): unknown[] {
   return []
 }
 
+function parseTaskDataObject(data: unknown): Record<string, unknown> | null {
+  if (!data) return null
+  let value: unknown = data
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+    try {
+      value = JSON.parse(trimmed)
+    } catch {
+      return null
+    }
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+function readErrorMessage(value: unknown): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return ''
+  const obj = value as Record<string, unknown>
+  for (const key of ['message', 'errorMessage', 'error_message', 'msg', 'reason']) {
+    const nested = obj[key]
+    if (typeof nested === 'string' && nested.trim()) return nested.trim()
+  }
+  return ''
+}
+
+/** Display-only fallback when fail_reason is empty; does not change stored fail_reason. */
+function getTaskFailDetail(log: TaskLog): string {
+  const fromField = typeof log.fail_reason === 'string' ? log.fail_reason.trim() : ''
+  if (fromField) return fromField
+
+  const root = parseTaskDataObject(log.data)
+  if (!root) return ''
+
+  const candidates: unknown[] = [
+    root.error,
+    root.errorMessage,
+    root.error_message,
+    root.message,
+    root.reason,
+  ]
+
+  const nestedData = parseTaskDataObject(root.data)
+  if (nestedData) {
+    candidates.push(
+      nestedData.error,
+      nestedData.errorMessage,
+      nestedData.error_message,
+      nestedData.message,
+      nestedData.reason
+    )
+  }
+
+  for (const candidate of candidates) {
+    const message = readErrorMessage(candidate)
+    if (message) return message
+  }
+  return ''
+}
+
 function AudioPreviewCell({ log }: { log: TaskLog }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -223,7 +287,7 @@ export function useTaskLogsColumns(isAdmin: boolean): ColumnDef<TaskLog>[] {
       header: t('Details'),
       cell: function DetailsCell({ row }) {
         const log = row.original
-        const failReason = row.getValue('fail_reason') as string
+        const failDetail = getTaskFailDetail(log)
         const status = log.status
         const [dialogOpen, setDialogOpen] = useState(false)
 
@@ -250,7 +314,7 @@ export function useTaskLogsColumns(isAdmin: boolean): ColumnDef<TaskLog>[] {
           log.action === TASK_ACTIONS.REFERENCE_GENERATE ||
           log.action === TASK_ACTIONS.REMIX_GENERATE
         const isSuccess = status === TASK_STATUS.SUCCESS
-        const isUrl = failReason?.startsWith('http')
+        const isUrl = failDetail.startsWith('http')
 
         if (isSuccess && isVideoTask && isUrl) {
           const videoUrl = `/v1/videos/${log.task_id}/content`
@@ -266,7 +330,7 @@ export function useTaskLogsColumns(isAdmin: boolean): ColumnDef<TaskLog>[] {
           )
         }
 
-        if (!failReason) {
+        if (!failDetail || isSuccess) {
           return <span className='text-muted-foreground/60 text-xs'>-</span>
         }
 
@@ -279,11 +343,11 @@ export function useTaskLogsColumns(isAdmin: boolean): ColumnDef<TaskLog>[] {
               title={t('Click to view full error message')}
             >
               <span className='truncate leading-snug text-red-600 group-hover:underline dark:text-red-400'>
-                {failReason}
+                {failDetail}
               </span>
             </button>
             <FailReasonDialog
-              failReason={failReason}
+              failReason={failDetail}
               open={dialogOpen}
               onOpenChange={setDialogOpen}
             />

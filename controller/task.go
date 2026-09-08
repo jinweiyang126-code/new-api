@@ -75,6 +75,26 @@ func tasksToDto(tasks []*model.Task, fillUser bool) []*dto.TaskDto {
 			}
 		}
 	}
+
+	channelNameByID := map[int]string{}
+	if fillUser {
+		channelIds := types.NewSet[int]()
+		for _, task := range tasks {
+			if task.ChannelId != 0 {
+				channelIds.Add(task.ChannelId)
+			}
+		}
+		for _, channelId := range channelIds.Items() {
+			if cacheChannel, err := model.CacheGetChannel(channelId); err == nil && cacheChannel != nil {
+				channelNameByID[channelId] = cacheChannel.Name
+				continue
+			}
+			if ch, err := model.GetChannelById(channelId, false); err == nil && ch != nil {
+				channelNameByID[channelId] = ch.Name
+			}
+		}
+	}
+
 	result := make([]*dto.TaskDto, len(tasks))
 	for i, task := range tasks {
 		if fillUser {
@@ -82,7 +102,11 @@ func tasksToDto(tasks []*model.Task, fillUser bool) []*dto.TaskDto {
 				task.Username = user.Username
 			}
 		}
-		result[i] = relay.TaskModel2Dto(task)
+		item := relay.TaskModel2Dto(task)
+		if fillUser {
+			item.ChannelName = channelNameByID[task.ChannelId]
+		}
+		result[i] = item
 	}
 	return result
 }

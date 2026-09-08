@@ -426,17 +426,46 @@ func TestUpdateSunoTasksStalePollsRefundExactlyOnce(t *testing.T) {
 	assert.Equal(t, int64(1), countLogs(t))
 }
 
-func TestRunTaskPollingOnceDoesNotRefundHistoricalFailedTask(t *testing.T) {
+func TestRunTaskPollingOnceRefundsFailedTaskWithPendingQuota(t *testing.T) {
 	truncate(t)
 
 	const userID, initialQuota, taskQuota = 402, 10_000, 1_200
 	seedUser(t, userID, initialQuota)
 
 	task := makeTask(userID, 0, taskQuota, 0, BillingSourceWallet, 0)
-	task.TaskID = "historical_failed_already_refunded"
+	task.TaskID = "failed_pending_refund_repair"
 	task.Status = model.TaskStatusFailure
 	task.Progress = "100%"
-	task.SubmitTime = time.Now().Add(-90 * 24 * time.Hour).Unix()
+	task.FailReason = "OutputVideoSensitiveContentDetected.PolicyViolation"
+	task.SubmitTime = time.Now().Add(-time.Hour).Unix()
+	task.UpdatedAt = time.Now().Add(-time.Minute).Unix()
+	require.NoError(t, model.DB.Create(task).Error)
+
+	previousFactory := GetTaskAdaptorFunc
+	GetTaskAdaptorFunc = func(constant.TaskPlatform) TaskPollingAdaptor {
+		return &taskPollingFetchAdaptor{}
+	}
+	t.Cleanup(func() { GetTaskAdaptorFunc = previousFactory })
+
+	summary := RunTaskPollingOnce(context.Background(), nil)
+
+	assert.Zero(t, summary.UnfinishedTasks)
+	assert.Equal(t, initialQuota+taskQuota, getUserQuota(t, userID))
+	assert.Zero(t, getTaskQuota(t, task.ID))
+	assert.Equal(t, int64(1), countLogs(t))
+}
+
+func TestRunTaskPollingOnceDoesNotRefundLegacyFailedTask(t *testing.T) {
+	truncate(t)
+
+	const userID, initialQuota, taskQuota = 404, 10_000, 1_200
+	seedUser(t, userID, initialQuota)
+
+	task := makeTask(userID, 0, taskQuota, 0, BillingSourceWallet, 0)
+	task.TaskID = "legacy_failed_without_refund"
+	task.Status = model.TaskStatusFailure
+	task.Progress = "100%"
+	task.SubmitTime = model.TaskRefundLegacyCutoff - 1
 	task.UpdatedAt = time.Now().Add(-time.Minute).Unix()
 	require.NoError(t, model.DB.Create(task).Error)
 

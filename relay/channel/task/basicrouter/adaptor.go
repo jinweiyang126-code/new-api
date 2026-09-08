@@ -69,6 +69,7 @@ type pollData struct {
 	TaskID       string          `json:"taskId"`
 	Status       string          `json:"status"`
 	ErrorMessage json.RawMessage `json:"errorMessage"`
+	Error        json.RawMessage `json:"error"`
 	VideoURL     string          `json:"videoUrl"`
 	LastFrameURL string          `json:"lastFrameUrl"`
 	Images       json.RawMessage `json:"images"`
@@ -476,7 +477,7 @@ func (a *TaskAdaptor) ParseTaskResult(respBody []byte) (*relaycommon.TaskInfo, e
 	taskResult := &relaycommon.TaskInfo{Code: 0}
 	status := strings.ToLower(poll.Data.Status)
 	urls := extractImageURLs(poll.Data)
-	errMsg := common.JsonRawMessageToString(poll.Data.ErrorMessage)
+	errMsg := extractPollErrorMessage(poll)
 	switch status {
 	case "pending", "queued":
 		taskResult.Status = model.TaskStatusQueued
@@ -531,6 +532,50 @@ func parsePollBody(respBody []byte) (pollEnvelope, error) {
 		}
 	}
 	return poll, nil
+}
+
+func extractPollErrorMessage(poll pollEnvelope) string {
+	if msg := common.JsonRawMessageToString(poll.Data.ErrorMessage); msg != "" {
+		// Prefer plain string; object payloads fall through to structured parse.
+		if !strings.HasPrefix(strings.TrimSpace(msg), "{") {
+			return msg
+		}
+		if nested := readStructuredErrorMessage(json.RawMessage(msg)); nested != "" {
+			return nested
+		}
+	}
+	if msg := readStructuredErrorMessage(poll.Data.Error); msg != "" {
+		return msg
+	}
+	if msg := readStructuredErrorMessage(poll.Data.ErrorMessage); msg != "" {
+		return msg
+	}
+	return strings.TrimSpace(poll.Message)
+}
+
+func readStructuredErrorMessage(raw json.RawMessage) string {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return ""
+	}
+	if trimmed[0] == '"' {
+		return strings.TrimSpace(common.JsonRawMessageToString(raw))
+	}
+	if trimmed[0] != '{' {
+		return strings.TrimSpace(string(trimmed))
+	}
+	var obj map[string]json.RawMessage
+	if err := common.Unmarshal(trimmed, &obj); err != nil {
+		return ""
+	}
+	for _, key := range []string{"message", "errorMessage", "error_message", "msg", "reason"} {
+		if v, ok := obj[key]; ok {
+			if msg := strings.TrimSpace(common.JsonRawMessageToString(v)); msg != "" {
+				return msg
+			}
+		}
+	}
+	return ""
 }
 
 func extractImageURLs(data pollData) []string {

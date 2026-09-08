@@ -311,6 +311,38 @@ func GetTimedOutUnfinishedTasks(cutoffUnix int64, limit int) []*Task {
 	return tasks
 }
 
+// GetFailedTasksPendingRefund returns failed tasks that still hold pre-consumed
+// quota (missed automatic refund). Legacy pre-cutoff tasks are excluded.
+func GetFailedTasksPendingRefund(limit int) []*Task {
+	if limit <= 0 {
+		limit = 100
+	}
+	var tasks []*Task
+	err := DB.Where("status = ?", TaskStatusFailure).
+		Where("quota > 0").
+		Where("submit_time >= ?", TaskRefundLegacyCutoff).
+		Order("id").
+		Limit(limit).
+		Find(&tasks).Error
+	if err != nil {
+		return nil
+	}
+	return tasks
+}
+
+// HasFailedTasksPendingRefund is a cheap existence check for the async poll
+// scheduler so idle systems still run when failed tasks need refund repair.
+func HasFailedTasksPendingRefund() bool {
+	var id int64
+	err := DB.Model(&Task{}).
+		Where("status = ?", TaskStatusFailure).
+		Where("quota > 0").
+		Where("submit_time >= ?", TaskRefundLegacyCutoff).
+		Limit(1).
+		Pluck("id", &id).Error
+	return err == nil && id != 0
+}
+
 func GetAllUnFinishSyncTasks(limit int) []*Task {
 	var tasks []*Task
 	var err error

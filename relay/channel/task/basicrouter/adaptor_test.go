@@ -77,6 +77,23 @@ func TestParseTaskResultImageSuccessWaitsForURLs(t *testing.T) {
 	require.Equal(t, "IN_PROGRESS", info.Status)
 }
 
+func TestParseTaskResultOpenAIVideoFailedUsesErrorMessage(t *testing.T) {
+	a := &TaskAdaptor{}
+	body := []byte(`{
+		"id":"cgt-20260908165402-x972h",
+		"model":"dreamina-seedance-2-5-260628",
+		"status":"failed",
+		"error":{
+			"code":"OutputVideoSensitiveContentDetected.PolicyViolation",
+			"message":"The request failed because the output video may be related to copyright restrictions."
+		}
+	}`)
+	info, err := a.ParseTaskResult(body)
+	require.NoError(t, err)
+	require.Equal(t, "FAILURE", string(info.Status))
+	require.Contains(t, info.Reason, "copyright restrictions")
+}
+
 func TestConvertToOpenAIVideoImageMetadata(t *testing.T) {
 	a := &TaskAdaptor{}
 	task := &model.Task{

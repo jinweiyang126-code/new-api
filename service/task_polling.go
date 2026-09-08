@@ -92,12 +92,39 @@ func sweepTimedOutTasks(ctx context.Context) {
 	}
 }
 
+// sweepUnrefundedFailedTasks repairs failed tasks that still hold pre-consumed
+// quota (e.g. CAS skipped billing on the failure transition). Safe to re-run:
+// RefundTaskQuota zeros quota after a successful refund.
+func sweepUnrefundedFailedTasks(ctx context.Context) {
+	tasks := model.GetFailedTasksPendingRefund(100)
+	if len(tasks) == 0 {
+		return
+	}
+	refunded := 0
+	for _, task := range tasks {
+		if task == nil || task.Quota == 0 {
+			continue
+		}
+		reason := task.FailReason
+		if reason == "" {
+			reason = "task failed: repair pending refund"
+		}
+		if RefundTaskQuota(ctx, task, reason) {
+			refunded++
+		}
+	}
+	if refunded > 0 {
+		logger.LogInfo(ctx, fmt.Sprintf("sweepUnrefundedFailedTasks: refunded %d tasks", refunded))
+	}
+}
+
 // TaskPollSummary is the result recorded on an async_task_poll system task row,
 // summarizing one polling pass.
 type TaskPollSummary struct {
 	UnfinishedTasks  int `json:"unfinished_tasks"`
 	PlatformsScanned int `json:"platforms_scanned"`
 	NullTasksFailed  int `json:"null_tasks_failed"`
+	PendingRefunds   int `json:"pending_refunds,omitempty"`
 }
 
 // RunTaskPollingOnce performs one async-task (Suno/video) polling pass
@@ -116,6 +143,7 @@ func RunTaskPollingOnce(ctx context.Context, report func(processed, total int)) 
 
 	common.SysLog("任务进度轮询开始")
 	sweepTimedOutTasks(ctx)
+	sweepUnrefundedFailedTasks(ctx)
 	allTasks := model.GetAllUnFinishSyncTasks(constant.TaskQueryLimit)
 	summary.UnfinishedTasks = len(allTasks)
 	platformTask := make(map[constant.TaskPlatform][]*model.Task)
