@@ -37,6 +37,9 @@ import { useAuthStore } from '@/stores/auth-store'
 
 const INVITE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const accountTypeCardClassName =
+  'h-auto w-full justify-start gap-3 rounded-[12px] border border-solid border-[#E5E5E7] bg-white px-4 py-4 text-left font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#212121] dark:hover:bg-[#212121]'
+
 type InviteEmailField = {
   key: string
   value: string
@@ -49,15 +52,17 @@ function createInviteField(value = ''): InviteEmailField {
   }
 }
 
-type OnboardingStep = 'choose' | 'organization'
+export type OnboardingStep = 'choose' | 'organization'
 
 type SignupOnboardingFormProps = {
-  initialStep?: OnboardingStep
+  step: OnboardingStep
+  onStepChange: (step: OnboardingStep) => void
   className?: string
 }
 
 export function SignupOnboardingForm({
-  initialStep = 'choose',
+  step,
+  onStepChange,
   className,
 }: SignupOnboardingFormProps) {
   const { t } = useTranslation()
@@ -66,7 +71,6 @@ export function SignupOnboardingForm({
   const setCurrentCustomer = useSetCurrentCustomer()
   const user = useAuthStore((state) => state.auth.user)
   const setUser = useAuthStore((state) => state.auth.setUser)
-  const [step, setStep] = useState<OnboardingStep>(initialStep)
   const [isLoading, setIsLoading] = useState(false)
   const [organizationName, setOrganizationName] = useState('')
   const [inviteEmails, setInviteEmails] = useState([createInviteField()])
@@ -135,39 +139,37 @@ export function SignupOnboardingForm({
 
   if (step === 'choose') {
     return (
-      <div className={cn('grid gap-4', className)}>
-        <p className='text-muted-foreground text-sm'>
-          {t('Choose the type of account you want to create')}
-        </p>
-        <p className='text-muted-foreground text-xs'>
-          {t('You can change this later.')}
-        </p>
+      <div className={cn('flex w-full flex-col gap-3', className)}>
         <Button
           type='button'
-          variant='outline'
-          className='h-auto w-full justify-start gap-3 rounded-lg px-4 py-4 text-left'
+          variant='ghost'
+          className={accountTypeCardClassName}
           disabled={isLoading}
           onClick={() => finishPersonal()}
         >
-          <User className='text-muted-foreground h-5 w-5 shrink-0' />
-          <span className='flex flex-col gap-0.5'>
-            <span className='font-medium'>{t('Personal account')}</span>
-            <span className='text-muted-foreground text-xs font-normal'>
+          <User className='size-5 shrink-0 text-foreground' />
+          <span className='flex min-w-0 flex-col gap-0.5'>
+            <span className='text-sm font-medium text-foreground'>
+              {t('Personal account')}
+            </span>
+            <span className='text-muted-foreground text-xs leading-5'>
               {t('Use your personal wallet for API usage')}
             </span>
           </span>
         </Button>
         <Button
           type='button'
-          variant='outline'
-          className='h-auto w-full justify-start gap-3 rounded-lg px-4 py-4 text-left'
+          variant='ghost'
+          className={accountTypeCardClassName}
           disabled={isLoading}
-          onClick={() => setStep('organization')}
+          onClick={() => onStepChange('organization')}
         >
-          <Building2 className='text-muted-foreground h-5 w-5 shrink-0' />
-          <span className='flex flex-col gap-0.5'>
-            <span className='font-medium'>{t('Organization account')}</span>
-            <span className='text-muted-foreground text-xs font-normal'>
+          <Building2 className='size-5 shrink-0 text-foreground' />
+          <span className='flex min-w-0 flex-col gap-0.5'>
+            <span className='text-sm font-medium text-foreground'>
+              {t('Organization account')}
+            </span>
+            <span className='text-muted-foreground text-xs leading-5'>
               {t('Create an organization and invite teammates')}
             </span>
           </span>
@@ -182,7 +184,7 @@ export function SignupOnboardingForm({
         event.preventDefault()
         void submitOrganization()
       }}
-      className={cn('grid gap-4', className)}
+      className={cn('flex w-full flex-col gap-6', className)}
     >
       <OrganizationSetupFields
         organizationName={organizationName}
@@ -191,25 +193,10 @@ export function SignupOnboardingForm({
         onInviteEmailsChange={setInviteEmails}
         disabled={isLoading}
       />
-      <div className='mt-2 flex gap-2'>
-        <Button
-          type='button'
-          variant='outline'
-          className='flex-1'
-          disabled={isLoading}
-          onClick={() => setStep('choose')}
-        >
-          {t('Back')}
-        </Button>
-        <AuthSubmitButton
-          type='submit'
-          className='flex-1'
-          disabled={isLoading}
-        >
-          {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
-          {t('Create organization')}
-        </AuthSubmitButton>
-      </div>
+      <AuthSubmitButton type='submit' disabled={isLoading}>
+        {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+        {t('Create organization')}
+      </AuthSubmitButton>
     </form>
   )
 }

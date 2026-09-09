@@ -93,7 +93,7 @@ export function AuthEmailVerifyStep({
             <button
               type='button'
               onClick={onEditEmail}
-              className='text-muted-foreground hover:text-foreground inline-flex size-5 items-center justify-center rounded-md'
+              className='text-[var(--auth-link)] hover:opacity-85 inline-flex size-5 items-center justify-center rounded-md'
               aria-label={t('Edit email')}
               title={t('Edit email')}
             >
@@ -117,7 +117,7 @@ export function AuthEmailVerifyStep({
               <InputOTPSlot
                 key={index}
                 index={index}
-                className='size-14 rounded-[12px] border border-border text-lg data-[active=true]:border-[#A3A3A3] data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E]'
+                className='size-14 rounded-[12px] border border-[#E5E5E7] bg-white text-lg shadow-none data-[active=true]:border-primary data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E] dark:bg-[#212121] dark:data-[active=true]:border-[#A3A3A3]'
               />
             ))}
           </InputOTPGroup>

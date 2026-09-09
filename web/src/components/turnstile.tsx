@@ -17,9 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useTheme } from '@/context/theme-provider'
+import { toIntlLocale } from '@/i18n/languages'
 import { cn } from '@/lib/utils'
 
 import {
@@ -33,6 +35,10 @@ interface TurnstileProps {
   onExpire?: () => void
   onReady?: () => void
   className?: string
+  /** Override widget theme; defaults to the current site light/dark theme. */
+  theme?: 'light' | 'dark' | 'auto'
+  /** Override widget language; defaults to the current platform UI language. */
+  language?: string
 }
 
 type LoadState = 'loading' | 'ready' | 'error'
@@ -104,8 +110,16 @@ export function Turnstile({
   onExpire,
   onReady,
   className,
+  theme: themeProp,
+  language: languageProp,
 }: TurnstileProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const { resolvedTheme } = useTheme()
+  const theme = themeProp ?? resolvedTheme
+  const language = useMemo(() => {
+    if (languageProp) return languageProp
+    return toIntlLocale(i18n.resolvedLanguage || i18n.language) || 'auto'
+  }, [languageProp, i18n.language, i18n.resolvedLanguage])
   const ref = useRef<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<string | null>(null)
   const onVerifyRef = useRef(onVerify)
@@ -160,6 +174,8 @@ export function Turnstile({
 
           const widgetId = window.turnstile.render(ref.current, {
             sitekey: siteKey,
+            theme,
+            language,
             callback: (token: string) => onVerifyRef.current(token),
             'error-callback': () => {
               onExpireRef.current?.()
@@ -194,7 +210,7 @@ export function Turnstile({
       signal.cancelled = true
       unmountWidget()
     }
-  }, [siteKey, retryToken, unmountWidget])
+  }, [siteKey, theme, language, retryToken, unmountWidget])
 
   return (
     <div className={cn('relative h-[65px] w-[300px] max-w-full', className)}>

@@ -310,7 +310,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
     <aside
       style={props.style}
       className={cn(
-        'flex flex-col overflow-hidden rounded-[20px] border border-[#e8e8e8] bg-white p-5 dark:border-border/80 dark:bg-transparent',
+        'flex flex-col overflow-hidden rounded-[20px] border border-[#e8e8e8] bg-white p-5 dark:border-border/80 dark:bg-[#1E1E1F]',
         props.className
       )}
     >

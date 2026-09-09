@@ -16,39 +16,79 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '@/features/auth/auth-layout'
 import { AuthBrand } from '@/features/auth/components/auth-brand'
 import { AuthCard } from '@/features/auth/components/auth-card'
+import { useAuthChrome } from '@/features/auth/lib/auth-chrome-context'
 
-import { SignupOnboardingForm } from './components/signup-onboarding-form'
+import {
+  SignupOnboardingForm,
+  type OnboardingStep,
+} from './components/signup-onboarding-form'
 
 type SignupOnboardingProps = {
-  initialStep?: 'choose' | 'organization'
+  initialStep?: OnboardingStep
 }
 
-export function SignupOnboarding({ initialStep }: SignupOnboardingProps) {
-  const { t } = useTranslation()
-
+export function SignupOnboarding({ initialStep = 'choose' }: SignupOnboardingProps) {
   return (
     <AuthLayout>
-      <AuthCard className='w-full max-w-[420px] space-y-6'>
-        <AuthBrand />
-        <div className='space-y-2 text-center'>
-          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
-            {initialStep === 'organization'
-              ? t('Set up your organization')
-              : t('Welcome')}
-          </h1>
-          <p className='text-muted-foreground text-sm'>
-            {initialStep === 'organization'
-              ? t('Invite teammates (optional)')
-              : t('How will you be using the platform?')}
-          </p>
-        </div>
-        <SignupOnboardingForm initialStep={initialStep ?? 'choose'} />
-      </AuthCard>
+      <SignupOnboardingContent initialStep={initialStep} />
     </AuthLayout>
+  )
+}
+
+function SignupOnboardingContent({
+  initialStep = 'choose',
+}: SignupOnboardingProps) {
+  const { t } = useTranslation()
+  const { setAction: setAuthChromeAction } = useAuthChrome()
+  const [step, setStep] = useState<OnboardingStep>(initialStep)
+  const isChoose = step === 'choose'
+
+  const goBackToChoose = useCallback(() => {
+    setStep('choose')
+  }, [])
+
+  useEffect(() => {
+    if (step === 'organization') {
+      setAuthChromeAction({
+        label: t('Back'),
+        onClick: goBackToChoose,
+      })
+      return () => setAuthChromeAction(null)
+    }
+    setAuthChromeAction(null)
+    return () => setAuthChromeAction(null)
+  }, [step, setAuthChromeAction, t, goBackToChoose])
+
+  return (
+    <AuthCard className='flex w-full max-w-[360px] flex-col items-center gap-6'>
+      <div className='flex w-full flex-col items-center gap-4'>
+        <AuthBrand />
+        <div className='flex flex-col items-center gap-2 text-center'>
+          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+            {isChoose
+              ? t('How will you be using the platform?')
+              : t('Complete your organization information')}
+          </h1>
+          {isChoose ? (
+            <p className='text-muted-foreground text-xs leading-5'>
+              {t(
+                'Choose the type of account you want to create, you can change this later.'
+              )}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <SignupOnboardingForm
+        step={step}
+        onStepChange={setStep}
+        className='w-full'
+      />
+    </AuthCard>
   )
 }

@@ -18,29 +18,27 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 
-import { Button } from '@/components/ui/button'
 import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
+import {
+  AuthTextField,
+} from '@/features/auth/components/auth-text-field'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-  InputOTPSeparator,
 } from '@/components/ui/input-otp'
 import { login2fa } from '@/features/auth/api'
 import {
@@ -59,12 +57,20 @@ import { getServerErrorMessageKey } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
-type OtpFormProps = React.HTMLAttributes<HTMLFormElement>
+type OtpFormProps = {
+  useBackupCode: boolean
+  onToggleMode: () => void
+  className?: string
+}
 
-export function OtpForm({ className, ...props }: OtpFormProps) {
+export function OtpForm({
+  useBackupCode,
+  onToggleMode,
+  className,
+}: OtpFormProps) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
-  const [useBackupCode, setUseBackupCode] = useState(false)
+  const autoSubmittedForRef = useRef<string | null>(null)
 
   const pending2FAFlowToken = useAuthStore(
     (state) => state.auth.pending2FAFlowToken
@@ -78,24 +84,20 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
 
   const otp = form.watch('otp')
 
-  async function onSubmit(data: z.infer<typeof otpFormSchema>) {
-    // Validate based on mode
+  async function verify(codeRaw: string) {
     if (useBackupCode) {
-      if (!isValidBackupCode(data.otp)) {
+      if (!isValidBackupCode(codeRaw)) {
         toast.error(t('Backup code must be in format XXXX-XXXX'))
         return
       }
-    } else {
-      if (!isValidOTP(data.otp)) {
-        toast.error(t('Verification code must be 6 digits'))
-        return
-      }
+    } else if (!isValidOTP(codeRaw)) {
+      toast.error(t('Verification code must be 6 digits'))
+      return
     }
 
     setIsLoading(true)
     try {
-      // Remove all hyphens from backup code before sending to backend
-      const code = useBackupCode ? cleanBackupCode(data.otp) : data.otp
+      const code = useBackupCode ? cleanBackupCode(codeRaw) : codeRaw
       if (!pending2FAFlowToken) {
         toast.error(t('Login flow expired. Please sign in again.'))
         redirectToLogin()
@@ -109,6 +111,7 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
       if (!res.success) {
         if (getServerErrorMessageKey(res)) return
         toast.error(res.message || t('Invalid code'))
+        autoSubmittedForRef.current = null
         return
       }
 
@@ -121,6 +124,7 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('2FA verification error:', error)
+      autoSubmittedForRef.current = null
       if (getServerErrorMessageKey(error)) return
       const errorMessage =
         error instanceof Error ? error.message : t('Verification failed')
@@ -130,109 +134,110 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
     }
   }
 
+  async function onSubmit(data: z.infer<typeof otpFormSchema>) {
+    await verify(data.otp)
+  }
+
+  function handleOtpChange(value: string) {
+    form.setValue('otp', value, { shouldValidate: true })
+    if (useBackupCode) return
+    if (value.length < OTP_LENGTH) {
+      autoSubmittedForRef.current = null
+      return
+    }
+    if (isLoading || autoSubmittedForRef.current === value) return
+    autoSubmittedForRef.current = value
+    void verify(value)
+  }
+
   function handleToggleMode() {
-    setUseBackupCode(!useBackupCode)
+    autoSubmittedForRef.current = null
     form.setValue('otp', '')
+    onToggleMode()
   }
 
-  function handleBackToLogin() {
-    redirectToLogin()
-  }
-
-  const isFormValid = useBackupCode
-    ? otp.length >= BACKUP_CODE_LENGTH
-    : otp.length >= OTP_LENGTH
+  const isBackupValid = otp.length >= BACKUP_CODE_LENGTH
+  const otpSlotClassName =
+    'size-14 rounded-[12px] border border-[#E5E5E7] bg-white text-lg shadow-none data-[active=true]:border-primary data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E] dark:bg-[#212121] dark:data-[active=true]:border-[#A3A3A3]'
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
-        {...props}
+        className={cn('flex w-full flex-col items-center gap-6', className)}
       >
         <FormField
           control={form.control}
           name='otp'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {useBackupCode ? t('Backup Code') : t('Verification Code')}
-              </FormLabel>
+            <FormItem className='w-full'>
               <FormControl>
                 {useBackupCode ? (
-                  <Input
+                  <AuthTextField
                     placeholder={t('Enter backup code (e.g., CAWD-OQDV)')}
-                    {...field}
+                    value={field.value}
                     maxLength={BACKUP_CODE_LENGTH}
                     autoComplete='off'
                     className='font-mono uppercase'
+                    disabled={isLoading}
                     onChange={(e) => {
                       const formatted = formatBackupCode(e.target.value)
                       field.onChange(formatted)
                     }}
                   />
                 ) : (
-                  <InputOTP
-                    maxLength={OTP_LENGTH}
-                    {...field}
-                    containerClassName='justify-between sm:[&>[data-slot="input-otp-group"]>div]:w-12'
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                    </InputOTPGroup>
-                    <InputOTPSeparator />
-                    <InputOTPGroup>
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                    </InputOTPGroup>
-                    <InputOTPSeparator />
-                    <InputOTPGroup>
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
+                  <div className='relative flex flex-col items-center gap-3'>
+                    <InputOTP
+                      maxLength={OTP_LENGTH}
+                      value={field.value}
+                      onChange={handleOtpChange}
+                      inputMode='numeric'
+                      pattern='[0-9]*'
+                      containerClassName='justify-center gap-2'
+                      disabled={isLoading}
+                    >
+                      <InputOTPGroup className='gap-2'>
+                        {Array.from({ length: OTP_LENGTH }, (_, index) => (
+                          <InputOTPSlot
+                            key={index}
+                            index={index}
+                            className={otpSlotClassName}
+                          />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                    {isLoading ? (
+                      <p className='text-muted-foreground inline-flex items-center gap-1.5 text-xs'>
+                        <Loader2 className='size-3.5 animate-spin' />
+                        {t('Submitting...')}
+                      </p>
+                    ) : null}
+                  </div>
                 )}
               </FormControl>
-              <FormDescription className='text-muted-foreground text-xs'>
-                {useBackupCode
-                  ? t('Each backup code can only be used once.')
-                  : t('Verification code updates every 30 seconds.')}
-              </FormDescription>
-              <FormMessage />
+              <FormMessage className='text-center' />
             </FormItem>
           )}
         />
 
-        <AuthSubmitButton
-          type='submit'
-          disabled={!isFormValid || isLoading}
-        >
-          {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
-          {t('Verify and Sign In')}
-        </AuthSubmitButton>
+        {useBackupCode ? (
+          <AuthSubmitButton
+            type='submit'
+            disabled={!isBackupValid || isLoading}
+          >
+            {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+            {t('Verify and Sign In')}
+          </AuthSubmitButton>
+        ) : null}
 
-        <div className='flex items-center justify-center gap-2 text-sm'>
-          <Button
-            type='button'
-            variant='link'
-            size='sm'
-            className='text-primary h-auto p-0'
-            onClick={handleToggleMode}
-          >
-            {useBackupCode ? t('Use authenticator code') : t('Use backup code')}
-          </Button>
-          <span className='text-muted-foreground'>·</span>
-          <Button
-            type='button'
-            variant='link'
-            size='sm'
-            className='text-primary h-auto p-0'
-            onClick={handleBackToLogin}
-          >
-            {t('Back to login')}
-          </Button>
-        </div>
+        <button
+          type='button'
+          className='auth-link text-xs'
+          disabled={isLoading}
+          onClick={handleToggleMode}
+        >
+          {useBackupCode ? t('Use authenticator code') : t('Use backup code')}
+        </button>
       </form>
     </Form>
   )

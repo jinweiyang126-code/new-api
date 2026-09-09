@@ -340,6 +340,7 @@ export function UserAuthForm({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
             className={cn('flex w-full flex-col gap-4', className)}
             {...props}
           >
@@ -382,7 +383,7 @@ export function UserAuthForm({
                         extra={
                           <Link
                             to='/forgot-password'
-                            className='auth-link text-xs'
+                            className='auth-link auth-link-plain text-xs'
                           >
                             {t('Forgot password?')}
                           </Link>

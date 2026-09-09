@@ -56,11 +56,11 @@ export async function updatePlan(
   return res.data
 }
 
-export async function patchPlanStatus(
+export async function updatePlanStatus(
   id: number,
   enabled: boolean
 ): Promise<ApiResponse> {
-  const res = await api.patch(`/api/subscription/admin/plans/${id}`, {
+  const res = await api.put(`/api/subscription/admin/plans/${id}/status`, {
     enabled,
   })
   return res.data

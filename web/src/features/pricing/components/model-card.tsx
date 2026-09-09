@@ -68,7 +68,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const groups = props.model.enable_groups || []
   const endpoints = props.model.supported_endpoint_types || []
   const modelIconKey = props.model.icon || props.model.vendor_icon
-  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 20) : null
+  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 24) : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
   const isDynamicPricing =
     props.model.billing_mode === 'tiered_expr' &&
@@ -215,15 +215,15 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         }
       }}
       className={cn(
-        'group relative flex h-[230px] cursor-pointer flex-col overflow-hidden rounded-[20px] border border-[#e8e8e8] bg-white p-[19px] transition-colors',
+        'group relative flex h-[248px] cursor-pointer flex-col overflow-hidden rounded-[20px] border border-[#e8e8e8] bg-white p-[19px] transition-colors',
         'hover:bg-[#f7f7f7]',
         'dark:border-white/10 dark:bg-[#1e1e1f] dark:hover:bg-[#262525]'
       )}
     >
       <div className='flex items-start gap-3'>
-        <div className='flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] p-[5px] dark:bg-[#252526]'>
+        <div className='flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] p-1.5 dark:bg-[#252526]'>
           {modelIcon || (
-            <span className='text-muted-foreground text-xs font-bold'>
+            <span className='text-muted-foreground text-sm font-bold'>
               {initial}
             </span>
           )}
@@ -231,7 +231,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
 
         <div className='min-w-0 flex-1'>
           <div className='flex items-start justify-between gap-2'>
-            <h3 className='text-foreground truncate text-sm leading-tight font-semibold'>
+            <h3 className='text-foreground truncate text-base leading-tight font-semibold'>
               {props.model.model_name}
             </h3>
             <button
@@ -244,17 +244,17 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </button>
           </div>
 
-          <div className='mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs'>
+          <div className='mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-sm'>
             {priceSummary}
           </div>
         </div>
       </div>
 
-      <p className='mt-4 line-clamp-3 min-h-[3.3rem] flex-1 text-[12px] leading-[18px] text-[#606060] dark:text-[#a3a3a3]'>
+      <p className='mt-6 h-16 shrink-0 overflow-hidden text-sm leading-[21px] text-[#606060] line-clamp-3 dark:text-[#a3a3a3]'>
         {props.model.description || t('No description available.')}
       </p>
 
-      <div className='mt-3 flex items-end justify-between gap-3'>
+      <div className='mt-6 flex items-end justify-between gap-3'>
         <div className='flex min-w-0 flex-col gap-2'>
           <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium'>
             {primaryGroup ? (

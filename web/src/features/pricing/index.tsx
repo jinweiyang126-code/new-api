@@ -23,7 +23,9 @@ import {
   PublicLayout,
   useLandingPublicLayoutProps,
 } from '@/components/layout'
+import { Footer } from '@/components/layout/components/footer'
 import { PageTransition } from '@/components/page-transition'
+import { GetInTouchDialog } from '@/features/home/components/get-in-touch-dialog'
 
 import {
   LoadingSkeleton,
@@ -42,6 +44,7 @@ import { usePricingData } from './hooks/use-pricing-data'
 export function Pricing() {
   const { t } = useTranslation()
   const landingLayout = useLandingPublicLayoutProps()
+  const [contactOpen, setContactOpen] = useState(false)
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   )
@@ -159,6 +162,11 @@ export function Pricing() {
         <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <LoadingSkeleton viewMode={viewMode} />
         </div>
+        <Footer
+          variant='landing'
+          onContactClick={() => setContactOpen(true)}
+        />
+        <GetInTouchDialog open={contactOpen} onOpenChange={setContactOpen} />
       </PublicLayout>
     )
   }
@@ -280,6 +288,8 @@ export function Pricing() {
           )}
         </PageTransition>
       </div>
+      <Footer variant='landing' onContactClick={() => setContactOpen(true)} />
+      <GetInTouchDialog open={contactOpen} onOpenChange={setContactOpen} />
     </PublicLayout>
   )
 }

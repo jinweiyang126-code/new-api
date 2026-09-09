@@ -5,8 +5,10 @@ import { Plus, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  AuthFieldLabel,
+  AuthTextField,
+} from '@/features/auth/components/auth-text-field'
 
 type InviteEmailField = {
   key: string
@@ -37,10 +39,10 @@ export function OrganizationSetupFields({
   const { t } = useTranslation()
 
   return (
-    <div className='grid gap-4'>
-      <div className='grid gap-2'>
-        <Label htmlFor='organization-name'>{t('Organization name')}</Label>
-        <Input
+    <div className='flex w-full flex-col gap-4'>
+      <div className='flex flex-col gap-2'>
+        <AuthFieldLabel label={t('Organization name')} />
+        <AuthTextField
           id='organization-name'
           value={organizationName}
           onChange={(event) => onOrganizationNameChange(event.target.value)}
@@ -50,12 +52,13 @@ export function OrganizationSetupFields({
           maxLength={128}
         />
       </div>
-      <div className='grid gap-2'>
-        <Label>{t('Invite teammates (optional)')}</Label>
+      <div className='flex flex-col gap-2'>
+        <AuthFieldLabel label={t('Invite teammates (optional)')} />
         {inviteEmails.map((field, index) => (
           <div key={field.key} className='flex items-center gap-2'>
-            <Input
+            <AuthTextField
               type='email'
+              inputMode='email'
               value={field.value}
               onChange={(event) => {
                 const next = [...inviteEmails]
@@ -64,12 +67,14 @@ export function OrganizationSetupFields({
               }}
               placeholder={t('name@example.com')}
               disabled={disabled}
+              className='min-w-0 flex-1'
             />
             {inviteEmails.length > 1 ? (
               <Button
                 type='button'
                 variant='ghost'
                 size='icon'
+                className='size-11 shrink-0'
                 disabled={disabled}
                 onClick={() =>
                   onInviteEmailsChange(
@@ -78,23 +83,22 @@ export function OrganizationSetupFields({
                 }
                 aria-label={t('Remove')}
               >
-                <X className='h-4 w-4' />
+                <X className='size-4' />
               </Button>
             ) : null}
           </div>
         ))}
-        <Button
+        <button
           type='button'
-          variant='outline'
-          className='w-fit gap-1.5'
           disabled={disabled || inviteEmails.length >= MAX_INVITE_EMAILS}
           onClick={() =>
             onInviteEmailsChange([...inviteEmails, createInviteField()])
           }
+          className='inline-flex w-fit items-center gap-1.5 text-sm font-normal text-foreground disabled:pointer-events-none disabled:opacity-50'
         >
-          <Plus className='h-4 w-4' />
+          <Plus className='size-4' />
           {t('Add another email')}
-        </Button>
+        </button>
       </div>
     </div>
   )

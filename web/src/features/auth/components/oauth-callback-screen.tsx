@@ -16,15 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Loader2, Send, Shield, UserRound, type LucideIcon } from 'lucide-react'
-import { useLayoutEffect, useMemo } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SiGithub, SiLinux, SiWechat } from 'react-icons/si'
 
 import { hideBootOAuthLoader } from '@/lib/boot-oauth-loader'
 
 import { AuthLayout } from '../auth-layout'
-import { AuthBrand } from './auth-brand'
+import { useAuthRedirect } from '../hooks/use-auth-redirect'
+import { useAuthChrome } from '../lib/auth-chrome-context'
 import { AuthCard } from './auth-card'
 
 type OAuthCallbackScreenProps = {
@@ -32,106 +32,59 @@ type OAuthCallbackScreenProps = {
   mode: 'login' | 'bind'
 }
 
-type ProviderMeta = {
-  label: string
-  Icon: LucideIcon | ((props: { className?: string }) => React.JSX.Element)
-}
-
-const providerDictionary: Record<string, ProviderMeta> = {
-  github: {
-    label: 'GitHub',
-    Icon: (props: { className?: string }) => (
-      <SiGithub className={props.className} focusable='false' />
-    ),
-  },
-  oidc: { label: 'OIDC', Icon: Shield },
-  linuxdo: {
-    label: 'LinuxDO',
-    Icon: (props: { className?: string }) => (
-      <SiLinux className={props.className} focusable='false' />
-    ),
-  },
-  telegram: { label: 'Telegram', Icon: Send },
-  wechat: {
-    label: 'WeChat',
-    Icon: (props: { className?: string }) => (
-      <SiWechat className={props.className} focusable='false' />
-    ),
-  },
-}
-
-export function OAuthCallbackScreen({
-  provider,
-  mode,
-}: OAuthCallbackScreenProps) {
-  const { t } = useTranslation()
-
+export function OAuthCallbackScreen({ mode }: OAuthCallbackScreenProps) {
   useLayoutEffect(() => {
     hideBootOAuthLoader()
   }, [])
 
-  const { label, Icon } = useMemo(() => {
-    const normalized = provider?.toLowerCase() ?? ''
-    return (
-      providerDictionary[normalized] || {
-        label: 'account',
-        Icon: UserRound,
-      }
-    )
-  }, [provider])
-
-  const providerLabel = t(label)
-  const isBindMode = mode === 'bind'
-
-  const headline = isBindMode
-    ? t('Binding your {{provider}} account', { provider: providerLabel })
-    : t('Signing you in with {{provider}}', { provider: providerLabel })
-
-  const description = isBindMode
-    ? t('Hang tight while we securely link this account to your profile.')
-    : t('Hang tight while we finish connecting your account.')
-
-  const secondaryNote = isBindMode
-    ? t(
-        'You can close this tab once the binding completes or a success message appears in the original window.'
-      )
-    : t(
-        "You'll be redirected automatically. You can return to the previous page if nothing happens after a few seconds."
-      )
-
   return (
     <AuthLayout>
-      <AuthCard className='w-full max-w-[420px] space-y-6'>
-        <AuthBrand />
-        <div className='flex flex-col items-center space-y-4 text-center'>
-          <div className='bg-muted flex h-16 w-16 items-center justify-center rounded-2xl'>
-            <Icon className='h-8 w-8' />
-          </div>
-          <div className='space-y-2'>
-            <h2 className='text-center text-lg font-semibold tracking-tight'>
-              {headline}
-            </h2>
-            <p className='text-muted-foreground text-sm sm:text-base'>
-              {description}
-            </p>
-          </div>
-        </div>
-
-        <div className='space-y-4 text-center'>
-          <div className='flex flex-col items-center justify-center gap-3 py-4'>
-            <Loader2 className='text-primary h-10 w-10 animate-spin' />
-            <p className='text-sm font-medium'>
-              {t('Processing OAuth response...')}
-            </p>
-          </div>
-          <p className='text-muted-foreground text-sm'>{secondaryNote}</p>
-          <p className='text-muted-foreground text-xs'>
-            {t(
-              'This may take a few moments while we validate the request and update your session.'
-            )}
-          </p>
-        </div>
-      </AuthCard>
+      <OAuthCallbackContent mode={mode} />
     </AuthLayout>
+  )
+}
+
+function OAuthCallbackContent({ mode }: { mode: 'login' | 'bind' }) {
+  const { t } = useTranslation()
+  const { setAction: setAuthChromeAction } = useAuthChrome()
+  const { redirectToLogin } = useAuthRedirect()
+  const isBindMode = mode === 'bind'
+
+  const goSignIn = useCallback(() => {
+    redirectToLogin()
+  }, [redirectToLogin])
+
+  useEffect(() => {
+    if (isBindMode) {
+      setAuthChromeAction(null)
+      return () => setAuthChromeAction(null)
+    }
+    setAuthChromeAction({
+      label: t('Log in'),
+      onClick: goSignIn,
+    })
+    return () => setAuthChromeAction(null)
+  }, [isBindMode, setAuthChromeAction, t, goSignIn])
+
+  return (
+    <AuthCard className='flex w-full max-w-[408px] flex-col items-center gap-10 text-center'>
+      <Loader2 className='text-primary size-10 animate-spin' aria-hidden />
+      <div className='flex w-full flex-col items-center gap-2'>
+        <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+          {isBindMode
+            ? t('Binding your account...')
+            : t('Processing OAuth response...')}
+        </h1>
+        <p className='text-muted-foreground text-xs leading-[1.5]'>
+          {isBindMode
+            ? t(
+                'You can close this tab once the binding completes or a success message appears in the original window.'
+              )
+            : t(
+                "You'll be redirected automatically. You can return to the previous page if nothing happens after a few seconds."
+              )}
+        </p>
+      </div>
+    </AuthCard>
   )
 }

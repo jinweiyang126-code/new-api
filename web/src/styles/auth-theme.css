@@ -28,13 +28,13 @@ For commercial licensing, please contact support@quantumnous.com
   --secondary: #f0f0f2;
   --secondary-foreground: #141b25;
   --muted: #f5f5f6;
-  --muted-foreground: #737373;
+  --muted-foreground: #606060;
   --accent: #f0f0f2;
   --accent-foreground: #141b25;
   --border: #e5e5e7;
   --input: #ffffff;
   --ring: #a3a3a3;
-  --auth-link: #33b1ff;
+  --auth-link: #1599eb;
   --auth-placeholder: #a3a3a3;
 
   background-color: var(--background);
@@ -65,14 +65,20 @@ For commercial licensing, please contact support@quantumnous.com
 
 .auth-theme .auth-link {
   color: var(--auth-link);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
 }
 
 .auth-theme .auth-link:hover {
   color: var(--auth-link);
   opacity: 0.85;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+}
+
+/* Forgot password: no underline (default or hover) */
+.auth-theme .auth-link.auth-link-plain,
+.auth-theme .auth-link.auth-link-plain:hover {
+  text-decoration: none;
 }
 
 .auth-theme input::placeholder,
@@ -85,6 +91,32 @@ For commercial licensing, please contact support@quantumnous.com
 .dark .auth-theme textarea::placeholder {
   color: var(--auth-placeholder);
   opacity: 0.5;
+}
+
+/* Browser autofill: Chrome ignores background-color alone. */
+.auth-theme input:-webkit-autofill,
+.auth-theme input:-webkit-autofill:hover,
+.auth-theme input:-webkit-autofill:focus,
+.auth-theme input:-webkit-autofill:active,
+.auth-theme textarea:-webkit-autofill,
+.auth-theme textarea:-webkit-autofill:hover,
+.auth-theme textarea:-webkit-autofill:focus,
+.auth-theme textarea:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow: inset 0 0 0 1000px #ffffff;
+  transition: background-color 99999s ease-out;
+}
+
+.dark .auth-theme input:-webkit-autofill,
+.dark .auth-theme input:-webkit-autofill:hover,
+.dark .auth-theme input:-webkit-autofill:focus,
+.dark .auth-theme input:-webkit-autofill:active,
+.dark .auth-theme textarea:-webkit-autofill,
+.dark .auth-theme textarea:-webkit-autofill:hover,
+.dark .auth-theme textarea:-webkit-autofill:focus,
+.dark .auth-theme textarea:-webkit-autofill:active {
+  box-shadow: inset 0 0 0 1000px #333333;
 }
 
 .auth-theme .auth-glow {

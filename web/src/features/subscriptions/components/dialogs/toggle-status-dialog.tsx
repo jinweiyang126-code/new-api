@@ -22,7 +22,7 @@ import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
-import { patchPlanStatus } from '../../api'
+import { updatePlanStatus } from '../../api'
 import { useSubscriptions } from '../subscriptions-provider'
 
 export function ToggleStatusDialog() {
@@ -43,7 +43,7 @@ export function ToggleStatusDialog() {
   const handleConfirm = async () => {
     setLoading(true)
     try {
-      const res = await patchPlanStatus(currentRow.plan.id, !isEnabled)
+      const res = await updatePlanStatus(currentRow.plan.id, !isEnabled)
       if (res.success) {
         toast.success(
           isEnabled ? t('Has been disabled') : t('Has been enabled')

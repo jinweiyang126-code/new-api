@@ -184,13 +184,13 @@ export function OAuthProviders({
                 ({ key, label, onClick, icon, disabled: extraDisabled }) => (
                   <Button
                     key={key}
-                    variant='outline'
+                    variant='ghost'
                     type='button'
                     disabled={disabled || isLoading || extraDisabled}
                     onClick={onClick}
                     aria-label={label}
                     title={label}
-                    className='h-10 min-w-0 flex-1 rounded-[12px] border-[#2E2E2E] bg-white text-foreground font-normal shadow-none hover:bg-white/90 dark:bg-[#1e1e1e] dark:hover:bg-[#1e1e1e]/90 [&_svg]:size-[18px] [&_img]:size-[18px]'
+                    className='h-10 min-w-0 flex-1 rounded-[12px] border border-solid border-[#E5E5E7] bg-white text-foreground font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#1E1E1E] dark:hover:bg-[#1E1E1E] [&_svg]:size-[18px] [&_img]:size-[18px]'
                   >
                     {icon ?? (
                       <span
@@ -216,11 +216,11 @@ export function OAuthProviders({
                 ({ key, label, onClick, icon, disabled: extraDisabled }) => (
                   <Button
                     key={key}
-                    variant='outline'
+                    variant='ghost'
                     type='button'
                     disabled={disabled || isLoading || extraDisabled}
                     onClick={onClick}
-                    className='h-11 w-full justify-center gap-2 rounded-[12px] border-[#2E2E2E] bg-white text-foreground font-normal shadow-none hover:bg-white/90 dark:bg-[#1e1e1e] dark:hover:bg-[#1e1e1e]/90'
+                    className='h-11 w-full justify-center gap-2 rounded-[12px] border border-solid border-[#E5E5E7] bg-white text-foreground font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#1E1E1E] dark:hover:bg-[#1E1E1E]'
                   >
                     {icon}
                     {label}

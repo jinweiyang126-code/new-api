@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -28,6 +28,7 @@ import {
 } from '@/features/home/lib/landing-brand'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { DEFAULT_LOGO, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
@@ -144,8 +145,11 @@ function LegalLinks(props: {
 
 function LandingFooter(props: FooterProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const { systemName, logo: systemLogo, footerHtml } = useSystemConfig()
+  // Same HeaderNavModules source as PublicHeader (marketing filters out About).
+  const topNavLinks = useTopNavLinks().filter((link) => link.href !== '/about')
 
   const displayName = props.name || systemName || LANDING_BRAND_NAME
   const usingDefaultLogo = !systemLogo || systemLogo === DEFAULT_LOGO
@@ -159,12 +163,6 @@ function LandingFooter(props: FooterProps) {
     'text-muted-foreground hover:text-foreground text-[14px] leading-[18px] transition-colors duration-200'
   const legalLinkClass =
     'text-[14px] leading-[18px] text-[#696969] transition-colors duration-200 hover:text-[#696969]/hover:opacity-80'
-
-  const topLinks: FooterLink[] = [
-    { text: 'Console', href: '/dashboard' },
-    { text: 'Model Square', href: '/pricing' },
-    { text: 'Rankings', href: '/rankings' },
-  ]
 
   const bottomLinks: FooterLink[] = [
     props.onContactClick
@@ -204,19 +202,66 @@ function LandingFooter(props: FooterProps) {
             />
           </Link>
           <p className='text-muted-foreground text-[16px] leading-[18px] md:col-start-1 md:row-start-2'>
-            {t('One gateway to global AI')}
+            {t('Powerful API Management Platform')}
           </p>
           <nav
             aria-label={t('Footer')}
             className='flex flex-wrap items-center gap-x-8 gap-y-3 md:col-start-2 md:row-start-2 md:justify-end'
           >
-            {topLinks.map((link) => (
-              <FooterLinkItem
-                key={link.text}
-                link={link}
-                className={navLinkClass}
-              />
-            ))}
+            {topNavLinks.map((link) => {
+              if (link.disabled) {
+                return (
+                  <span
+                    key={`${link.href}-${link.title}`}
+                    className={cn(navLinkClass, 'cursor-not-allowed opacity-50')}
+                  >
+                    {link.title}
+                  </span>
+                )
+              }
+
+              if (link.requiresAuth) {
+                return (
+                  <button
+                    key={`${link.href}-${link.title}`}
+                    type='button'
+                    className={navLinkClass}
+                    onClick={() =>
+                      navigate({
+                        to: '/sign-in',
+                        search: { redirect: link.href },
+                      })
+                    }
+                  >
+                    {link.title}
+                  </button>
+                )
+              }
+
+              if (link.external || link.href.startsWith('http')) {
+                return (
+                  <a
+                    key={`${link.href}-${link.title}`}
+                    href={link.href}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={navLinkClass}
+                  >
+                    {link.title}
+                  </a>
+                )
+              }
+
+              return (
+                <Link
+                  key={`${link.href}-${link.title}`}
+                  to={link.href}
+                  className={navLinkClass}
+                >
+                  {link.title}
+                </Link>
+              )
+            })}
           </nav>
         </div>
 

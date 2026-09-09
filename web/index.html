@@ -84,13 +84,71 @@
   <body>
     <div id="boot-oauth-loader" hidden>
       <div class="boot-oauth-spinner" aria-hidden="true"></div>
-      <p class="boot-oauth-text">Signing in…</p>
+      <p class="boot-oauth-text" id="boot-oauth-text">Signing in…</p>
     </div>
     <div id="root" translate="no" class="notranslate"></div>
     <script>
       ;(function () {
         // Avoid regex literals here — escape mistakes break this boot script silently.
         if (window.location.pathname.indexOf('/oauth/') !== 0) return
+
+        var messages = {
+          en: 'Signing in…',
+          zhCN: '正在登录…',
+          zhTW: '正在登入…',
+          ja: 'サインイン中…',
+          fr: 'Connexion…',
+          ru: 'Вход…',
+          vi: 'Đang đăng nhập…',
+        }
+
+        function normalizeLang(value) {
+          if (!value) return 'en'
+          var raw = String(value).trim().replace(/_/g, '-')
+          var lower = raw.toLowerCase()
+          if (
+            raw === 'zhTW' ||
+            lower === 'zh-tw' ||
+            lower === 'zh-hk' ||
+            lower === 'zh-mo' ||
+            lower.indexOf('zh-hant') === 0
+          ) {
+            return 'zhTW'
+          }
+          if (
+            raw === 'zhCN' ||
+            lower === 'zh-cn' ||
+            lower === 'zh-hans' ||
+            lower === 'zh'
+          ) {
+            return 'zhCN'
+          }
+          if (lower.indexOf('ja') === 0) return 'ja'
+          if (lower.indexOf('fr') === 0) return 'fr'
+          if (lower.indexOf('ru') === 0) return 'ru'
+          if (lower.indexOf('vi') === 0) return 'vi'
+          if (messages[raw]) return raw
+          return 'en'
+        }
+
+        var stored = null
+        try {
+          stored = window.localStorage.getItem('i18nextLng')
+        } catch (e) {}
+        var nav =
+          (window.navigator.languages && window.navigator.languages[0]) ||
+          window.navigator.language ||
+          'en'
+        var lang = normalizeLang(stored || nav)
+        var text = messages[lang] || messages.en
+
+        var textEl = document.getElementById('boot-oauth-text')
+        if (textEl) textEl.textContent = text
+        try {
+          document.documentElement.lang =
+            lang === 'zhCN' ? 'zh-CN' : lang === 'zhTW' ? 'zh-TW' : lang
+        } catch (e) {}
+
         var loader = document.getElementById('boot-oauth-loader')
         if (loader) loader.hidden = false
       })()

@@ -17,8 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
+import { CheckCircle2, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -36,10 +35,7 @@ import { sendPasswordResetEmail } from '@/features/auth/api'
 import { AuthBrand } from '@/features/auth/components/auth-brand'
 import { AuthCard } from '@/features/auth/components/auth-card'
 import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
-import {
-  AuthFieldLabel,
-  AuthTextField,
-} from '@/features/auth/components/auth-text-field'
+import { AuthTextField } from '@/features/auth/components/auth-text-field'
 import { AuthTurnstileStep } from '@/features/auth/components/auth-turnstile-step'
 import {
   forgotPasswordFormSchema,
@@ -47,6 +43,8 @@ import {
 } from '@/features/auth/constants'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { useCountdown } from '@/hooks/use-countdown'
+import { useSystemConfig } from '@/hooks/use-system-config'
+import { DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 export function ForgotPasswordForm({
@@ -54,7 +52,10 @@ export function ForgotPasswordForm({
   ...props
 }: React.HTMLAttributes<HTMLFormElement>) {
   const { t } = useTranslation()
+  const { systemName } = useSystemConfig()
+  const brandName = systemName || DEFAULT_SYSTEM_NAME
   const [isLoading, setIsLoading] = useState(false)
+  const [sent, setSent] = useState(false)
   const [view, setView] = useState<'form' | 'turnstile'>('form')
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
 
@@ -85,9 +86,9 @@ export function ForgotPasswordForm({
         tokenOverride ?? turnstileToken
       )
       if (res?.success) {
-        form.reset()
+        form.setValue('email', email)
+        setSent(true)
         startCountdown()
-        toast.success(t('Reset email sent, please check your inbox'))
       } else {
         toast.error(res?.message || t('Failed to send reset email'))
       }
@@ -133,65 +134,90 @@ export function ForgotPasswordForm({
 
       <AuthCard
         className={cn(
-          'flex flex-col items-center gap-6',
+          'flex w-full max-w-[360px] flex-col items-center gap-10',
           view === 'turnstile' && 'hidden'
         )}
       >
-      <div className='flex w-full flex-col items-center gap-4 text-center'>
-        <AuthBrand />
-        <div className='space-y-2'>
-          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
-            {t('Forgot password')}
-          </h1>
-          <p className='text-muted-foreground text-xs'>
-            {t(
-              'Enter your registered email and we will send you a link to reset your password.'
-            )}
-          </p>
+        <div className='flex w-full flex-col items-center gap-6'>
+          <div className='flex w-full flex-col items-center gap-4 text-center'>
+            <AuthBrand />
+            <div className='flex flex-col items-center gap-2'>
+              <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+                {t('Forgot Password')}
+              </h1>
+              <p className='text-muted-foreground max-w-[385px] text-xs leading-[1.5]'>
+                {t(
+                  'Please enter the email you used to register with {{systemName}} to request a password reset',
+                  { systemName: brandName }
+                )}
+              </p>
+            </div>
+          </div>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              noValidate
+              className={cn(
+                'flex w-full flex-col gap-10',
+                className
+              )}
+              {...props}
+            >
+              <div className='flex w-full flex-col gap-6'>
+                <FormField
+                  control={form.control}
+                  name='email'
+                  render={({ field }) => (
+                    <FormItem className='gap-2'>
+                      <FormControl>
+                        <AuthTextField
+                          placeholder={t('Enter your email address')}
+                          type='text'
+                          inputMode='email'
+                          autoComplete='email'
+                          autoCapitalize='none'
+                          autoCorrect='off'
+                          spellCheck={false}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {sent ? (
+                  <div className='flex w-full gap-2 rounded-[12px] border border-[rgba(0,187,126,0.5)] bg-[rgba(0,187,126,0.1)] p-4 text-left'>
+                    <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-[#00BB7E]' />
+                    <div className='flex min-w-0 flex-col gap-2'>
+                      <p className='text-sm font-medium leading-none'>
+                        {t('Reset link has been sent')}
+                      </p>
+                      <p className='text-xs leading-normal text-foreground/90'>
+                        {t(
+                          'Please check your inbox and click the link in the email to reset your password'
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <AuthSubmitButton
+                type='submit'
+                className='font-semibold'
+                disabled={isLoading || isActive}
+              >
+                {isLoading ? <Loader2 className='animate-spin' /> : null}
+                {isActive
+                  ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
+                  : t('Send reset link')}
+              </AuthSubmitButton>
+            </form>
+          </Form>
         </div>
-      </div>
-
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className={cn('flex w-full flex-col gap-4', className)}
-          {...props}
-        >
-          <FormField
-            control={form.control}
-            name='email'
-            render={({ field }) => (
-              <FormItem className='gap-2'>
-                <AuthFieldLabel label={t('Email')} />
-                <FormControl>
-                  <AuthTextField
-                    placeholder={t('Enter your email address')}
-                    type='email'
-                    autoComplete='email'
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <AuthSubmitButton type='submit' disabled={isLoading || isActive}>
-            {isLoading ? <Loader2 className='animate-spin' /> : null}
-            {isActive
-              ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
-              : t('Send reset email')}
-          </AuthSubmitButton>
-        </form>
-      </Form>
-
-      <p className='text-muted-foreground w-full text-center text-xs'>
-        {t("Don't have an account?")}{' '}
-        <Link to='/sign-up' className='auth-link'>
-          {t('Sign up')}
-        </Link>
-      </p>
-    </AuthCard>
+      </AuthCard>
     </>
   )
 }

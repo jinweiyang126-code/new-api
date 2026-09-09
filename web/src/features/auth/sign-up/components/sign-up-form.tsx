@@ -539,6 +539,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
             className={cn('flex w-full flex-col gap-4', className)}
             {...props}
           >
@@ -589,13 +590,19 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
                     <FormControl>
                       <AuthTextField
                         placeholder={t('Enter your email address')}
-                        type='email'
+                        type='text'
+                        inputMode='email'
                         autoComplete='email'
+                        autoCapitalize='none'
+                        autoCorrect='off'
+                        spellCheck={false}
                         {...field}
                         onBlur={async (event) => {
                           field.onBlur()
                           const value = event.target.value
-                          if (value?.trim()) {
+                          if (!value?.trim()) return
+                          const ok = await form.trigger('email')
+                          if (ok) {
                             await ensureEmailAvailable(value)
                           }
                         }}

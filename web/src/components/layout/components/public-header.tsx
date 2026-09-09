@@ -144,6 +144,8 @@ export function PublicHeader(props: PublicHeaderProps) {
   const notifications = useNotifications()
   const routerState = useRouterState()
   const pathname = routerState.location.pathname
+  // Onboarding is post-auth: logo only on choose; Back chrome on org setup.
+  const isOnboarding = isAuth && pathname === '/onboarding'
 
   const user = auth.user
   const isAuthenticated = !!user
@@ -271,27 +273,38 @@ export function PublicHeader(props: PublicHeaderProps) {
     />
   ) : undefined
 
+  function renderAuthChromeButton(compact = false) {
+    if (!authChromeAction) return null
+    return (
+      <button
+        type='button'
+        onClick={authChromeAction.onClick}
+        className={
+          compact
+            ? 'inline-flex items-center gap-2 text-xs font-normal text-foreground'
+            : 'inline-flex items-center gap-2 text-sm font-normal text-foreground'
+        }
+      >
+        {authChromeAction.label}
+        <ArrowRight className='size-4' />
+      </button>
+    )
+  }
+
   function renderDesktopAuthActions() {
     if (loading) {
       return <Skeleton className='h-8 w-24 rounded-full' />
+    }
+    if (isOnboarding) {
+      return renderAuthChromeButton()
     }
     if (isAuthenticated) {
       return <ProfileDropdown />
     }
     if (isAuth) {
-      if (authChromeAction) {
-        return (
-          <Button
-            variant='ghost'
-            size='sm'
-            className='h-8 rounded-full px-3.5 text-xs font-normal'
-            onClick={authChromeAction.onClick}
-          >
-            {authChromeAction.label}
-          </Button>
-        )
-      }
-      return <AuthEntryLinks pathname={pathname} />
+      return renderAuthChromeButton() ?? (
+        <AuthEntryLinks pathname={pathname} />
+      )
     }
     return (
       <div className='flex items-center gap-1.5'>
@@ -334,11 +347,13 @@ export function PublicHeader(props: PublicHeaderProps) {
         <div
           className={cn(
             'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            isMarketing
-              ? 'w-full max-w-[1200px] px-0 pt-0'
-              : scrolled
-                ? 'max-w-6xl px-3 pt-3'
-                : 'max-w-7xl px-4 pt-0 md:px-6'
+            isAuth
+              ? 'w-full max-w-[1200px] px-8 pt-0'
+              : isLanding
+                ? 'w-full max-w-[1200px] px-6 pt-0 md:px-0'
+                : scrolled
+                  ? 'max-w-6xl px-3 pt-3'
+                  : 'max-w-7xl px-4 pt-0 md:px-6'
           )}
         >
           <nav
@@ -348,7 +363,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                 ? cn(
                     'h-16',
                     scrolled &&
-                      'bg-white/85 shadow-[0_1px_0_0_rgba(0,0,0,0.06)] backdrop-blur-xl dark:bg-background/80 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]'
+                      'bg-white/15 shadow-[0_1px_0_0_rgba(0,0,0,0.02)] backdrop-blur-[2px] dark:bg-background/10 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.02)]'
                   )
                 : scrolled
                   ? 'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
@@ -495,21 +510,19 @@ export function PublicHeader(props: PublicHeaderProps) {
                   icon={themeIcon}
                 />
               )}
-              {showAuthButtons && !loading && isAuthenticated && (
-                <ProfileDropdown />
-              )}
-              {showAuthButtons && !loading && !isAuthenticated && (
-                isAuth ? (
-                  authChromeAction ? (
-                    <button
-                      type='button'
-                      onClick={authChromeAction.onClick}
-                      className='inline-flex items-center gap-2 text-xs font-normal text-foreground'
-                    >
-                      {authChromeAction.label}
-                      <ArrowRight className='size-4' />
-                    </button>
-                  ) : (
+              {showAuthButtons && !loading && isOnboarding
+                ? renderAuthChromeButton(true)
+                : null}
+              {showAuthButtons &&
+                !loading &&
+                isAuthenticated &&
+                !isOnboarding && <ProfileDropdown />}
+              {showAuthButtons &&
+                !loading &&
+                !isAuthenticated &&
+                !isOnboarding &&
+                (isAuth ? (
+                  renderAuthChromeButton(true) ?? (
                     <AuthEntryLinks pathname={pathname} compact />
                   )
                 ) : (
@@ -525,8 +538,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                   >
                     {isLanding ? t('Sign up') : t('Get Started')}
                   </Button>
-                )
-              )}
+                ))}
               {!isAuth && (
               <Button
                 type='button'
@@ -629,9 +641,21 @@ export function PublicHeader(props: PublicHeaderProps) {
             )}
             style={{ transitionDelay: mobileOpen ? '250ms' : '0ms' }}
           >
-            {showAuthButtons && (
+            {showAuthButtons && (isOnboarding ? !!authChromeAction : true) && (
               <>
-                {isAuth && !isAuthenticated ? (
+                {isOnboarding && authChromeAction ? (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      authChromeAction.onClick()
+                      setMobileOpen(false)
+                    }}
+                    className='border-border inline-flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-normal'
+                  >
+                    {authChromeAction.label}
+                    <ArrowRight className='size-4' />
+                  </button>
+                ) : isAuth && !isAuthenticated ? (
                   authChromeAction ? (
                     <button
                       type='button'
