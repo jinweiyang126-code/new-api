@@ -766,7 +766,7 @@ export function OverviewDashboard() {
             showUptimePanel) && (
             <CardStaggerContainer
               className={cn(
-                'grid grid-cols-1 items-stretch gap-4',
+                'grid grid-cols-1 gap-4',
                 (isAdmin || showApiInfoPanel || showAnnouncementsPanel) &&
                   showUptimePanel &&
                   'xl:grid-cols-[minmax(0,1fr)_22rem]'
@@ -798,7 +798,7 @@ export function OverviewDashboard() {
                 </div>
               )}
               {showUptimePanel && (
-                <CardStaggerItem className='flex h-full min-h-0 flex-col'>
+                <CardStaggerItem>
                   <UptimePanel />
                 </CardStaggerItem>
               )}

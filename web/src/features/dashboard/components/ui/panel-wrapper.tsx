@@ -28,10 +28,7 @@ interface PanelWrapperProps {
   loading?: boolean
   empty?: boolean
   emptyMessage?: string
-  /** Fixed body height (e.g. h-72). Ignored when fillHeight is true. */
   height?: string
-  /** Stretch card to parent height; body fills leftover space and scrolls inside. */
-  fillHeight?: boolean
   className?: string
   contentClassName?: string
   headerActions?: ReactNode
@@ -53,7 +50,7 @@ function PanelHeader(props: {
   )
 
   return (
-    <div className='shrink-0 border-b px-4 py-3 sm:px-5'>
+    <div className='border-b px-4 py-3 sm:px-5'>
       {props.actions != null ? (
         <div className='flex items-start justify-between gap-2'>
           {heading}
@@ -69,26 +66,19 @@ function PanelHeader(props: {
 export function PanelWrapper(props: PanelWrapperProps) {
   const { t } = useTranslation()
   const resolvedEmptyMessage = props.emptyMessage ?? t('No data available')
-  const fillHeight = props.fillHeight === true
   const height = props.height ?? 'h-64'
-  const frameClassName = cn(
-    'overflow-hidden rounded-2xl border bg-card shadow-xs',
-    fillHeight && 'flex h-full min-h-0 flex-col',
-    props.className
-  )
-  const bodyClassName = cn(
-    fillHeight ? 'min-h-80 flex-1 overflow-hidden' : height,
-    props.contentClassName
-  )
 
   if (props.loading) {
     return (
-      <div className={frameClassName}>
+      <div
+        className={cn(
+          'bg-card overflow-hidden rounded-2xl border shadow-xs',
+          props.className
+        )}
+      >
         <PanelHeader title={props.title} description={props.description} />
-        <div className={cn('p-4 sm:p-5', bodyClassName)}>
-          <Skeleton
-            className={fillHeight ? 'h-full w-full' : `w-full ${height}`}
-          />
+        <div className={cn('p-4 sm:p-5', props.contentClassName)}>
+          <Skeleton className={`w-full ${height}`} />
         </div>
       </div>
     )
@@ -96,12 +86,18 @@ export function PanelWrapper(props: PanelWrapperProps) {
 
   if (props.empty) {
     return (
-      <div className={frameClassName}>
+      <div
+        className={cn(
+          'bg-card overflow-hidden rounded-2xl border shadow-xs',
+          props.className
+        )}
+      >
         <PanelHeader title={props.title} description={props.description} />
         <div
           className={cn(
             'text-muted-foreground flex items-center justify-center px-4 text-sm',
-            bodyClassName
+            height,
+            props.contentClassName
           )}
         >
           {resolvedEmptyMessage}
@@ -111,13 +107,18 @@ export function PanelWrapper(props: PanelWrapperProps) {
   }
 
   return (
-    <div className={frameClassName}>
+    <div
+      className={cn(
+        'bg-card overflow-hidden rounded-2xl border shadow-xs',
+        props.className
+      )}
+    >
       <PanelHeader
         title={props.title}
         description={props.description}
         actions={props.headerActions}
       />
-      <div className={cn(fillHeight ? undefined : 'p-4 sm:p-5', bodyClassName)}>
+      <div className={cn('p-4 sm:p-5', props.contentClassName)}>
         {props.children}
       </div>
     </div>
