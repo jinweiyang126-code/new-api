@@ -103,21 +103,25 @@ Tokens follow html.light / html.dark from ThemeProvider.
 
 /* Paint the fixed header across the viewport; keep navigation content centered. */
 .landing-theme > header {
+  border-bottom: 1px solid transparent;
   background-color: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   transition:
+    border-color 300ms ease,
     background-color 300ms ease,
     backdrop-filter 300ms ease;
 }
 
 .landing-theme > header:has(nav[class*='backdrop-blur-']) {
+  border-bottom-color: #e8e8e8;
   background-color: rgb(255 255 255 / 70%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 .dark .landing-theme > header:has(nav[class*='backdrop-blur-']) {
+  border-bottom-color: #2e2e2e;
   background-color: rgb(30 30 30 / 70%);
 }
 
