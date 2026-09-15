@@ -348,7 +348,7 @@ export function PublicHeader(props: PublicHeaderProps) {
           className={cn(
             'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
             isAuth
-              ? 'w-full max-w-[1200px] px-8 pt-0'
+              ? 'w-full px-8 pt-0'
               : isLanding
                 ? 'w-full max-w-[1200px] px-6 pt-0 md:px-0'
                 : scrolled

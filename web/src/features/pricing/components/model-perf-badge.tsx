@@ -79,32 +79,32 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
       )}
     >
       <div title={t('Average latency')} className='min-w-0'>
-        <div className='text-[12px] leading-none font-light text-[#919191] dark:text-[#77777a]'>
+        <div className='text-[12px] leading-4 font-light text-[#919191] dark:text-[#77777a]'>
           {t('Latency short')}
         </div>
-        <div className='mt-2 text-[12px] leading-none font-medium whitespace-nowrap text-[#606060] dark:text-[#a3a3a3]'>
+        <div className='mt-2 text-[12px] leading-4 font-medium whitespace-nowrap text-[#606060] dark:text-[#a3a3a3]'>
           {formatCompactLatency(avg_latency_ms)}
         </div>
       </div>
       <div title={t('Throughput')} className='min-w-0'>
-        <div className='text-[12px] leading-none font-light text-[#919191] dark:text-[#77777a]'>
+        <div className='text-[12px] leading-4 font-light text-[#919191] dark:text-[#77777a]'>
           {t('Throughput short')}
         </div>
-        <div className='mt-2 text-[12px] leading-none font-medium whitespace-nowrap text-[#606060] dark:text-[#a3a3a3]'>
+        <div className='mt-2 text-[12px] leading-4 font-medium whitespace-nowrap text-[#606060] dark:text-[#a3a3a3]'>
           {formatCompactThroughput(avg_tps)}
         </div>
       </div>
       <div
         title={`${t('Success rate')}: ${success_rate.toFixed(1)}%`}
-        className='min-w-0'
+        className='min-w-0 text-center'
       >
-        <div className='text-[12px] leading-none font-light text-[#919191] dark:text-[#77777a]'>
+        <div className='text-[12px] leading-4 font-light text-[#919191] dark:text-[#77777a]'>
           {t('Status short')}
         </div>
-        <div className='mt-2 flex h-[14px] items-end gap-0.5 py-px'>
+        <div className='mt-2 flex h-4 items-end justify-center gap-0.5 py-px'>
           {statusBars.map((rate, index) => (
             <span
-              key={`${index}-${rate ?? 'empty'}`}
+              key={['earliest', 'middle', 'latest'][index]}
               className={cn(
                 'w-1 rounded-full',
                 index === 0 && 'h-2',

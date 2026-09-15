@@ -102,6 +102,7 @@ export function WeChatLoginDialog({
           value={code}
           onChange={(event) => onCodeChange(event.target.value)}
           autoComplete='one-time-code'
+          className='dark:hover:border-input hover:border-[#A3A3A3] focus-visible:border-[#A3A3A3] focus-visible:ring-0'
         />
       </div>
     </Dialog>

@@ -46,7 +46,10 @@ export function Hero(props: HeroProps) {
         props.className
       )}
     >
-      <div aria-hidden className='landing-glow pointer-events-none absolute inset-0 -z-10' />
+      <div
+        aria-hidden
+        className='landing-glow pointer-events-none absolute inset-0 -z-10'
+      />
 
       <div className='mx-auto flex w-full max-w-[1200px] flex-col items-center text-center'>
         <p
@@ -63,7 +66,7 @@ export function Hero(props: HeroProps) {
           <span className='text-foreground block whitespace-nowrap'>
             {t('One Gateway to Global AI')}
           </span>
-          <span className='landing-hero-gradient mt-1 inline-block whitespace-nowrap px-[0.08em]'>
+          <span className='landing-hero-gradient mt-1 inline-block px-[0.08em] whitespace-nowrap'>
             {t('Better Models & Better Prices')}
           </span>
         </h1>
@@ -78,11 +81,11 @@ export function Hero(props: HeroProps) {
         </p>
 
         <div
-          className='landing-animate-fade-up mt-[68px] flex flex-col items-center justify-center gap-3 opacity-0 md:flex-row md:flex-nowrap md:gap-5'
+          className='landing-animate-fade-up mt-[68px] flex w-full max-w-[240px] flex-col items-stretch justify-center gap-3 opacity-0 md:w-auto md:max-w-none md:flex-row md:flex-nowrap md:items-center md:gap-5'
           style={{ animationDelay: '200ms' }}
         >
           <Button
-            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-12 shrink-0 rounded-full px-[40px] text-base font-normal md:h-14 md:text-lg'
+            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full shrink-0 rounded-full px-[40px] text-base font-normal md:h-14 md:w-auto md:text-lg'
             render={<Link to={primaryTo} />}
           >
             {primaryLabel}
@@ -91,7 +94,7 @@ export function Hero(props: HeroProps) {
           {!props.isAuthenticated && (
             <Button
               variant='outline'
-              className='border-[#CDCDCD] text-foreground hover:bg-muted/40 h-12 shrink-0 rounded-full px-[40px] text-base font-normal md:h-14 md:text-lg'
+              className='text-foreground hover:bg-muted/40 h-12 w-full shrink-0 rounded-full border-[#CDCDCD] px-[40px] text-base font-normal md:h-14 md:w-auto md:text-lg'
               render={<Link to='/pricing' />}
             >
               {t('View Pricing')}

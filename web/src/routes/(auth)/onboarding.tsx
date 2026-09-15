@@ -8,14 +8,19 @@ import { useAuthStore } from '@/stores/auth-store'
 
 type OnboardingSearch = {
   type?: 'organization'
+  preview?: 'flow'
+  theme?: 'light'
 }
 
 export const Route = createFileRoute('/(auth)/onboarding')({
   component: OnboardingRoute,
   validateSearch: (search: Record<string, unknown>): OnboardingSearch => ({
     type: search.type === 'organization' ? 'organization' : undefined,
+    preview: search.preview === 'flow' ? 'flow' : undefined,
+    theme: search.theme === 'light' ? 'light' : undefined,
   }),
-  beforeLoad: ({ location }) => {
+  beforeLoad: ({ location, search }) => {
+    if (search.preview === 'flow') return
     const { auth } = useAuthStore.getState()
     if (!auth.user || !auth.accessToken) {
       throw redirect({
@@ -31,6 +36,7 @@ function OnboardingRoute() {
   return (
     <SignupOnboarding
       initialStep={search.type === 'organization' ? 'organization' : 'choose'}
+      preview={search.preview === 'flow'}
     />
   )
 }

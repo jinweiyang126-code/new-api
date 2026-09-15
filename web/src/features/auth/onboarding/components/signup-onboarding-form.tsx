@@ -1,3 +1,6 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,28 +20,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { Building2, Loader2, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import onboardingOrganizationIcon from '@/assets/auth/onboarding-organization.svg'
+import onboardingPersonalIcon from '@/assets/auth/onboarding-personal.svg'
 import { Button } from '@/components/ui/button'
 import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
+import { clearSignupOnboardingPending } from '@/features/auth/lib/signup-onboarding'
+import { OrganizationSetupFields } from '@/features/auth/sign-up/components/organization-setup-fields'
 import { createSelfCustomer } from '@/features/customer-org/api'
 import {
   SELF_CUSTOMER_QUERY_KEY,
   useSetCurrentCustomer,
 } from '@/features/customer-org/hooks/use-customer-context'
-import { OrganizationSetupFields } from '@/features/auth/sign-up/components/organization-setup-fields'
-import { clearSignupOnboardingPending } from '@/features/auth/lib/signup-onboarding'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 const INVITE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const accountTypeCardClassName =
-  'h-auto w-full justify-start gap-3 rounded-[12px] border border-solid border-[#E5E5E7] bg-white px-4 py-4 text-left font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#212121] dark:hover:bg-[#212121]'
+  'h-[74px] w-full justify-start gap-4 rounded-[12px] border border-solid border-[#E5E5E7] bg-white px-4 py-2 text-left font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#212121] dark:hover:bg-[#212121]'
 
 type InviteEmailField = {
   key: string
@@ -58,12 +60,14 @@ type SignupOnboardingFormProps = {
   step: OnboardingStep
   onStepChange: (step: OnboardingStep) => void
   className?: string
+  preview?: boolean
 }
 
 export function SignupOnboardingForm({
   step,
   onStepChange,
   className,
+  preview = false,
 }: SignupOnboardingFormProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -96,12 +100,14 @@ export function SignupOnboardingForm({
   }
 
   function finishPersonal() {
+    if (preview) return
     clearSignupOnboardingPending()
     toast.success(t('Welcome!'))
     void navigate({ to: '/dashboard', replace: true })
   }
 
   async function submitOrganization() {
+    if (preview) return
     const name = organizationName.trim()
     if (!name) {
       toast.error(t('Please enter your organization name'))
@@ -139,7 +145,7 @@ export function SignupOnboardingForm({
 
   if (step === 'choose') {
     return (
-      <div className={cn('flex w-full flex-col gap-3', className)}>
+      <div className={cn('flex w-full flex-col gap-4', className)}>
         <Button
           type='button'
           variant='ghost'
@@ -147,9 +153,13 @@ export function SignupOnboardingForm({
           disabled={isLoading}
           onClick={() => finishPersonal()}
         >
-          <User className='size-5 shrink-0 text-foreground' />
-          <span className='flex min-w-0 flex-col gap-0.5'>
-            <span className='text-sm font-medium text-foreground'>
+          <img
+            src={onboardingPersonalIcon}
+            alt=''
+            className='size-6 shrink-0 invert dark:invert-0'
+          />
+          <span className='flex min-w-0 flex-col gap-2'>
+            <span className='text-foreground text-sm font-normal'>
               {t('Personal account')}
             </span>
             <span className='text-muted-foreground text-xs leading-5'>
@@ -164,9 +174,15 @@ export function SignupOnboardingForm({
           disabled={isLoading}
           onClick={() => onStepChange('organization')}
         >
-          <Building2 className='size-5 shrink-0 text-foreground' />
-          <span className='flex min-w-0 flex-col gap-0.5'>
-            <span className='text-sm font-medium text-foreground'>
+          <span className='flex size-6 shrink-0 items-center justify-center p-[2px]'>
+            <img
+              src={onboardingOrganizationIcon}
+              alt=''
+              className='size-full invert dark:invert-0'
+            />
+          </span>
+          <span className='flex min-w-0 flex-col gap-2'>
+            <span className='text-foreground text-sm font-normal'>
               {t('Organization account')}
             </span>
             <span className='text-muted-foreground text-xs leading-5'>
@@ -193,7 +209,11 @@ export function SignupOnboardingForm({
         onInviteEmailsChange={setInviteEmails}
         disabled={isLoading}
       />
-      <AuthSubmitButton type='submit' disabled={isLoading}>
+      <AuthSubmitButton
+        type='submit'
+        disabled={isLoading}
+        className='font-semibold'
+      >
         {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
         {t('Create organization')}
       </AuthSubmitButton>

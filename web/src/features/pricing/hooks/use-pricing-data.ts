@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -16,21 +17,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useQuery } from '@tanstack/react-query'
+import { useSearch } from '@tanstack/react-router'
 import { useMemo } from 'react'
 
 import { useStatus } from '@/hooks/use-status'
 
 import { getPricing } from '../api'
+import { pricingPreviewData } from '../preview-data'
 
 export function usePricingData() {
   const { status } = useStatus()
+  const search = useSearch({ strict: false })
+  const isPreview = 'preview' in search && search.preview === 'cards'
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const {
+    data: liveData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['pricing'],
+    enabled: !isPreview,
     queryFn: getPricing,
     staleTime: 5 * 60 * 1000,
   })
+
+  const data = isPreview ? pricingPreviewData : liveData
 
   // Ensure rates never reach zero to prevent division errors
   const priceRate = useMemo(
@@ -69,10 +81,11 @@ export function usePricingData() {
     usableGroup: data?.usable_group ?? {},
     endpointMap: data?.supported_endpoint ?? {},
     autoGroups: data?.auto_groups ?? [],
-    isLoading,
+    isLoading: !isPreview && isLoading,
+    isPreview,
     error,
     refetch,
-    priceRate,
-    usdExchangeRate,
+    priceRate: isPreview ? 1 : priceRate,
+    usdExchangeRate: isPreview ? 1 : usdExchangeRate,
   }
 }

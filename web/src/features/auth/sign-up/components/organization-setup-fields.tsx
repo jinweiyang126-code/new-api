@@ -1,9 +1,10 @@
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
-import { Plus, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import addEmailIcon from '@/assets/auth/onboarding-add-email.svg'
 import { Button } from '@/components/ui/button'
 import {
   AuthFieldLabel,
@@ -16,7 +17,10 @@ type InviteEmailField = {
 }
 
 function createInviteField(value = ''): InviteEmailField {
-  return { key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, value }
+  return {
+    key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    value,
+  }
 }
 
 const MAX_INVITE_EMAILS = 10
@@ -94,9 +98,13 @@ export function OrganizationSetupFields({
           onClick={() =>
             onInviteEmailsChange([...inviteEmails, createInviteField()])
           }
-          className='inline-flex w-fit items-center gap-1.5 text-sm font-normal text-foreground disabled:pointer-events-none disabled:opacity-50'
+          className='text-foreground mt-2 inline-flex w-fit items-center gap-2 text-sm font-normal disabled:pointer-events-none disabled:opacity-50'
         >
-          <Plus className='size-4' />
+          <img
+            src={addEmailIcon}
+            alt=''
+            className='size-3.5 invert dark:invert-0'
+          />
           {t('Add another email')}
         </button>
       </div>

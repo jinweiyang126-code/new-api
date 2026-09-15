@@ -32,10 +32,7 @@ import { AuthLayout } from '../auth-layout'
 import { AuthBrand } from '../components/auth-brand'
 import { AuthCard } from '../components/auth-card'
 import { AuthSubmitButton } from '../components/auth-submit-button'
-import {
-  AuthFieldLabel,
-  AuthTextField,
-} from '../components/auth-text-field'
+import { AuthFieldLabel, AuthTextField } from '../components/auth-text-field'
 import { useAuthChrome } from '../lib/auth-chrome-context'
 
 export type ResetPasswordSearchParams = {
@@ -63,7 +60,11 @@ function ResetPasswordConfirmContent({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setAction: setAuthChromeAction } = useAuthChrome()
-  const [newPassword, setNewPassword] = useState('')
+  const preview =
+    new URLSearchParams(window.location.search).get('preview') === 'flow'
+  const [newPassword, setNewPassword] = useState(
+    preview ? 'UnionMeta-Preview-2026' : ''
+  )
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,7 +75,7 @@ function ResetPasswordConfirmContent({
     start: startCountdown,
   } = useCountdown({ initialSeconds: 30 })
 
-  const isValidResetLink = Boolean(email && token)
+  const isValidResetLink = preview || Boolean(email && token)
 
   const goSignIn = useCallback(() => {
     void navigate({ to: '/sign-in', replace: true })
@@ -123,10 +124,11 @@ function ResetPasswordConfirmContent({
   }, [email, token, isValidResetLink, startCountdown, t])
 
   useEffect(() => {
+    if (preview) return
     if (!isValidResetLink || autoStartedRef.current) return
     autoStartedRef.current = true
     void resetPassword()
-  }, [isValidResetLink, resetPassword])
+  }, [isValidResetLink, preview, resetPassword])
 
   async function handleCopy() {
     if (!newPassword) return
@@ -144,7 +146,7 @@ function ResetPasswordConfirmContent({
         <div className='flex w-full flex-col items-center gap-4 text-center'>
           <AuthBrand />
           <div className='flex flex-col items-center gap-2'>
-            <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+            <h1 className='text-lg leading-7 font-semibold tracking-[-0.09px]'>
               {t('Reset Password')}
             </h1>
             <p className='text-muted-foreground max-w-[385px] text-xs leading-[1.5]'>

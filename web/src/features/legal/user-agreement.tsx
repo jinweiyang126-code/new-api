@@ -16,21 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useTranslation } from 'react-i18next'
-
-import { getUserAgreement } from './api'
-import { LegalDocument } from './legal-document'
+import document from './content/terms-of-service.json'
+import { LegalPage } from './legal-page'
 
 export function UserAgreement() {
-  const { t } = useTranslation()
-  return (
-    <LegalDocument
-      title={t('User Agreement')}
-      queryKey='user-agreement'
-      fetchDocument={getUserAgreement}
-      emptyMessage={t(
-        'The administrator has not configured a user agreement yet.'
-      )}
-    />
-  )
+  return <LegalPage document={document} />
 }

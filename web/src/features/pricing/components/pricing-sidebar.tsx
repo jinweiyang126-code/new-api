@@ -16,10 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import {
-  ChevronDown,
-  RotateCcw,
-} from 'lucide-react'
+import { ChevronDown, RotateCcw } from 'lucide-react'
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -131,13 +128,7 @@ function FilterRow(props: {
         aria-hidden
       >
         {props.active ? (
-          <svg
-            viewBox='0 0 11 8'
-            width='10'
-            height='8'
-            fill='none'
-            aria-hidden
-          >
+          <svg viewBox='0 0 11 8' width='10' height='8' fill='none' aria-hidden>
             <path
               d='M9.90765 0.857143L3.68543 7.07937L0.857143 4.25108'
               stroke='currentColor'
@@ -181,10 +172,7 @@ function FilterSection(props: FilterSectionProps) {
     : props.options
 
   return (
-    <Collapsible
-      defaultOpen={props.defaultOpen ?? true}
-      className='space-y-2'
-    >
+    <Collapsible defaultOpen={props.defaultOpen ?? true} className='space-y-2'>
       <CollapsibleTrigger className='group flex w-full items-center justify-between gap-2 py-2 text-left'>
         <span className='text-foreground flex min-w-0 items-center gap-1 font-medium'>
           {props.icon}
@@ -328,7 +316,6 @@ export function PricingSidebar(props: PricingSidebarProps) {
           variant='ghost'
           size='sm'
           onClick={props.onClearFilters}
-          disabled={!props.hasActiveFilters}
           className='text-foreground h-auto shrink-0 gap-1 px-0 py-0 text-xs font-medium hover:bg-transparent'
         >
           <RotateCcw className='size-3' />

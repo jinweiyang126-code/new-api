@@ -46,13 +46,13 @@ export function GetInTouchDialog(props: GetInTouchDialogProps) {
       title={<span className='sr-only'>{title}</span>}
       /* Figma 305:7391 / 305:7392 — black 70% scrim, 758px card, no ring */
       overlayClassName='bg-black/70 supports-backdrop-filter:backdrop-blur-none'
-      contentClassName='landing-theme bg-background gap-0 overflow-hidden rounded-t-[16px] rounded-b-[20px] border-0 p-0 ring-0 sm:max-w-[758px] [&_[data-slot=dialog-close]]:top-6 [&_[data-slot=dialog-close]]:right-9 [&_[data-slot=dialog-close]]:size-4 [&_[data-slot=dialog-close]]:p-0 [&_[data-slot=dialog-close]]:hover:bg-transparent [&_[data-slot=dialog-close]]:hover:opacity-80'
+      contentClassName='landing-theme bg-background gap-0 overflow-hidden rounded-t-[16px] rounded-b-[20px] border-0 p-0 ring-0 sm:p-0 sm:max-w-[758px] [&_[data-slot=dialog-close]]:top-6 [&_[data-slot=dialog-close]]:right-9 [&_[data-slot=dialog-close]]:size-7 [&_[data-slot=dialog-close]_svg]:size-7! [&_[data-slot=dialog-close]]:p-0 [&_[data-slot=dialog-close]]:hover:bg-transparent [&_[data-slot=dialog-close]]:hover:opacity-80'
       contentHeight='auto'
       headerClassName='sr-only'
       bodyClassName='px-0 py-0'
     >
-      {/* Figma: topbar close only; body gap 44 / pb 64 / pt 16 */}
-      <div className='flex flex-col items-center gap-11 px-9 pt-4 pb-16'>
+      {/* Keep equal space above and below the centered contact content. */}
+      <div className='flex flex-col items-center justify-center gap-11 px-9 py-16'>
         <div className='flex flex-col items-center gap-6'>
           <img
             src={LANDING_LOGO_MARK_SRC}
@@ -71,9 +71,7 @@ export function GetInTouchDialog(props: GetInTouchDialogProps) {
                   {t('Reach out to us directly via email.')}
                 </span>
                 <span className='block'>
-                  {t(
-                    'Our support team typically responds within 24 hours.'
-                  )}
+                  {t('Our support team typically responds within 24 hours.')}
                 </span>
               </p>
             </div>

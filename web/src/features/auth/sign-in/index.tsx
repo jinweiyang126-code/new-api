@@ -20,6 +20,7 @@ import { useSearch } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 import { AuthLayout } from '../auth-layout'
+import { AuthFlowPreview } from '../components/auth-flow-preview'
 import { clearSignupOnboardingPending } from '../lib/signup-onboarding'
 import { UserAuthForm } from './components/user-auth-form'
 
@@ -32,7 +33,11 @@ export function SignIn() {
 
   return (
     <AuthLayout>
-      <UserAuthForm redirectTo={redirect} />
+      {new URLSearchParams(window.location.search).get('preview') === 'flow' ? (
+        <AuthFlowPreview mode='sign-in' />
+      ) : (
+        <UserAuthForm redirectTo={redirect} />
+      )}
     </AuthLayout>
   )
 }

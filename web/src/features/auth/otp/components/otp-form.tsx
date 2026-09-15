@@ -24,10 +24,6 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 
-import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
-import {
-  AuthTextField,
-} from '@/features/auth/components/auth-text-field'
 import {
   Form,
   FormControl,
@@ -41,6 +37,8 @@ import {
   InputOTPSlot,
 } from '@/components/ui/input-otp'
 import { login2fa } from '@/features/auth/api'
+import { AuthSubmitButton } from '@/features/auth/components/auth-submit-button'
+import { AuthTextField } from '@/features/auth/components/auth-text-field'
 import {
   otpFormSchema,
   OTP_LENGTH,
@@ -61,12 +59,14 @@ type OtpFormProps = {
   useBackupCode: boolean
   onToggleMode: () => void
   className?: string
+  preview?: boolean
 }
 
 export function OtpForm({
   useBackupCode,
   onToggleMode,
   className,
+  preview = false,
 }: OtpFormProps) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
@@ -94,6 +94,8 @@ export function OtpForm({
       toast.error(t('Verification code must be 6 digits'))
       return
     }
+
+    if (preview) return
 
     setIsLoading(true)
     try {
@@ -158,7 +160,7 @@ export function OtpForm({
 
   const isBackupValid = otp.length >= BACKUP_CODE_LENGTH
   const otpSlotClassName =
-    'size-14 rounded-[12px] border border-[#E5E5E7] bg-white text-lg shadow-none data-[active=true]:border-primary data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E] dark:bg-[#212121] dark:data-[active=true]:border-[#A3A3A3]'
+    'size-14 rounded-[12px] border border-[#E5E5E7] bg-white text-lg shadow-none hover:border-[#A3A3A3] data-[active=true]:border-[#A3A3A3] data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E] dark:bg-[#212121] dark:hover:border-[#2E2E2E] dark:data-[active=true]:border-[#A3A3A3]'
 
   return (
     <Form {...form}>

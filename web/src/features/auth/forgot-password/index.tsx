@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -18,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from '@tanstack/react-router'
 
 import { AuthLayout } from '../auth-layout'
 import { useAuthChrome } from '../lib/auth-chrome-context'
@@ -36,6 +36,8 @@ function ForgotPasswordContent() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setAction: setAuthChromeAction } = useAuthChrome()
+  const preview =
+    new URLSearchParams(window.location.search).get('preview') === 'flow'
 
   const goBack = useCallback(() => {
     void navigate({ to: '/sign-in' })
@@ -49,5 +51,5 @@ function ForgotPasswordContent() {
     return () => setAuthChromeAction(null)
   }, [setAuthChromeAction, t, goBack])
 
-  return <ForgotPasswordForm />
+  return <ForgotPasswordForm preview={preview} />
 }

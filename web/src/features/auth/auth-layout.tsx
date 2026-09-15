@@ -1,3 +1,5 @@
+import { useLayoutEffect } from 'react'
+
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -33,10 +35,33 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     (!logo || logo === DEFAULT_LOGO) &&
     (!systemName || systemName === DEFAULT_SYSTEM_NAME)
 
+  useLayoutEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (
+      !['social', 'flow', 'security'].includes(params.get('preview') ?? '') ||
+      params.get('theme') !== 'light'
+    ) {
+      return
+    }
+
+    const root = document.documentElement
+    const wasDark = root.classList.contains('dark')
+    root.classList.remove('dark')
+    root.classList.add('light')
+
+    return () => {
+      root.classList.remove('light')
+      if (wasDark) root.classList.add('dark')
+    }
+  }, [])
+
   return (
     <AuthChromeProvider>
       <div className='auth-theme relative min-h-svh overflow-x-clip'>
-        <div className='auth-glow pointer-events-none absolute inset-0' aria-hidden />
+        <div
+          className='auth-glow pointer-events-none absolute inset-0'
+          aria-hidden
+        />
         <PublicHeader
           variant='auth'
           showNotifications={false}

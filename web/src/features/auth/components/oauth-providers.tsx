@@ -45,6 +45,8 @@ type OAuthProvidersProps = {
   isWeChatLoading?: boolean
   redirectTo?: string
   layout?: 'stack' | 'icons'
+  preview?: boolean
+  previewOnClick?: () => void
 }
 
 type ProviderButton = {
@@ -63,6 +65,8 @@ export function OAuthProviders({
   isWeChatLoading = false,
   redirectTo,
   layout = 'stack',
+  preview = false,
+  previewOnClick,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -81,7 +85,28 @@ export function OAuthProviders({
     setIsTelegramDialogOpen,
   } = useOAuthLogin(status, redirectTo)
 
-  const providerButtons: ProviderButton[] = []
+  const providerButtons: ProviderButton[] = preview
+    ? [
+        {
+          key: 'google-preview',
+          label: t('Continue with Google'),
+          onClick: previewOnClick ?? (() => undefined),
+          icon: renderOAuthProviderIcon({ name: 'Google' }),
+        },
+        {
+          key: 'github-preview',
+          label: t('Continue with GitHub'),
+          onClick: previewOnClick ?? (() => undefined),
+          icon: <IconGithub className={OAUTH_ICON_SIZE_CLASS} />,
+        },
+        {
+          key: 'discord-preview',
+          label: t('Continue with Discord'),
+          onClick: previewOnClick ?? (() => undefined),
+          icon: <IconDiscord className={OAUTH_ICON_SIZE_CLASS} />,
+        },
+      ]
+    : []
 
   if (status?.wechat_login && onWeChatLogin) {
     providerButtons.push({
@@ -190,7 +215,7 @@ export function OAuthProviders({
                     onClick={onClick}
                     aria-label={label}
                     title={label}
-                    className='h-10 min-w-0 flex-1 rounded-[12px] border border-solid border-[#E5E5E7] bg-white text-foreground font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#1E1E1E] dark:hover:bg-[#1E1E1E] [&_svg]:size-[18px] [&_img]:size-[18px]'
+                    className='text-foreground h-10 min-w-0 flex-1 rounded-[12px] border border-solid border-[#E5E5E7] bg-white font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#1E1E1E] dark:hover:bg-[#1E1E1E] [&_img]:size-[18px] [&_svg]:size-[18px]'
                   >
                     {icon ?? (
                       <span
@@ -220,7 +245,7 @@ export function OAuthProviders({
                     type='button'
                     disabled={disabled || isLoading || extraDisabled}
                     onClick={onClick}
-                    className='h-11 w-full justify-center gap-2 rounded-[12px] border border-solid border-[#E5E5E7] bg-white text-foreground font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#1E1E1E] dark:hover:bg-[#1E1E1E]'
+                    className='text-foreground h-11 w-full justify-center gap-2 rounded-[12px] border border-solid border-[#E5E5E7] bg-white font-normal shadow-none hover:bg-white dark:border-[#2E2E2E] dark:bg-[#1E1E1E] dark:hover:bg-[#1E1E1E]'
                   >
                     {icon}
                     {label}

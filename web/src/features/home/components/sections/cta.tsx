@@ -39,7 +39,7 @@ export function CTA(props: CTAProps) {
   return (
     <section
       className={cn(
-        'relative z-10 flex min-h-[480px] items-center justify-center overflow-hidden px-6 py-24 md:min-h-[640px] md:py-0',
+        'relative z-10 flex items-center justify-center overflow-hidden px-6 pt-24 pb-[160px] md:pt-[200px]',
         props.className
       )}
     >
@@ -70,7 +70,7 @@ export function CTA(props: CTAProps) {
         </p>
         <div className='mt-12 flex flex-wrap items-center justify-center gap-5'>
           <Button
-            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-14 min-w-[200px] rounded-full px-6 text-lg font-normal'
+            className='group bg-primary text-primary-foreground hover:bg-primary/90 h-14 min-w-[200px] rounded-full px-6 text-lg font-[400]'
             render={<Link to={primaryTo} />}
           >
             {primaryLabel}
@@ -78,7 +78,7 @@ export function CTA(props: CTAProps) {
           </Button>
           <Button
             variant='outline'
-            className='border-[#CDCDCD] text-foreground hover:bg-muted/40 h-14 w-[200px] rounded-full px-6 text-lg font-normal dark:border-[#383838]'
+            className='text-foreground hover:bg-muted/40 h-14 w-[200px] rounded-full border-[#CDCDCD] px-6 text-lg font-[400] dark:border-[#383838]'
             render={<Link to='/pricing' />}
           >
             {t('View Pricing')}

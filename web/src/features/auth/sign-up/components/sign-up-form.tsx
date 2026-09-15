@@ -132,7 +132,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
   const hasWeChatLogin = Boolean(status?.wechat_login)
   const customerSelfRegisterEnabled = Boolean(
     status?.customer_self_register_enabled ??
-      status?.data?.customer_self_register_enabled
+    status?.data?.customer_self_register_enabled
   )
   const isInviteSignup = Boolean(invite?.trim())
   const shouldOnboardAfterSignup =
@@ -292,9 +292,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
       })
 
       if (!res?.success) {
-        toast.error(
-          t(res?.message || 'Failed to create account')
-        )
+        toast.error(t(res?.message || 'Failed to create account'))
         return
       }
 
@@ -315,11 +313,7 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
         turnstile: loginTurnstileToken,
       })
 
-      if (
-        loginRes.success &&
-        loginRes.data &&
-        isAuthBundle(loginRes.data)
-      ) {
+      if (loginRes.success && loginRes.data && isAuthBundle(loginRes.data)) {
         await handleLoginSuccess(loginRes.data)
         toast.success(t('Account created!'))
         return
@@ -343,7 +337,10 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
     }
   }
 
-  async function requestVerificationCode(email: string, tokenOverride?: string) {
+  async function requestVerificationCode(
+    email: string,
+    tokenOverride?: string
+  ) {
     const sent = await sendCode(email, tokenOverride)
     setTurnstileToken('')
     setTurnstileWidgetKey((current) => current + 1)
@@ -523,151 +520,156 @@ export function SignUpForm({ className, invite, ...props }: SignUpFormProps) {
             view === 'turnstile' && 'hidden'
           )}
         >
-      <div className='flex w-full flex-col items-center gap-6'>
-        <div className='flex w-full flex-col items-center gap-4'>
-          <AuthBrand />
-          <div className='flex flex-col items-center gap-2 text-center'>
-            <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
-              {t('Sign Up Account')}
-            </h1>
-            <p className='text-muted-foreground text-xs'>
-              {t('Please enter your information to create account')}
-            </p>
-          </div>
-        </div>
+          <div className='flex w-full flex-col items-center gap-6'>
+            <div className='flex w-full flex-col items-center gap-4'>
+              <AuthBrand />
+              <div className='flex flex-col items-center gap-2 text-center'>
+                <h1 className='text-lg leading-7 font-semibold tracking-[-0.09px]'>
+                  {t('Sign Up Account')}
+                </h1>
+                <p className='text-muted-foreground text-xs'>
+                  {t('Please enter your information to create account')}
+                </p>
+              </div>
+            </div>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            noValidate
-            className={cn('flex w-full flex-col gap-4', className)}
-            {...props}
-          >
-            {oauthRegisterEnabled && (
-              <OAuthProviders
-                status={status}
-                layout='icons'
-                disabled={isLoading}
-                onWeChatLogin={
-                  hasWeChatLogin ? handleOpenWeChatDialog : undefined
-                }
-                isWeChatLoading={isWeChatSubmitting}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name='username'
-              render={({ field }) => (
-                <FormItem className='gap-2'>
-                  <AuthFieldLabel label={t('User name')} />
-                  <FormControl>
-                    <AuthTextField
-                      placeholder={t('Enter your user name')}
-                      autoComplete='username'
-                      {...field}
-                      onBlur={async (event) => {
-                        field.onBlur()
-                        const value = event.target.value
-                        if (value?.trim()) {
-                          await ensureUsernameAvailable(value)
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {emailVerificationRequired && (
-              <FormField
-                control={form.control}
-                name='email'
-                render={({ field }) => (
-                  <FormItem className='gap-2'>
-                    <AuthFieldLabel label={t('Email')} />
-                    <FormControl>
-                      <AuthTextField
-                        placeholder={t('Enter your email address')}
-                        type='text'
-                        inputMode='email'
-                        autoComplete='email'
-                        autoCapitalize='none'
-                        autoCorrect='off'
-                        spellCheck={false}
-                        {...field}
-                        onBlur={async (event) => {
-                          field.onBlur()
-                          const value = event.target.value
-                          if (!value?.trim()) return
-                          const ok = await form.trigger('email')
-                          if (ok) {
-                            await ensureEmailAvailable(value)
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                noValidate
+                className={cn('flex w-full flex-col gap-4', className)}
+                {...props}
+              >
+                {oauthRegisterEnabled && (
+                  <OAuthProviders
+                    status={status}
+                    preview={
+                      typeof window !== 'undefined' &&
+                      new URLSearchParams(window.location.search).get(
+                        'preview'
+                      ) === 'social'
+                    }
+                    layout='icons'
+                    disabled={isLoading}
+                    onWeChatLogin={
+                      hasWeChatLogin ? handleOpenWeChatDialog : undefined
+                    }
+                    isWeChatLoading={isWeChatSubmitting}
+                  />
                 )}
-              />
-            )}
 
-            <FormField
-              control={form.control}
-              name='password'
-              render={({ field }) => (
-                <FormItem className='gap-2'>
-                  <AuthFieldLabel label={t('Password')} />
-                  <FormControl>
-                    <AuthPasswordField
-                      placeholder={t('Create a password')}
-                      autoComplete='new-password'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+                <FormField
+                  control={form.control}
+                  name='username'
+                  render={({ field }) => (
+                    <FormItem className='gap-2'>
+                      <AuthFieldLabel label={t('User name')} />
+                      <FormControl>
+                        <AuthTextField
+                          placeholder={t('Enter your user name')}
+                          autoComplete='username'
+                          {...field}
+                          onBlur={async (event) => {
+                            field.onBlur()
+                            const value = event.target.value
+                            if (value?.trim()) {
+                              await ensureUsernameAvailable(value)
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {emailVerificationRequired && (
+                  <FormField
+                    control={form.control}
+                    name='email'
+                    render={({ field }) => (
+                      <FormItem className='gap-2'>
+                        <AuthFieldLabel label={t('Email')} />
+                        <FormControl>
+                          <AuthTextField
+                            placeholder={t('Enter your email address')}
+                            type='text'
+                            inputMode='email'
+                            autoComplete='email'
+                            autoCapitalize='none'
+                            autoCorrect='off'
+                            spellCheck={false}
+                            {...field}
+                            onBlur={async (event) => {
+                              field.onBlur()
+                              const value = event.target.value
+                              if (!value?.trim()) return
+                              const ok = await form.trigger('email')
+                              if (ok) {
+                                await ensureEmailAvailable(value)
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name='password'
+                  render={({ field }) => (
+                    <FormItem className='gap-2'>
+                      <AuthFieldLabel label={t('Password')} />
+                      <FormControl>
+                        <AuthPasswordField
+                          placeholder={t('Create a password')}
+                          autoComplete='new-password'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <LegalConsent
+                  status={status}
+                  checked={agreedToLegal}
+                  onCheckedChange={setAgreedToLegal}
+                />
+
+                <AuthSubmitButton type='submit' disabled={isLoading}>
+                  {isLoading ? (
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                  ) : null}
+                  {t('Continue')}
+                </AuthSubmitButton>
+              </form>
+            </Form>
+          </div>
+
+          <p className='text-muted-foreground w-full text-center text-xs'>
+            {t('Already have an account?')}{' '}
+            <Link to='/sign-in' className='auth-link'>
+              {t('Log in')}
+            </Link>
+          </p>
+
+          {hasWeChatLogin && (
+            <WeChatLoginDialog
+              open={isWeChatDialogOpen}
+              onOpenChange={handleWeChatDialogChange}
+              qrCodeUrl={wechatQrCodeUrl}
+              code={wechatCode}
+              onCodeChange={setWeChatCode}
+              onConfirm={handleWeChatLogin}
+              submitting={isWeChatSubmitting}
             />
-
-            <LegalConsent
-              status={status}
-              checked={agreedToLegal}
-              onCheckedChange={setAgreedToLegal}
-            />
-
-            <AuthSubmitButton
-              type='submit'
-              disabled={isLoading}
-            >
-              {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
-              {t('Continue')}
-            </AuthSubmitButton>
-          </form>
-        </Form>
-      </div>
-
-      <p className='text-muted-foreground w-full text-center text-xs'>
-        {t('Already have an account?')}{' '}
-        <Link to='/sign-in' className='auth-link'>
-          {t('Log in')}
-        </Link>
-      </p>
-
-      {hasWeChatLogin && (
-        <WeChatLoginDialog
-          open={isWeChatDialogOpen}
-          onOpenChange={handleWeChatDialogChange}
-          qrCodeUrl={wechatQrCodeUrl}
-          code={wechatCode}
-          onCodeChange={setWeChatCode}
-          onConfirm={handleWeChatLogin}
-          submitting={isWeChatSubmitting}
-        />
-      )}
-    </AuthCard>
+          )}
+        </AuthCard>
       )}
     </>
   )

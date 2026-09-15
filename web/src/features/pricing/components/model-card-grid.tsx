@@ -31,6 +31,7 @@ import type { ModelPerfBadgeData } from './model-perf-badge'
 
 export interface ModelCardGridProps {
   models: PricingModel[]
+  previewPerformance?: Record<string, ModelPerfBadgeData>
   onModelClick: (modelName: string) => void
   priceRate?: number
   usdExchangeRate?: number
@@ -49,6 +50,7 @@ export function ModelCardGrid(props: ModelCardGridProps) {
 
   const perfQuery = useQuery({
     queryKey: ['perf-metrics-summary', 24],
+    enabled: !props.previewPerformance,
     queryFn: () => getPerfMetricsSummary(24),
     staleTime: 60 * 1000,
     retry: false,
@@ -73,7 +75,7 @@ export function ModelCardGrid(props: ModelCardGridProps) {
 
   return (
     <div className='space-y-4 sm:space-y-5'>
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] gap-4'>
         {pagedModels.map((model) => (
           <ModelCard
             key={model.id ?? model.model_name}
@@ -83,7 +85,10 @@ export function ModelCardGrid(props: ModelCardGridProps) {
             usdExchangeRate={props.usdExchangeRate}
             showRechargePrice={props.showRechargePrice}
             selectedGroup={props.selectedGroup}
-            perf={perfMap.get(model.model_name || '')}
+            perf={
+              props.previewPerformance?.[model.model_name] ??
+              perfMap.get(model.model_name || '')
+            }
             onClick={() => props.onModelClick(model.model_name || '')}
           />
         ))}

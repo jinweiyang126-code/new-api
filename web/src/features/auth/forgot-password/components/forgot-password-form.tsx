@@ -47,10 +47,15 @@ import { useSystemConfig } from '@/hooks/use-system-config'
 import { DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
+type ForgotPasswordFormProps = React.HTMLAttributes<HTMLFormElement> & {
+  preview?: boolean
+}
+
 export function ForgotPasswordForm({
   className,
+  preview = false,
   ...props
-}: React.HTMLAttributes<HTMLFormElement>) {
+}: ForgotPasswordFormProps) {
   const { t } = useTranslation()
   const { systemName } = useSystemConfig()
   const brandName = systemName || DEFAULT_SYSTEM_NAME
@@ -103,6 +108,13 @@ export function ForgotPasswordForm({
   }
 
   async function onSubmit(data: z.infer<typeof forgotPasswordFormSchema>) {
+    if (preview) {
+      form.setValue('email', data.email)
+      setSent(true)
+      startCountdown()
+      return
+    }
+
     if (showTurnstileSlot && !turnstileToken) {
       setPendingEmail(data.email)
       setView('turnstile')
@@ -142,7 +154,7 @@ export function ForgotPasswordForm({
           <div className='flex w-full flex-col items-center gap-4 text-center'>
             <AuthBrand />
             <div className='flex flex-col items-center gap-2'>
-              <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+              <h1 className='text-lg leading-7 font-semibold tracking-[-0.09px]'>
                 {t('Forgot Password')}
               </h1>
               <p className='text-muted-foreground max-w-[385px] text-xs leading-[1.5]'>
@@ -158,10 +170,7 @@ export function ForgotPasswordForm({
             <form
               onSubmit={form.handleSubmit(onSubmit)}
               noValidate
-              className={cn(
-                'flex w-full flex-col gap-10',
-                className
-              )}
+              className={cn('flex w-full flex-col gap-10', className)}
               {...props}
             >
               <div className='flex w-full flex-col gap-6'>
@@ -191,10 +200,10 @@ export function ForgotPasswordForm({
                   <div className='flex w-full gap-2 rounded-[12px] border border-[rgba(0,187,126,0.5)] bg-[rgba(0,187,126,0.1)] p-4 text-left'>
                     <CheckCircle2 className='mt-0.5 size-4 shrink-0 text-[#00BB7E]' />
                     <div className='flex min-w-0 flex-col gap-2'>
-                      <p className='text-sm font-medium leading-none'>
+                      <p className='text-sm leading-none font-medium'>
                         {t('Reset link has been sent')}
                       </p>
-                      <p className='text-xs leading-normal text-foreground/90'>
+                      <p className='text-foreground/90 text-xs leading-normal'>
                         {t(
                           'Please check your inbox and click the link in the email to reset your password'
                         )}

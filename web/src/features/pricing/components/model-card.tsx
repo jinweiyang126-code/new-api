@@ -47,10 +47,7 @@ export interface ModelCardProps {
   perf?: ModelPerfBadgeData
 }
 
-function billingLabel(
-  model: PricingModel,
-  t: (key: string) => string
-): string {
+function billingLabel(model: PricingModel, t: (key: string) => string): string {
   if (isDynamicPricingModel(model)) return t('Dynamic Pricing')
   if (isTokenBasedModel(model)) return t('Token-based')
   return t('Per Request')
@@ -68,7 +65,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const groups = props.model.enable_groups || []
   const endpoints = props.model.supported_endpoint_types || []
   const modelIconKey = props.model.icon || props.model.vendor_icon
-  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 24) : null
+  const modelIcon = modelIconKey
+    ? getLobeIcon(modelIconKey, (24 / 36) * 40)
+    : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
   const isDynamicPricing =
     props.model.billing_mode === 'tiered_expr' &&
@@ -88,11 +87,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     : null
 
   const primaryGroup = groups[0]
-  const bottomTagPool = [
-    props.model.vendor_name,
-    ...endpoints,
-    ...tags,
-  ].filter(Boolean) as string[]
+  const bottomTagPool = [props.model.vendor_name, ...endpoints, ...tags].filter(
+    Boolean
+  ) as string[]
   const bottomTags = bottomTagPool.slice(0, 3)
   const hiddenCount = Math.max(bottomTagPool.length - 3, 0)
 
@@ -221,7 +218,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       )}
     >
       <div className='flex items-start gap-3'>
-        <div className='flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] p-1.5 dark:bg-[#252526]'>
+        <div className='flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] dark:bg-[#252526]'>
           {modelIcon || (
             <span className='text-muted-foreground text-sm font-bold'>
               {initial}
@@ -244,19 +241,19 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </button>
           </div>
 
-          <div className='mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-sm'>
+          <div className='mt-1 flex -translate-y-[6px] flex-nowrap items-baseline gap-x-2 text-sm whitespace-nowrap min-[480px]:gap-x-4'>
             {priceSummary}
           </div>
         </div>
       </div>
 
-      <p className='mt-6 h-16 shrink-0 overflow-hidden text-sm leading-[21px] text-[#606060] line-clamp-3 dark:text-[#a3a3a3]'>
+      <p className='mt-6 line-clamp-3 h-16 shrink-0 overflow-hidden text-sm leading-[21px] text-[#606060] dark:text-[#a3a3a3]'>
         {props.model.description || t('No description available.')}
       </p>
 
-      <div className='mt-6 flex items-end justify-between gap-3'>
+      <div className='mt-6 flex items-start justify-between gap-3'>
         <div className='flex min-w-0 flex-col gap-2'>
-          <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium'>
+          <div className='flex h-4 min-w-0 items-center gap-x-2 overflow-hidden text-xs leading-4 font-medium whitespace-nowrap'>
             {primaryGroup ? (
               <span className='text-[#606060] dark:text-[#a3a3a3]'>
                 {primaryGroup}
@@ -267,7 +264,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </span>
           </div>
           {(bottomTags.length > 0 || hiddenCount > 0) && (
-            <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-light text-[#919191] dark:text-[#77777a]'>
+            <div className='flex h-4 min-w-0 items-center gap-x-2 overflow-hidden text-[12px] leading-4 font-light whitespace-nowrap text-[#919191] dark:text-[#77777a]'>
               {bottomTags.map((item) => (
                 <span key={item} className='truncate'>
                   {item}

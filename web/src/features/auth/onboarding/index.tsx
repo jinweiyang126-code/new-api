@@ -31,18 +31,23 @@ import {
 
 type SignupOnboardingProps = {
   initialStep?: OnboardingStep
+  preview?: boolean
 }
 
-export function SignupOnboarding({ initialStep = 'choose' }: SignupOnboardingProps) {
+export function SignupOnboarding({
+  initialStep = 'choose',
+  preview = false,
+}: SignupOnboardingProps) {
   return (
     <AuthLayout>
-      <SignupOnboardingContent initialStep={initialStep} />
+      <SignupOnboardingContent initialStep={initialStep} preview={preview} />
     </AuthLayout>
   )
 }
 
 function SignupOnboardingContent({
   initialStep = 'choose',
+  preview = false,
 }: SignupOnboardingProps) {
   const { t } = useTranslation()
   const { setAction: setAuthChromeAction } = useAuthChrome()
@@ -70,7 +75,7 @@ function SignupOnboardingContent({
       <div className='flex w-full flex-col items-center gap-4'>
         <AuthBrand />
         <div className='flex flex-col items-center gap-2 text-center'>
-          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+          <h1 className='text-lg leading-7 font-semibold tracking-[-0.09px]'>
             {isChoose
               ? t('How will you be using the platform?')
               : t('Complete your organization information')}
@@ -87,6 +92,7 @@ function SignupOnboardingContent({
       <SignupOnboardingForm
         step={step}
         onStepChange={setStep}
+        preview={preview}
         className='w-full'
       />
     </AuthCard>

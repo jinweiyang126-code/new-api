@@ -165,6 +165,7 @@ export function SecureVerificationDialog({
               placeholder={t('Enter verification code')}
               disabled={state.loading}
               autoFocus={activeMethod === '2fa'}
+              className='dark:hover:border-input hover:border-[#A3A3A3] focus-visible:border-[#A3A3A3] focus-visible:ring-0'
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !verifyDisabled) {
                   event.preventDefault()

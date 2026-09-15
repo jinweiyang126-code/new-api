@@ -22,8 +22,8 @@ import { useTranslation } from 'react-i18next'
 import { AuthLayout } from '../auth-layout'
 import { AuthBrand } from '../components/auth-brand'
 import { AuthCard } from '../components/auth-card'
-import { useAuthChrome } from '../lib/auth-chrome-context'
 import { useAuthRedirect } from '../hooks/use-auth-redirect'
+import { useAuthChrome } from '../lib/auth-chrome-context'
 import { OtpForm } from './components/otp-form'
 
 export function Otp() {
@@ -39,6 +39,8 @@ function OtpContent() {
   const { setAction: setAuthChromeAction } = useAuthChrome()
   const { redirectToLogin } = useAuthRedirect()
   const [useBackupCode, setUseBackupCode] = useState(false)
+  const preview =
+    new URLSearchParams(window.location.search).get('preview') === 'flow'
 
   const goSignIn = useCallback(() => {
     redirectToLogin()
@@ -57,7 +59,7 @@ function OtpContent() {
       <div className='flex w-full flex-col items-center gap-4'>
         <AuthBrand />
         <div className='flex flex-col items-center gap-2'>
-          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+          <h1 className='text-lg leading-7 font-semibold tracking-[-0.09px]'>
             {useBackupCode
               ? t('Enter backup code')
               : t('Verify Google Authenticator')}
@@ -74,6 +76,7 @@ function OtpContent() {
       <OtpForm
         useBackupCode={useBackupCode}
         onToggleMode={() => setUseBackupCode((v) => !v)}
+        preview={preview}
         className='w-full'
       />
     </AuthCard>

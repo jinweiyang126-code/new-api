@@ -24,8 +24,8 @@ import Gemini from '@lobehub/icons/es/Gemini'
 import Github from '@lobehub/icons/es/Github'
 import OpenAI from '@lobehub/icons/es/OpenAI'
 import Qwen from '@lobehub/icons/es/Qwen'
-import { useTranslation } from 'react-i18next'
 import { useId, type ComponentType } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { AnimateInView } from '@/components/animate-in-view'
 import { cn } from '@/lib/utils'
@@ -115,7 +115,9 @@ function BrandTile(props: IconItem & { flat?: boolean }) {
   return (
     <div
       className='flex w-16 shrink-0 flex-col items-center gap-4'
-      style={props.flat ? undefined : { transform: `translateY(${props.offsetY}px)` }}
+      style={
+        props.flat ? undefined : { transform: `translateY(${props.offsetY}px)` }
+      }
     >
       <div
         className={cn(
@@ -136,28 +138,41 @@ function BrandTile(props: IconItem & { flat?: boolean }) {
   )
 }
 
-/** Mobile: single flat row, no arc / dashed curve. */
-function BrandRowFlat(props: { items: readonly IconItem[]; className?: string }) {
+/** Mobile: three brands per row, with an incomplete final row centered. */
+function BrandRowFlat(props: {
+  items: readonly IconItem[]
+  className?: string
+}) {
+  const rows = [props.items.slice(0, 3), props.items.slice(3)]
+
   return (
     <div
       className={cn(
-        'flex flex-nowrap items-start justify-start gap-8 overflow-x-auto px-1 pb-1',
-        '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        'mx-auto grid w-full max-w-[360px] gap-y-8',
         props.className
       )}
     >
-      {props.items.map((item) => (
-        <BrandTile key={item.label} {...item} flat />
-      ))}
+      {rows
+        .filter((row) => row.length > 0)
+        .map((row) => (
+          <div
+            key={row[0].label}
+            className={cn(
+              'flex items-start gap-6',
+              row.length === 3 ? 'justify-between' : 'justify-evenly'
+            )}
+          >
+            {row.map((item) => (
+              <BrandTile key={item.label} {...item} flat />
+            ))}
+          </div>
+        ))}
     </div>
   )
 }
 
-function BrandArc(props: {
-  items: readonly IconItem[]
-  className?: string
-}) {
-  const gradientId = useId().replace(/:/g, '')
+function BrandArc(props: { items: readonly IconItem[]; className?: string }) {
+  const gradientId = useId().replaceAll(':', '')
   const maxOffset = Math.max(...props.items.map((item) => item.offsetY), 0)
   const minOffset = Math.min(...props.items.map((item) => item.offsetY), 0)
   const width =
@@ -183,7 +198,12 @@ function BrandArc(props: {
       <svg
         aria-hidden
         className='pointer-events-none absolute overflow-visible text-[#C8C8C8] dark:text-[#3A3A3A]'
-        style={{ left: svgLeft, top: svgTop, width: svgWidth, height: svgHeight }}
+        style={{
+          left: svgLeft,
+          top: svgTop,
+          width: svgWidth,
+          height: svgHeight,
+        }}
         width={svgWidth}
         height={svgHeight}
         viewBox={`${svgLeft} ${svgTop} ${svgWidth} ${svgHeight}`}

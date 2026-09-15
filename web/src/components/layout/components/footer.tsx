@@ -95,10 +95,7 @@ function FooterLinkItem(props: { link: FooterLink; className?: string }) {
   )
 }
 
-function LegalLinks(props: {
-  leadingSeparator?: boolean
-  className?: string
-}) {
+function LegalLinks(props: { leadingSeparator?: boolean; className?: string }) {
   const { t } = useTranslation()
   const { status } = useStatus()
   const items: { key: string; label: string; href: string }[] = []
@@ -178,7 +175,7 @@ function LandingFooter(props: FooterProps) {
 
   if (footerHtml) {
     return (
-      <footer className={cn('relative z-10', props.className)}>
+      <footer className={cn('site-footer relative z-10', props.className)}>
         <div className='mx-auto w-full max-w-[1200px] px-6 py-8'>
           <div
             className='custom-footer text-muted-foreground text-sm'
@@ -190,10 +187,13 @@ function LandingFooter(props: FooterProps) {
   }
 
   return (
-    <footer className={cn('relative z-10', props.className)}>
+    <footer className={cn('site-footer relative z-10', props.className)}>
       <div className='mx-auto max-w-[1200px] px-6 pt-16 pb-16 md:pt-[100px] md:pb-[100px]'>
         <div className='grid gap-x-8 gap-y-4 md:grid-cols-[1fr_auto] md:items-center'>
-          <Link to='/' className='inline-flex h-10 items-center md:col-start-1 md:row-start-1'>
+          <Link
+            to='/'
+            className='inline-flex h-10 items-center md:col-start-1 md:row-start-1'
+          >
             <img
               src={brandLogo}
               alt={displayName}
@@ -213,7 +213,10 @@ function LandingFooter(props: FooterProps) {
                 return (
                   <span
                     key={`${link.href}-${link.title}`}
-                    className={cn(navLinkClass, 'cursor-not-allowed opacity-50')}
+                    className={cn(
+                      navLinkClass,
+                      'cursor-not-allowed opacity-50'
+                    )}
                   >
                     {link.title}
                   </span>
@@ -265,7 +268,7 @@ function LandingFooter(props: FooterProps) {
           </nav>
         </div>
 
-        <div className='mt-10 h-px w-full bg-border opacity-70' />
+        <div className='bg-border mt-10 h-px w-full opacity-70' />
 
         <div className='mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
           <p className='text-[14px] leading-[18px] text-[#696969]'>
@@ -371,7 +374,7 @@ export function Footer(props: FooterProps) {
     return (
       <footer
         className={cn(
-          'border-border/40 relative z-10 border-t',
+          'site-footer border-border/40 relative z-10 border-t',
           props.className
         )}
       >
@@ -392,7 +395,10 @@ export function Footer(props: FooterProps) {
 
   return (
     <footer
-      className={cn('border-border/40 relative z-10 border-t', props.className)}
+      className={cn(
+        'site-footer border-border/40 relative z-10 border-t',
+        props.className
+      )}
     >
       <div className='mx-auto max-w-6xl px-6 py-16 md:py-20'>
         <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
@@ -414,14 +420,14 @@ export function Footer(props: FooterProps) {
 
           {isDemoSiteMode && (
             <div className='grid grid-cols-3 gap-8 md:gap-16'>
-              {displayColumns.map((column, index) => (
-                <div key={index}>
+              {displayColumns.map((column) => (
+                <div key={column.title}>
                   <p className='text-muted-foreground/50 mb-3 text-xs font-medium tracking-wider uppercase'>
                     {t(column.title)}
                   </p>
                   <ul className='space-y-2.5'>
-                    {column.links.map((link, linkIndex) => (
-                      <li key={linkIndex}>
+                    {column.links.map((link) => (
+                      <li key={`${link.href}|${link.text}`}>
                         <FooterLinkItem link={link} />
                       </li>
                     ))}

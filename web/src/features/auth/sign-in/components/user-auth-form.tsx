@@ -329,136 +329,140 @@ export function UserAuthForm({
           view === 'turnstile' && 'hidden'
         )}
       >
-      <div className='flex w-full flex-col items-center gap-6'>
-        <div className='flex w-full flex-col items-center gap-4'>
-          <AuthBrand />
-          <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
-            {t('Sign In')}
-          </h1>
+        <div className='flex w-full flex-col items-center gap-6'>
+          <div className='flex w-full flex-col items-center gap-4'>
+            <AuthBrand />
+            <h1 className='text-lg leading-7 font-semibold tracking-[-0.09px]'>
+              {t('Sign In')}
+            </h1>
+          </div>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              noValidate
+              className={cn('flex w-full flex-col gap-4', className)}
+              {...props}
+            >
+              <OAuthProviders
+                status={status}
+                preview={
+                  typeof window !== 'undefined' &&
+                  new URLSearchParams(window.location.search).get('preview') ===
+                    'social'
+                }
+                redirectTo={redirectTo}
+                layout='icons'
+                disabled={isLoading}
+                onWeChatLogin={
+                  hasWeChatLogin ? handleOpenWeChatDialog : undefined
+                }
+                isWeChatLoading={isWeChatSubmitting}
+              />
+
+              {passwordLoginEnabled && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name='username'
+                    render={({ field }) => (
+                      <FormItem className='gap-2'>
+                        <AuthFieldLabel label={t('User name/Email')} />
+                        <FormControl>
+                          <AuthTextField
+                            placeholder={t('Enter your user name/Email')}
+                            autoComplete='username'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='password'
+                    render={({ field }) => (
+                      <FormItem className='gap-2'>
+                        <AuthFieldLabel
+                          label={t('Password')}
+                          extra={
+                            <Link
+                              to='/forgot-password'
+                              className='auth-link auth-link-plain text-xs'
+                            >
+                              {t('Forgot password?')}
+                            </Link>
+                          }
+                        />
+                        <FormControl>
+                          <AuthPasswordField
+                            placeholder={t('Enter password')}
+                            autoComplete='current-password'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <AuthSubmitButton type='submit' disabled={isLoading}>
+                    {isLoading ? <Loader2 className='animate-spin' /> : null}
+                    {t('Continue')}
+                  </AuthSubmitButton>
+                </>
+              )}
+
+              {passkeyLoginEnabled && (
+                <div className='space-y-1'>
+                  <AuthSubmitButton
+                    type='button'
+                    variant='outline'
+                    disabled={passkeyButtonDisabled}
+                    onClick={handlePasskeyLogin}
+                    className='bg-transparent'
+                  >
+                    {isPasskeyLoading ? (
+                      <Loader2 className='h-4 w-4 animate-spin' />
+                    ) : (
+                      <KeyRound className='h-4 w-4' />
+                    )}
+                    {t('Sign in with Passkey')}
+                  </AuthSubmitButton>
+                  {!passkeySupported && (
+                    <p className='text-muted-foreground text-center text-xs'>
+                      {t('Passkey is not supported on this device.')}
+                    </p>
+                  )}
+                </div>
+              )}
+            </form>
+          </Form>
         </div>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            noValidate
-            className={cn('flex w-full flex-col gap-4', className)}
-            {...props}
-          >
-            <OAuthProviders
-              status={status}
-              redirectTo={redirectTo}
-              layout='icons'
-              disabled={isLoading}
-              onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
-              isWeChatLoading={isWeChatSubmitting}
-            />
+        {showSignUpLink && (
+          <p className='text-muted-foreground w-full text-center text-xs'>
+            {t("Don't have an account?")}{' '}
+            <Link to='/sign-up' className='auth-link'>
+              {t('Sign up')}
+            </Link>
+          </p>
+        )}
 
-            {passwordLoginEnabled && (
-              <>
-                <FormField
-                  control={form.control}
-                  name='username'
-                  render={({ field }) => (
-                    <FormItem className='gap-2'>
-                      <AuthFieldLabel label={t('User name/Email')} />
-                      <FormControl>
-                        <AuthTextField
-                          placeholder={t('Enter your user name/Email')}
-                          autoComplete='username'
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='password'
-                  render={({ field }) => (
-                    <FormItem className='gap-2'>
-                      <AuthFieldLabel
-                        label={t('Password')}
-                        extra={
-                          <Link
-                            to='/forgot-password'
-                            className='auth-link auth-link-plain text-xs'
-                          >
-                            {t('Forgot password?')}
-                          </Link>
-                        }
-                      />
-                      <FormControl>
-                        <AuthPasswordField
-                          placeholder={t('Enter password')}
-                          autoComplete='current-password'
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <AuthSubmitButton
-                  type='submit'
-                  disabled={isLoading}
-                >
-                  {isLoading ? <Loader2 className='animate-spin' /> : null}
-                  {t('Continue')}
-                </AuthSubmitButton>
-              </>
-            )}
-
-            {passkeyLoginEnabled && (
-              <div className='space-y-1'>
-                <AuthSubmitButton
-                  type='button'
-                  variant='outline'
-                  disabled={passkeyButtonDisabled}
-                  onClick={handlePasskeyLogin}
-                  className='bg-transparent'
-                >
-                  {isPasskeyLoading ? (
-                    <Loader2 className='h-4 w-4 animate-spin' />
-                  ) : (
-                    <KeyRound className='h-4 w-4' />
-                  )}
-                  {t('Sign in with Passkey')}
-                </AuthSubmitButton>
-                {!passkeySupported && (
-                  <p className='text-muted-foreground text-center text-xs'>
-                    {t('Passkey is not supported on this device.')}
-                  </p>
-                )}
-              </div>
-            )}
-          </form>
-        </Form>
-      </div>
-
-      {showSignUpLink && (
-        <p className='text-muted-foreground w-full text-center text-xs'>
-          {t("Don't have an account?")}{' '}
-          <Link to='/sign-up' className='auth-link'>
-            {t('Sign up')}
-          </Link>
-        </p>
-      )}
-
-      {hasWeChatLogin && (
-        <WeChatLoginDialog
-          open={isWeChatDialogOpen}
-          onOpenChange={handleWeChatDialogChange}
-          qrCodeUrl={wechatQrCodeUrl}
-          code={wechatCode}
-          onCodeChange={setWeChatCode}
-          onConfirm={handleWeChatLogin}
-          submitting={isWeChatSubmitting}
-        />
-      )}
-    </AuthCard>
+        {hasWeChatLogin && (
+          <WeChatLoginDialog
+            open={isWeChatDialogOpen}
+            onOpenChange={handleWeChatDialogChange}
+            qrCodeUrl={wechatQrCodeUrl}
+            code={wechatCode}
+            onCodeChange={setWeChatCode}
+            onConfirm={handleWeChatLogin}
+            submitting={isWeChatSubmitting}
+          />
+        )}
+      </AuthCard>
     </>
   )
 }

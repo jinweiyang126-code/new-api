@@ -17,6 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { AuthLayout } from '../auth-layout'
+import { AuthFlowPreview } from '../components/auth-flow-preview'
+import { AuthTurnstileStep } from '../components/auth-turnstile-step'
 import { SignUpForm } from './components/sign-up-form'
 
 type SignUpProps = {
@@ -24,9 +26,19 @@ type SignUpProps = {
 }
 
 export function SignUp({ invite }: SignUpProps) {
-  return (
-    <AuthLayout>
-      <SignUpForm invite={invite} />
-    </AuthLayout>
-  )
+  const preview = new URLSearchParams(window.location.search).get('preview')
+  let content = <SignUpForm invite={invite} />
+  if (preview === 'flow') content = <AuthFlowPreview mode='sign-up' />
+  if (preview === 'security') {
+    content = (
+      <AuthTurnstileStep
+        siteKey=''
+        enabled={false}
+        onVerify={() => undefined}
+        onExpire={() => undefined}
+      />
+    )
+  }
+
+  return <AuthLayout>{content}</AuthLayout>
 }

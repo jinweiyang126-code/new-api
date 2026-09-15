@@ -33,7 +33,6 @@ import {
   OAUTH_BIND_RESULT_MESSAGE,
 } from '@/features/auth/constants'
 import { sanitizeAuthRedirect } from '@/features/auth/lib/auth-redirect'
-import { resolveSignupOnboardingRedirect } from '@/features/auth/lib/signup-onboarding'
 import {
   parseTelegramBindCallback,
   postTelegramBindResult,
@@ -43,6 +42,7 @@ import {
   getOAuthSessionStorage,
   resolveOAuthCallbackMode,
 } from '@/features/auth/lib/oauth-callback-mode'
+import { resolveSignupOnboardingRedirect } from '@/features/auth/lib/signup-onboarding'
 import { api, applyAuthBundle, isAuthBundle } from '@/lib/api'
 import { getServerErrorMessageKey } from '@/lib/server-error-message'
 
@@ -74,6 +74,8 @@ function OAuthCallback() {
     error_code?: string
   }
   const callbackState = search.state ?? ''
+  const isPreview =
+    new URLSearchParams(window.location.search).get('preview') === 'flow'
   const isTelegramBindCallback =
     provider === 'telegram' &&
     (search.telegram_bind === 'success' || search.telegram_bind === 'error')
@@ -89,6 +91,7 @@ function OAuthCallback() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (isPreview) return
 
     const code = search.code ?? ''
     const state = callbackState
@@ -232,6 +235,7 @@ function OAuthCallback() {
     })()
   }, [
     callbackState,
+    isPreview,
     mode,
     navigate,
     provider,

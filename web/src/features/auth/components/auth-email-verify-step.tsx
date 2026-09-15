@@ -58,13 +58,9 @@ export function AuthEmailVerifyStep({
   const { t } = useTranslation()
   const autoSubmittedForRef = useRef<string | null>(null)
 
-  let resendLabel = t("Didn't receive a code? Resend")
-  if (isSending) {
-    resendLabel = t('Sending...')
-  } else if (isResendActive) {
-    // Concatenate seconds so countdown always renders (avoids i18n interpolation misses)
-    resendLabel = `${t("Didn't receive a code? Resend")} (${secondsLeft}s)`
-  }
+  let resendLabel = t('Resend')
+  if (isSending) resendLabel = t('Sending...')
+  else if (isResendActive) resendLabel = `${t('Resend')} (${secondsLeft}s)`
 
   function handleCodeChange(value: string) {
     onCodeChange(value)
@@ -81,7 +77,7 @@ export function AuthEmailVerifyStep({
     <AuthCard className='flex flex-col items-center gap-6 text-center'>
       <AuthBrand />
       <div className='space-y-2'>
-        <h1 className='text-lg font-semibold leading-7 tracking-[-0.09px]'>
+        <h1 className='text-lg leading-7 font-semibold tracking-[-0.09px]'>
           {t('Verify Your Email')}
         </h1>
         <p className='text-muted-foreground text-xs leading-5'>
@@ -93,7 +89,7 @@ export function AuthEmailVerifyStep({
             <button
               type='button'
               onClick={onEditEmail}
-              className='text-[var(--auth-link)] hover:opacity-85 inline-flex size-5 items-center justify-center rounded-md'
+              className='inline-flex size-5 items-center justify-center rounded-md text-[var(--auth-link)] hover:opacity-85'
               aria-label={t('Edit email')}
               title={t('Edit email')}
             >
@@ -117,7 +113,7 @@ export function AuthEmailVerifyStep({
               <InputOTPSlot
                 key={index}
                 index={index}
-                className='size-14 rounded-[12px] border border-[#E5E5E7] bg-white text-lg shadow-none data-[active=true]:border-primary data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E] dark:bg-[#212121] dark:data-[active=true]:border-[#A3A3A3]'
+                className='size-14 rounded-[12px] border border-[#E5E5E7] bg-white text-lg shadow-none hover:border-[#A3A3A3] data-[active=true]:border-[#A3A3A3] data-[active=true]:ring-0 data-[active=true]:ring-offset-0 dark:border-[#2E2E2E] dark:bg-[#212121] dark:hover:border-[#2E2E2E] dark:data-[active=true]:border-[#A3A3A3]'
               />
             ))}
           </InputOTPGroup>
@@ -129,14 +125,17 @@ export function AuthEmailVerifyStep({
           </p>
         ) : null}
       </div>
-      <button
-        type='button'
-        className='text-muted-foreground hover:text-foreground text-xs disabled:opacity-50'
-        disabled={isSending || isResendActive || isSubmitting}
-        onClick={onResend}
-      >
-        {resendLabel}
-      </button>
+      <p className='text-muted-foreground flex items-center gap-1 text-xs'>
+        <span>{t("Didn't receive a code?")}</span>
+        <button
+          type='button'
+          className='text-[#1687FF] hover:opacity-80 disabled:cursor-default disabled:text-[#939393] disabled:opacity-100'
+          disabled={isSending || isResendActive || isSubmitting}
+          onClick={onResend}
+        >
+          {resendLabel}
+        </button>
+      </p>
     </AuthCard>
   )
 }

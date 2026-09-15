@@ -16,8 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ArrowUpDown, Check, Filter, Grid2X2, Table2 } from 'lucide-react'
+import { ArrowUpDown, Check, Filter, Grid2X2, Table2, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -166,32 +167,36 @@ export function PricingToolbar(props: PricingToolbarProps) {
   )
 
   return (
-    <div className='rounded-[20px] border border-[#e8e8e8] bg-white px-5 py-3 dark:border-border/80 dark:bg-[#1E1E1F]'>
+    <div className='dark:border-border/80 rounded-[20px] border border-[#e8e8e8] bg-white px-5 py-3 dark:bg-[#1E1E1F]'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
         <div className='flex items-center gap-2'>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            onClick={() => setMobileFiltersOpen(true)}
-            className='gap-1.5 rounded-full xl:hidden'
-          >
-            <Filter className='size-4' />
-            {t('Filter')}
-            {props.activeFilterCount > 0 && (
-              <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
-                {props.activeFilterCount}
-              </Badge>
+          {typeof document !== 'undefined' &&
+            createPortal(
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => setMobileFiltersOpen(true)}
+                aria-expanded={mobileFiltersOpen}
+                aria-controls='mobile-model-filters'
+                className='fixed right-4 bottom-[max(24px,env(safe-area-inset-bottom))] z-40 h-11 gap-2 rounded-full border bg-white px-5 text-[14px] font-medium opacity-100 shadow-lg hover:bg-white xl:hidden dark:bg-[#1E1E1F] dark:hover:bg-[#1E1E1F]'
+              >
+                <Filter className='size-4' />
+                {t('Filter')}
+                {props.activeFilterCount > 0 && (
+                  <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
+                    {props.activeFilterCount}
+                  </Badge>
+                )}
+              </Button>,
+              document.body
             )}
-          </Button>
 
           <div className='text-muted-foreground flex items-baseline gap-1 text-sm'>
             <span className='text-foreground font-semibold tabular-nums'>
               {props.filteredCount.toLocaleString()}
             </span>
-            <span>
-              {props.filteredCount === 1 ? t('model') : t('models')}
-            </span>
+            <span>{props.filteredCount === 1 ? t('model') : t('models')}</span>
             {props.totalCount != null && (
               <span className='text-muted-foreground'>
                 / {props.totalCount.toLocaleString()}
@@ -200,8 +205,8 @@ export function PricingToolbar(props: PricingToolbarProps) {
           </div>
         </div>
 
-        <div className='flex flex-wrap items-center gap-2'>
-          <div className='hidden items-center gap-2 sm:flex'>
+        <div className='grid grid-cols-[max-content_max-content] items-center justify-items-start gap-2 sm:flex sm:flex-wrap'>
+          <div className='col-span-2 grid grid-cols-[max-content_max-content] items-center justify-items-start gap-2 sm:flex sm:flex-wrap'>
             <SegmentedControl
               options={[
                 { value: 'standard', label: t('Standard') },
@@ -278,7 +283,11 @@ export function PricingToolbar(props: PricingToolbarProps) {
       <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
         <SheetContent
           side='right'
-          className={sideDrawerContentClassName('sm:max-w-md')}
+          id='mobile-model-filters'
+          showCloseButton={false}
+          className={sideDrawerContentClassName(
+            'landing-theme w-full rounded-none sm:max-w-none'
+          )}
         >
           <SheetHeader className={sideDrawerHeaderClassName()}>
             <SheetTitle>{t('Filter')}</SheetTitle>
@@ -305,8 +314,19 @@ export function PricingToolbar(props: PricingToolbarProps) {
               models={props.models}
               hasActiveFilters={props.hasActiveFilters}
               onClearFilters={props.onClearFilters}
-              className='border-0 bg-transparent p-0 shadow-none'
+              className='min-h-0 flex-1 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none'
             />
+          </div>
+          <div className='flex shrink-0 justify-end px-4 pt-3 pb-[max(24px,env(safe-area-inset-bottom))]'>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-11 gap-2 rounded-full px-5'
+              onClick={() => setMobileFiltersOpen(false)}
+            >
+              <X className='size-4' />
+              {t('Close')}
+            </Button>
           </div>
         </SheetContent>
       </Sheet>

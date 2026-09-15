@@ -27,9 +27,10 @@ interface StatCounterProps {
 }
 
 export function StatCounter(props: StatCounterProps) {
-  const { end, suffix = '', prefix = '', duration = 1600, decimals = 0 } = props
+  const { end, suffix = '', prefix = '', duration = 2400, decimals = 0 } = props
   const ref = useRef<HTMLSpanElement>(null)
   const startedRef = useRef(false)
+  const frameRef = useRef<number | null>(null)
 
   const formatValue = useCallback(
     (v: number) =>
@@ -43,11 +44,11 @@ export function StatCounter(props: StatCounterProps) {
     const start = performance.now()
     const step = (now: number) => {
       const progress = Math.min((now - start) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
+      const eased = 1 - Math.pow(1 - progress, 2)
       el.textContent = `${prefix}${formatValue(eased * end)}${suffix}`
-      if (progress < 1) requestAnimationFrame(step)
+      if (progress < 1) frameRef.current = requestAnimationFrame(step)
     }
-    requestAnimationFrame(step)
+    frameRef.current = requestAnimationFrame(step)
   }, [end, duration, prefix, suffix, formatValue])
 
   useEffect(() => {
@@ -72,7 +73,13 @@ export function StatCounter(props: StatCounterProps) {
     )
 
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current)
+      }
+      startedRef.current = false
+    }
   }, [animate, end, prefix, suffix, formatValue])
 
   return (

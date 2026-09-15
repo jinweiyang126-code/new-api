@@ -24,6 +24,7 @@ import { getFreshModuleAccess } from '@/lib/nav-modules'
 import { useAuthStore } from '@/stores/auth-store'
 
 const pricingSearchSchema = z.object({
+  preview: z.literal('cards').optional(),
   search: z.string().optional(),
   sort: z.string().optional(),
   vendor: z.string().optional(),
@@ -38,7 +39,9 @@ const pricingSearchSchema = z.object({
 
 export const Route = createFileRoute('/pricing/')({
   validateSearch: pricingSearchSchema,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async ({ location, search }) => {
+    // The visual preview only displays local fixtures and needs no backend access.
+    if (search.preview === 'cards') return
     const access = await getFreshModuleAccess('pricing')
     if (!access.enabled) {
       throw redirect({ to: '/' })

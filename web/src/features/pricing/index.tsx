@@ -19,10 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  PublicLayout,
-  useLandingPublicLayoutProps,
-} from '@/components/layout'
+import { PublicLayout, useLandingPublicLayoutProps } from '@/components/layout'
 import { Footer } from '@/components/layout/components/footer'
 import { PageTransition } from '@/components/page-transition'
 import { GetInTouchDialog } from '@/features/home/components/get-in-touch-dialog'
@@ -37,9 +34,10 @@ import {
   ModelCardGrid,
   ModelDetailsDrawer,
 } from './components'
-import { EXCLUDED_GROUPS, VIEW_MODES, getPricingSidebarHeightPx } from './constants'
+import { EXCLUDED_GROUPS, VIEW_MODES } from './constants'
 import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
+import { pricingPreviewPerformance } from './preview-data'
 
 export function Pricing() {
   const { t } = useTranslation()
@@ -48,10 +46,10 @@ export function Pricing() {
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   )
-  const sidebarHeightPx = useMemo(() => getPricingSidebarHeightPx(), [])
 
   const {
     models,
+    isPreview,
     vendors,
     groupRatio,
     usableGroup,
@@ -133,6 +131,7 @@ export function Pricing() {
       return (
         <ModelCardGrid
           models={filteredModels}
+          previewPerformance={isPreview ? pricingPreviewPerformance : undefined}
           onModelClick={handleModelClick}
           priceRate={priceRate}
           usdExchangeRate={usdExchangeRate}
@@ -159,11 +158,12 @@ export function Pricing() {
   if (isLoading) {
     return (
       <PublicLayout {...landingLayout}>
-        <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+        <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-[160px] sm:px-6 sm:pt-20 xl:px-8'>
           <LoadingSkeleton viewMode={viewMode} />
         </div>
         <Footer
           variant='landing'
+          className='h-[500px] border-t border-[#E8E8E8] dark:border-[#2E2E2E]'
           onContactClick={() => setContactOpen(true)}
         />
         <GetInTouchDialog open={contactOpen} onOpenChange={setContactOpen} />
@@ -179,11 +179,18 @@ export function Pricing() {
           className='landing-glow pointer-events-none absolute inset-x-0 top-0 h-[520px]'
         />
 
-        <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+        <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-[160px] sm:px-6 sm:pt-20 xl:px-8'>
           <header className='mx-auto mb-6 max-w-3xl pt-6 text-center sm:mb-10 sm:pt-10'>
             <h1 className='text-[clamp(2.25rem,5.5vw,3.5rem)] leading-[1.1] font-bold tracking-tight'>
               {t('Model Square')}
             </h1>
+            {isPreview && (
+              <p className='text-muted-foreground mt-4 text-sm'>
+                {t(
+                  'Card style preview — sample data and prices for visual review only.'
+                )}
+              </p>
+            )}
             <p className='text-muted-foreground mt-3 text-sm sm:mt-4 sm:text-base'>
               {t('This site currently has {{count}} models enabled', {
                 count: models?.length || 0,
@@ -224,8 +231,7 @@ export function Pricing() {
               models={models || []}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
-              className='sticky top-4 hidden self-start xl:flex'
-              style={{ height: sidebarHeightPx }}
+              className='sticky top-20 hidden h-[calc(100dvh-96px)] self-start xl:flex'
             />
 
             <main className='min-w-0 space-y-4'>
@@ -288,7 +294,11 @@ export function Pricing() {
           )}
         </PageTransition>
       </div>
-      <Footer variant='landing' onContactClick={() => setContactOpen(true)} />
+      <Footer
+        variant='landing'
+        className='h-[500px] border-t border-[#E8E8E8] dark:border-[#2E2E2E]'
+        onContactClick={() => setContactOpen(true)}
+      />
       <GetInTouchDialog open={contactOpen} onOpenChange={setContactOpen} />
     </PublicLayout>
   )
