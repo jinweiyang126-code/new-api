@@ -430,11 +430,13 @@ func TokenAuth() func(c *gin.Context) {
 			logger.LogDebug(c, "Token has IP restrictions, checking client IP %s", clientIp)
 			ip := net.ParseIP(clientIp)
 			if ip == nil {
-				abortWithOpenAiMessage(c, http.StatusForbidden, "无法解析客户端 IP 地址")
+				abortWithOpenAiMessage(c, http.StatusForbidden,
+					common.TranslateMessage(c, i18n.MsgTokenIPUnparseable))
 				return
 			}
 			if common.IsIpInCIDRList(ip, allowIps) == false {
-				abortWithOpenAiMessage(c, http.StatusForbidden, "您的 IP 不在令牌允许访问的列表中", types.ErrorCodeAccessDenied)
+				abortWithOpenAiMessage(c, http.StatusForbidden,
+					common.TranslateMessage(c, i18n.MsgTokenIPNotAllowed), types.ErrorCodeAccessDenied)
 				return
 			}
 			logger.LogDebug(c, "Client IP %s passed the token IP restrictions check", clientIp)
@@ -460,13 +462,15 @@ func TokenAuth() func(c *gin.Context) {
 		if tokenGroup != "" {
 			// check common.UserUsableGroups[userGroup]
 			if _, ok := service.GetUserUsableGroups(userGroup)[tokenGroup]; !ok {
-				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权访问 %s 分组", tokenGroup))
+				abortWithOpenAiMessage(c, http.StatusForbidden,
+					common.TranslateMessage(c, i18n.MsgTokenGroupAccessDenied, map[string]any{"Group": tokenGroup}))
 				return
 			}
 			// check group in common.GroupRatio
 			if !ratio_setting.ContainsGroupRatio(tokenGroup) {
 				if tokenGroup != "auto" {
-					abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 已被弃用", tokenGroup))
+					abortWithOpenAiMessage(c, http.StatusForbidden,
+						common.TranslateMessage(c, i18n.MsgTokenGroupDeprecated, map[string]any{"Group": tokenGroup}))
 					return
 				}
 			}
@@ -506,18 +510,18 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 	common.SetContextKey(c, constant.ContextKeyWorkspaceId, token.WorkspaceId)
 	if token.WorkspaceId > 0 {
 		if err := model.ValidateWorkspaceTokenActive(token.CustomerId, token.WorkspaceId); err != nil {
-			msg := "工作区不可用"
+			msg := common.TranslateMessage(c, i18n.MsgWorkspaceUnavailable)
 			if errors.Is(err, model.ErrWorkspaceDisabled) {
-				msg = "工作区已停用"
+				msg = common.TranslateMessage(c, i18n.MsgWorkspaceDisabled)
 			} else if errors.Is(err, model.ErrWorkspaceNotFound) {
-				msg = "工作区不存在"
-		} else if errors.Is(err, model.ErrCustomerNotFound) {
-			msg = "组织不存在"
-		} else if strings.Contains(err.Error(), "customer is disabled") {
-			msg = "组织已停用"
-		} else if strings.Contains(err.Error(), "mismatch") {
-			msg = "令牌组织与工作区不匹配"
-		}
+				msg = common.TranslateMessage(c, i18n.MsgWorkspaceNotFound)
+			} else if errors.Is(err, model.ErrCustomerNotFound) {
+				msg = common.TranslateMessage(c, i18n.MsgOrgNotFound)
+			} else if strings.Contains(err.Error(), "customer is disabled") {
+				msg = common.TranslateMessage(c, i18n.MsgOrgDisabled)
+			} else if strings.Contains(err.Error(), "mismatch") {
+				msg = common.TranslateMessage(c, i18n.MsgTokenWorkspaceMismatch)
+			}
 			abortWithOpenAiMessage(c, http.StatusForbidden, msg)
 			return err
 		}
@@ -537,8 +541,9 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 			c.Set("specific_channel_id", parts[1])
 		} else {
 			c.Header("specific_channel_version", "701e3ae1dc3f7975556d354e0675168d004891c8")
-			abortWithOpenAiMessage(c, http.StatusForbidden, "普通用户不支持指定渠道")
-			return fmt.Errorf("普通用户不支持指定渠道")
+			abortWithOpenAiMessage(c, http.StatusForbidden,
+				common.TranslateMessage(c, i18n.MsgTokenChannelSpecifyForbidden))
+			return fmt.Errorf("%s", common.TranslateMessage(c, i18n.MsgTokenChannelSpecifyForbidden))
 		}
 	}
 	return nil

@@ -99,3 +99,19 @@ export function toIntlLocale(value?: string | null): string | undefined {
     return undefined
   }
 }
+
+/**
+ * Map UI language codes to Accept-Language values the backend i18n understands
+ * (`zh-CN` / `zh-TW` / `en` / …).
+ */
+export function toAcceptLanguage(value?: string | null): string {
+  const code = normalizeInterfaceLanguage(value)
+  switch (code) {
+    case 'zhCN':
+      return 'zh-CN'
+    case 'zhTW':
+      return 'zh-TW'
+    default:
+      return code
+  }
+}

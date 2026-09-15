@@ -17,9 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import axios, { type AxiosRequestConfig } from 'axios'
-import { t } from 'i18next'
+import i18n, { t } from 'i18next'
 import { toast } from 'sonner'
 
+import { toAcceptLanguage } from '@/i18n/languages'
 import {
   applyAuthRotation,
   clearAuthentication,
@@ -47,6 +48,14 @@ export const api = axios.create({
   headers: {
     'Cache-Control': 'no-store',
   },
+})
+
+api.interceptors.request.use((config) => {
+  config.headers = config.headers ?? {}
+  config.headers['Accept-Language'] = toAcceptLanguage(
+    i18n.resolvedLanguage || i18n.language
+  )
+  return config
 })
 
 const inFlightGet = new Map<string, Promise<unknown>>()

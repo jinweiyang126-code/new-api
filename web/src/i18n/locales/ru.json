@@ -5347,6 +5347,7 @@
         "Rate limits, allowlists, prepaid balances, and approval workflows": "Лимиты запросов, белые списки, предоплата и процессы согласования",
         "Operational support for onboarding, exceptions, and incident review": "Операционная поддержка онбординга, исключений и разбора инцидентов",
         "Compatible models": "Совместимые модели",
-        "Terms of Service": "Условия использования"
+        "Terms of Service": "Условия использования",
+        "Chat Generation": "Генерация чата"
     }
 }

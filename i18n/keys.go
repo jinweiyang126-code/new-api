@@ -131,6 +131,27 @@ const (
 	MsgQuotaThresholdGtZero = "quota.threshold_gt_zero"
 )
 
+// Billing / wallet / workspace messages (relay + auth paths)
+const (
+	MsgBillingUserQuotaInsufficient       = "billing.user_quota_insufficient"
+	MsgBillingPreConsumeFailed            = "billing.preconsume_failed"
+	MsgBillingOrgWalletInsufficient       = "billing.org_wallet_insufficient"
+	MsgBillingOrgWalletInsufficientDetail = "billing.org_wallet_insufficient_detail"
+	MsgBillingOrgWalletInsufficientNeed   = "billing.org_wallet_insufficient_need"
+	MsgBillingSubscriptionInsufficient    = "billing.subscription_insufficient"
+	MsgWorkspaceUnavailable               = "workspace.unavailable"
+	MsgWorkspaceDisabled                  = "workspace.disabled"
+	MsgWorkspaceNotFound                  = "workspace.not_found"
+	MsgOrgNotFound                        = "org.not_found"
+	MsgOrgDisabled                        = "org.disabled"
+	MsgTokenWorkspaceMismatch             = "token.workspace_mismatch"
+	MsgTokenIPUnparseable                 = "token.ip_unparseable"
+	MsgTokenIPNotAllowed                  = "token.ip_not_allowed"
+	MsgTokenGroupAccessDenied             = "token.group_access_denied"
+	MsgTokenGroupDeprecated               = "token.group_deprecated"
+	MsgTokenChannelSpecifyForbidden       = "token.channel_specify_forbidden"
+)
+
 // Subscription related messages
 const (
 	MsgSubscriptionNotEnabled       = "subscription.not_enabled"

@@ -38,7 +38,7 @@ type ExperienceShellProps = {
 }
 
 /**
- * Experience Center shell: text/image/video tabs, plus composer+canvas or a custom layout.
+ * Experience Center shell: chat/image/video tabs, plus composer+canvas or a custom layout.
  */
 export function ExperienceShell({
   mode,
@@ -68,7 +68,7 @@ export function ExperienceShell({
                   : 'text-muted-foreground hover:text-foreground border-transparent'
               )}
             >
-              {t('Text')}
+              {t('Chat')}
             </Link>
             <Link
               to='/experience/images'

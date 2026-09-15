@@ -759,50 +759,77 @@ export function OverviewDashboard() {
       <SummaryCards />
 
       {showContentPanels && (
-        <CardStaggerContainer
-          className={cn(
-            'grid grid-cols-1 gap-4',
-            showLeftContentPanels &&
-              showUptimePanel &&
-              'xl:grid-cols-[minmax(0,1fr)_22rem]'
-          )}
-        >
-          {showLeftContentPanels && (
-            <div
+        <div className='flex flex-col gap-4'>
+          {(isAdmin ||
+            showApiInfoPanel ||
+            showAnnouncementsPanel ||
+            showUptimePanel) && (
+            <CardStaggerContainer
               className={cn(
-                'grid min-w-0 grid-cols-1 gap-4',
-                (showApiInfoPanel || showAnnouncementsPanel || showFAQPanel) &&
-                  'lg:grid-cols-2'
+                'grid grid-cols-1 items-stretch gap-4',
+                (isAdmin || showApiInfoPanel || showAnnouncementsPanel) &&
+                  showUptimePanel &&
+                  'xl:grid-cols-[minmax(0,1fr)_22rem]'
               )}
             >
-              {isAdmin && (
-                <CardStaggerItem className='lg:col-span-2'>
-                  <PerformanceHealthPanel />
+              {(isAdmin || showApiInfoPanel || showAnnouncementsPanel) && (
+                <div
+                  className={cn(
+                    'grid min-w-0 grid-cols-1 gap-4',
+                    (showApiInfoPanel || showAnnouncementsPanel) &&
+                      'lg:grid-cols-2'
+                  )}
+                >
+                  {isAdmin && (
+                    <CardStaggerItem className='lg:col-span-2'>
+                      <PerformanceHealthPanel />
+                    </CardStaggerItem>
+                  )}
+                  {showApiInfoPanel && (
+                    <CardStaggerItem>
+                      <ApiInfoPanel />
+                    </CardStaggerItem>
+                  )}
+                  {showAnnouncementsPanel && (
+                    <CardStaggerItem>
+                      <AnnouncementsPanel />
+                    </CardStaggerItem>
+                  )}
+                </div>
+              )}
+              {showUptimePanel && (
+                <CardStaggerItem className='flex h-full min-h-0 flex-col'>
+                  <UptimePanel />
                 </CardStaggerItem>
               )}
-              {showApiInfoPanel && (
-                <CardStaggerItem>
-                  <ApiInfoPanel />
-                </CardStaggerItem>
+            </CardStaggerContainer>
+          )}
+
+          {showFAQPanel && (
+            <CardStaggerContainer
+              className={cn(
+                'grid grid-cols-1 gap-4',
+                (isAdmin || showApiInfoPanel || showAnnouncementsPanel) &&
+                  showUptimePanel &&
+                  'xl:grid-cols-[minmax(0,1fr)_22rem]'
               )}
-              {showAnnouncementsPanel && (
-                <CardStaggerItem>
-                  <AnnouncementsPanel />
-                </CardStaggerItem>
-              )}
-              {showFAQPanel && (
+            >
+              <div
+                className={cn(
+                  'grid min-w-0 grid-cols-1 gap-4',
+                  (showApiInfoPanel ||
+                    showAnnouncementsPanel ||
+                    showFAQPanel) &&
+                    'lg:grid-cols-2'
+                )}
+              >
                 <CardStaggerItem>
                   <FAQPanel />
                 </CardStaggerItem>
-              )}
-            </div>
+              </div>
+            </CardStaggerContainer>
           )}
-          {showUptimePanel && (
-            <CardStaggerItem>
-              <UptimePanel />
-            </CardStaggerItem>
-          )}
-        </CardStaggerContainer>
+        </div>
       )}
     </div>
   )

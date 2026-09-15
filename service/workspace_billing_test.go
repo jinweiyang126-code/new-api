@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
@@ -79,9 +80,11 @@ func seedWorkspaceToken(t *testing.T, id, userId, customerId, workspaceId int, k
 
 func ginTestContext(t *testing.T) *gin.Context {
 	t.Helper()
+	require.NoError(t, i18n.Init())
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+	c.Request.Header.Set("Accept-Language", "en")
 	return c
 }
 
@@ -168,7 +171,7 @@ func TestWorkspaceBillingRejectsInsufficientOrgWallet(t *testing.T) {
 	apiErr := PreConsumeBilling(c, 100, info)
 	require.NotNil(t, apiErr)
 	require.Equal(t, types.ErrorCodeInsufficientUserQuota, apiErr.GetErrorCode())
-	require.Contains(t, apiErr.Error(), "组织钱包")
+	require.Contains(t, apiErr.Error(), "organization wallet")
 	require.Equal(t, 50_000, userQuota(t, 802))
 	require.Equal(t, 0, orgWalletBalance(t, 802, workspaceID))
 	require.Equal(t, 10_000, tokenRemain(t, 8021))
@@ -259,7 +262,7 @@ func TestWorkspaceBillingRejectsDisabledWorkspace(t *testing.T) {
 
 	apiErr := PreConsumeBilling(c, 100, info)
 	require.NotNil(t, apiErr)
-	require.Contains(t, apiErr.Error(), "工作区已停用")
+	require.Contains(t, apiErr.Error(), "Workspace is disabled")
 	require.Equal(t, 30_000, userQuota(t, 805))
 	require.Equal(t, 8_000, orgWalletBalance(t, 805, workspaceID))
 	require.Equal(t, 5_000, tokenRemain(t, 8051))

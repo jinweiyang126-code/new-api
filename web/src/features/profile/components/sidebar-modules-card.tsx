@@ -82,7 +82,7 @@ export function SidebarModulesCard() {
       modules: [
         {
           key: 'text',
-          title: t('Text Generation'),
+          title: t('Chat Generation'),
           description: t('Generate text from prompts with chat models.'),
         },
         {

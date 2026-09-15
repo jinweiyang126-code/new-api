@@ -5347,6 +5347,7 @@
         "Rate limits, allowlists, prepaid balances, and approval workflows": "Limites de débit, listes d’autorisation, soldes prépayés et workflows d’approbation",
         "Operational support for onboarding, exceptions, and incident review": "Support opérationnel pour l’onboarding, les exceptions et la revue d’incidents",
         "Compatible models": "Modèles compatibles",
-        "Terms of Service": "Conditions d'utilisation"
+        "Terms of Service": "Conditions d'utilisation",
+        "Chat Generation": "Génération de chat"
     }
 }

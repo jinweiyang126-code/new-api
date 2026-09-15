@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -33,7 +34,16 @@ type BillingSession struct {
 	fundingSettled   bool // funding.Settle 已成功，资金来源已提交
 	settled          bool // Settle 全部完成（资金 + 令牌）
 	refunded         bool // Refund 已调用
+	lang             string // request language for user-facing errors (Reserve has no gin.Context)
 	mu               sync.Mutex
+}
+
+func (s *BillingSession) t(key string, args ...map[string]any) string {
+	lang := s.lang
+	if lang == "" {
+		lang = i18n.DefaultLang
+	}
+	return i18n.Translate(lang, key, args...)
 }
 
 // Settle 根据实际消耗额度进行结算。
@@ -217,10 +227,14 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 		// TODO: model 层应定义哨兵错误（如 ErrNoActiveSubscription），用 errors.Is 替代字符串匹配
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "no active subscription") || strings.Contains(errMsg, "subscription quota insufficient") {
-			return types.NewErrorWithStatusCode(fmt.Errorf("订阅额度不足或未配置订阅: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+			return types.NewErrorWithStatusCode(
+				fmt.Errorf("%s", s.t(i18n.MsgBillingSubscriptionInsufficient, map[string]any{"Error": errMsg})),
+				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
 		if strings.Contains(errMsg, "organization wallet") || strings.Contains(errMsg, "insufficient organization wallet") {
-			return types.NewErrorWithStatusCode(fmt.Errorf("组织钱包余额不足: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+			return types.NewErrorWithStatusCode(
+				fmt.Errorf("%s", s.t(i18n.MsgBillingOrgWalletInsufficient, map[string]any{"Error": errMsg})),
+				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
 		return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 	}
@@ -254,7 +268,7 @@ func (s *BillingSession) reserveFunding(delta int) error {
 	case *SubscriptionFunding:
 		if err := model.PostConsumeUserSubscriptionDelta(funding.subscriptionId, int64(delta)); err != nil {
 			return types.NewErrorWithStatusCode(
-				fmt.Errorf("订阅额度不足或未配置订阅: %s", err.Error()),
+				fmt.Errorf("%s", s.t(i18n.MsgBillingSubscriptionInsufficient, map[string]any{"Error": err.Error()})),
 				types.ErrorCodeInsufficientUserQuota,
 				http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(),
@@ -373,6 +387,8 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 
 	pref := common.NormalizeBillingPreference(relayInfo.UserSetting.BillingPreference)
 
+	lang := i18n.GetLangFromContext(c)
+
 	// 钱包路径需要先检查用户额度
 	tryWallet := func() (*BillingSession, *types.NewAPIError) {
 		userQuota, err := model.GetUserQuota(relayInfo.UserId, false)
@@ -381,13 +397,18 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		}
 		if userQuota <= 0 {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("用户额度不足, 剩余额度: %s", logger.FormatQuota(userQuota)),
+				fmt.Errorf("%s", i18n.T(c, i18n.MsgBillingUserQuotaInsufficient, map[string]any{
+					"Remain": logger.FormatQuota(userQuota),
+				})),
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
 		if userQuota-preConsumedQuota < 0 {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("预扣费额度失败, 用户剩余额度: %s, 需要预扣费额度: %s", logger.FormatQuota(userQuota), logger.FormatQuota(preConsumedQuota)),
+				fmt.Errorf("%s", i18n.T(c, i18n.MsgBillingPreConsumeFailed, map[string]any{
+					"Remain": logger.FormatQuota(userQuota),
+					"Need":   logger.FormatQuota(preConsumedQuota),
+				})),
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
@@ -396,6 +417,7 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		session := &BillingSession{
 			relayInfo: relayInfo,
 			funding:   &WalletFunding{userId: relayInfo.UserId},
+			lang:      lang,
 		}
 		if apiErr := session.preConsume(c, preConsumedQuota); apiErr != nil {
 			return nil, apiErr
@@ -410,6 +432,7 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		}
 		session := &BillingSession{
 			relayInfo: relayInfo,
+			lang:      lang,
 			funding: &SubscriptionFunding{
 				requestId: relayInfo.RequestId,
 				userId:    relayInfo.UserId,
@@ -472,13 +495,15 @@ func tryWorkspaceFunding(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCo
 	if err := model.ValidateWorkspaceTokenActive(relayInfo.CustomerId, relayInfo.WorkspaceId); err != nil {
 		msg := err.Error()
 		if errors.Is(err, model.ErrWorkspaceDisabled) {
-			msg = "工作区已停用"
+			msg = i18n.T(c, i18n.MsgWorkspaceDisabled)
 		} else if errors.Is(err, model.ErrWorkspaceNotFound) {
-			msg = "工作区不存在"
+			msg = i18n.T(c, i18n.MsgWorkspaceNotFound)
 		} else if errors.Is(err, model.ErrCustomerNotFound) {
-			msg = "组织不存在"
+			msg = i18n.T(c, i18n.MsgOrgNotFound)
 		} else if strings.Contains(err.Error(), "customer is disabled") {
-			msg = "组织已停用"
+			msg = i18n.T(c, i18n.MsgOrgDisabled)
+		} else {
+			msg = i18n.T(c, i18n.MsgWorkspaceUnavailable)
 		}
 		return nil, types.NewErrorWithStatusCode(fmt.Errorf("%s", msg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
@@ -489,13 +514,18 @@ func tryWorkspaceFunding(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCo
 	}
 	if orgBalance <= 0 {
 		return nil, types.NewErrorWithStatusCode(
-			fmt.Errorf("组织钱包余额不足, 剩余额度: %s", logger.FormatQuota(orgBalance)),
+			fmt.Errorf("%s", i18n.T(c, i18n.MsgBillingOrgWalletInsufficientDetail, map[string]any{
+				"Remain": logger.FormatQuota(orgBalance),
+			})),
 			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 	}
 	if orgBalance-preConsumedQuota < 0 {
 		return nil, types.NewErrorWithStatusCode(
-			fmt.Errorf("预扣费额度失败, 组织钱包剩余额度: %s, 需要预扣费额度: %s", logger.FormatQuota(orgBalance), logger.FormatQuota(preConsumedQuota)),
+			fmt.Errorf("%s", i18n.T(c, i18n.MsgBillingPreConsumeFailed, map[string]any{
+				"Remain": logger.FormatQuota(orgBalance),
+				"Need":   logger.FormatQuota(preConsumedQuota),
+			})),
 			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 	}
@@ -503,6 +533,7 @@ func tryWorkspaceFunding(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCo
 
 	session := &BillingSession{
 		relayInfo: relayInfo,
+		lang:      i18n.GetLangFromContext(c),
 		funding: &WorkspaceFunding{
 			userId:      relayInfo.UserId,
 			workspaceId: relayInfo.WorkspaceId,
@@ -512,7 +543,7 @@ func tryWorkspaceFunding(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCo
 		errMsg := apiErr.Error()
 		if strings.Contains(errMsg, "insufficient") || strings.Contains(errMsg, "organization wallet") {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("组织钱包余额不足: %s", errMsg),
+				fmt.Errorf("%s", i18n.T(c, i18n.MsgBillingOrgWalletInsufficient, map[string]any{"Error": errMsg})),
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
