@@ -18,7 +18,7 @@ func TestModelMetaInfersVendorOutsideCatalog(t *testing.T) {
 	require.Equal(t, "DeepSeek.Color", catalog.vendorIcon)
 
 	inferred := modelMeta("qwen3.7-max", meta)
-	require.Equal(t, "阿里巴巴", inferred.vendor)
+	require.Equal(t, "Alibaba", inferred.vendor)
 	require.Equal(t, "Qwen.Color", inferred.vendorIcon)
 
 	listedUnknown := modelMeta("listed-unknown", meta)

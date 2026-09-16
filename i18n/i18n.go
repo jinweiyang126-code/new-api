@@ -166,10 +166,12 @@ func GetLangFromContext(c *gin.Context) string {
 	}
 
 	// 4. Try Accept-Language header directly (fallback if middleware didn't run)
-	if acceptLang := c.GetHeader("Accept-Language"); acceptLang != "" {
-		lang := ParseAcceptLanguage(acceptLang)
-		if IsSupported(lang) {
-			return lang
+	if c.Request != nil {
+		if acceptLang := c.GetHeader("Accept-Language"); acceptLang != "" {
+			lang := ParseAcceptLanguage(acceptLang)
+			if IsSupported(lang) {
+				return lang
+			}
 		}
 	}
 
@@ -200,12 +202,13 @@ func ParseAcceptLanguage(header string) string {
 // normalizeLang normalizes language code to supported format
 func normalizeLang(lang string) string {
 	lang = strings.ToLower(strings.TrimSpace(lang))
+	lang = strings.ReplaceAll(lang, "_", "-")
 
-	// Handle common variations
+	// Handle common variations (including frontend codes zhCN / zhTW)
 	switch {
-	case strings.HasPrefix(lang, "zh-tw"):
+	case lang == "zhtw" || strings.HasPrefix(lang, "zh-tw") || strings.HasPrefix(lang, "zh-hk") || strings.HasPrefix(lang, "zh-mo") || strings.HasPrefix(lang, "zh-hant"):
 		return LangZhTW
-	case strings.HasPrefix(lang, "zh"):
+	case lang == "zhcn" || strings.HasPrefix(lang, "zh"):
 		return LangZhCN
 	case strings.HasPrefix(lang, "en"):
 		return LangEn

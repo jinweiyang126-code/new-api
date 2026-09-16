@@ -9,6 +9,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
@@ -141,7 +142,10 @@ func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usag
 			return wsErr
 		}
 		if orgBalance < quota {
-			return fmt.Errorf("组织钱包余额不足, 剩余额度: %s, 需要额度: %s", logger.FormatQuota(orgBalance), logger.FormatQuota(quota))
+			return fmt.Errorf("%s", i18n.T(ctx, i18n.MsgBillingOrgWalletInsufficientNeed, map[string]any{
+				"Remain": logger.FormatQuota(orgBalance),
+				"Need":   logger.FormatQuota(quota),
+			}))
 		}
 	} else {
 		userQuota, uErr := model.GetUserQuota(relayInfo.UserId, false)
@@ -400,7 +404,7 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 
 func PreConsumeTokenQuota(relayInfo *relaycommon.RelayInfo, quota int) error {
 	if quota < 0 {
-		return errors.New("quota 不能为负数！")
+		return errors.New(i18n.Translate(i18n.DefaultLang, i18n.MsgQuotaNegative))
 	}
 	if relayInfo.IsPlayground {
 		return nil

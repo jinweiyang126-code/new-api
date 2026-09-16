@@ -76,7 +76,7 @@ export function useSidebarData(): SidebarData {
         title: t('Experience Center'),
         items: [
           {
-            title: t('Text Generation'),
+            title: t('Chat Generation'),
             url: '/experience/text',
             icon: MessageSquare,
           },

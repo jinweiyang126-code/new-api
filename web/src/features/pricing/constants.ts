@@ -142,7 +142,7 @@ export const VIEW_MODES = {
 export type ViewMode = (typeof VIEW_MODES)[keyof typeof VIEW_MODES]
 
 /** Default page size for pricing table */
-export const DEFAULT_PRICING_PAGE_SIZE = 20
+export const DEFAULT_PRICING_PAGE_SIZE = 18
 
 /**
  * Desktop Model Square layout: sidebar height aligns with the toolbar + N card
