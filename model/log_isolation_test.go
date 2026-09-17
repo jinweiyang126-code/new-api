@@ -141,3 +141,81 @@ func TestCustomerAdminCannotSeeOtherCustomerLogs(t *testing.T) {
 	require.Equal(t, int64(0), total)
 	require.Len(t, logs, 0)
 }
+
+// Customer admin must still see their own personal-token logs (customer_id=0),
+// while never expanding into another customer's rows.
+func TestCustomerAdminSeesOwnPersonalTokenLogs(t *testing.T) {
+	setupLogIsolationDB(t)
+	now := time.Now().Unix()
+
+	ownerA := seedLogIsoUser(t, "owner-a-pers", 0)
+	ownerB := seedLogIsoUser(t, "owner-b-pers", 0)
+	memberA := seedLogIsoUser(t, "member-a-pers", 0)
+	custA := &Customer{Name: "A", Slug: "logap-" + ownerA.Username, Status: CustomerStatusEnabled, OwnerUserId: ownerA.Id, UpstreamMode: UpstreamModeShared, CreatedAt: now, UpdatedAt: now}
+	custB := &Customer{Name: "B", Slug: "logbp-" + ownerB.Username, Status: CustomerStatusEnabled, OwnerUserId: ownerB.Id, UpstreamMode: UpstreamModeShared, CreatedAt: now, UpdatedAt: now}
+	require.NoError(t, DB.Create(custA).Error)
+	require.NoError(t, DB.Create(custB).Error)
+	require.NoError(t, DB.Model(ownerA).Update("customer_id", custA.Id).Error)
+	require.NoError(t, DB.Model(ownerB).Update("customer_id", custB.Id).Error)
+	require.NoError(t, DB.Model(memberA).Update("customer_id", custA.Id).Error)
+	require.NoError(t, DB.Create(&CustomerMember{
+		CustomerId: custA.Id, UserId: ownerA.Id, Role: CustomerRoleOwner, Status: MemberStatusEnabled, CreatedAt: now, UpdatedAt: now,
+	}).Error)
+	require.NoError(t, DB.Create(&CustomerMember{
+		CustomerId: custB.Id, UserId: ownerB.Id, Role: CustomerRoleOwner, Status: MemberStatusEnabled, CreatedAt: now, UpdatedAt: now,
+	}).Error)
+	require.NoError(t, DB.Create(&CustomerMember{
+		CustomerId: custA.Id, UserId: memberA.Id, Role: CustomerRoleMember, Status: MemberStatusEnabled, CreatedAt: now, UpdatedAt: now,
+	}).Error)
+
+	wsA := &Workspace{CustomerId: custA.Id, Name: "a", Slug: "default", Status: CustomerStatusEnabled, IsDefault: true, CreatedAt: now, UpdatedAt: now}
+	require.NoError(t, DB.Create(wsA).Error)
+
+	// Org token log for A
+	require.NoError(t, createLog(&Log{
+		UserId: memberA.Id, Username: "member-a-pers", CreatedAt: now, Type: LogTypeConsume,
+		Quota: 10, CustomerId: custA.Id, WorkspaceId: wsA.Id, ModelName: "m",
+	}))
+	// Personal token log for owner A (customer_id=0) — previously invisible to org admin scope
+	require.NoError(t, createLog(&Log{
+		UserId: ownerA.Id, Username: "owner-a-pers", CreatedAt: now, Type: LogTypeConsume,
+		Quota: 20, CustomerId: 0, WorkspaceId: 0, ModelName: "m",
+	}))
+	// Personal token log for owner B — must stay invisible to A
+	require.NoError(t, createLog(&Log{
+		UserId: ownerB.Id, Username: "owner-b-pers", CreatedAt: now, Type: LogTypeConsume,
+		Quota: 99, CustomerId: 0, WorkspaceId: 0, ModelName: "m",
+	}))
+	// Org token log for B
+	require.NoError(t, createLog(&Log{
+		UserId: ownerB.Id, Username: "owner-b-pers", CreatedAt: now, Type: LogTypeConsume,
+		Quota: 88, CustomerId: custB.Id, WorkspaceId: 0, ModelName: "m",
+	}))
+
+	logs, total, err := GetLogsForViewer(
+		LogAccessScope{CustomerId: custA.Id, AlsoUserId: ownerA.Id},
+		LogTypeUnknown, 0, 0, "", "", 0, 20, "", "", "",
+	)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), total)
+	require.Len(t, logs, 2)
+
+	seenQuota := map[int]bool{}
+	for _, l := range logs {
+		seenQuota[l.Quota] = true
+		require.NotEqual(t, ownerB.Id, l.UserId)
+		require.NotEqual(t, custB.Id, l.CustomerId)
+	}
+	require.True(t, seenQuota[10])
+	require.True(t, seenQuota[20])
+
+	// Explicit workspace narrow must NOT pull in personal-token rows (workspace_id=0).
+	logs, total, err = GetLogsForViewer(
+		LogAccessScope{CustomerId: custA.Id, WorkspaceId: wsA.Id},
+		LogTypeUnknown, 0, 0, "", "", 0, 20, "", "", "",
+	)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Len(t, logs, 1)
+	require.Equal(t, 10, logs[0].Quota)
+}

@@ -40,7 +40,11 @@ func ResolveSelfLogAccessScope(userId, requestedCustomerId, requestedWorkspaceId
 				return model.LogAccessScope{Empty: true}, nil
 			}
 			scope.WorkspaceId = requestedWorkspaceId
+			// Explicit workspace filter: only that workspace (no personal-token OR).
+			return scope, nil
 		}
+		// Also include caller's own rows so personal API keys (customer_id=0) remain visible.
+		scope.AlsoUserId = userId
 		return scope, nil
 	}
 
@@ -61,8 +65,8 @@ func ResolveSelfLogAccessScope(userId, requestedCustomerId, requestedWorkspaceId
 	}
 
 	if len(adminWorkspaceIds) > 0 {
-		// Workspace admin without filter: all logs in administered workspaces.
-		return model.LogAccessScope{WorkspaceIds: adminWorkspaceIds}, nil
+		// Workspace admin without filter: administered workspaces OR own personal-token rows.
+		return model.LogAccessScope{WorkspaceIds: adminWorkspaceIds, AlsoUserId: userId}, nil
 	}
 
 	// Member / personal: own logs only. Ignore forged customer_id.

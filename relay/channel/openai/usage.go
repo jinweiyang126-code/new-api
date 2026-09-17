@@ -12,33 +12,17 @@ func applyUsagePostProcessing(info *relaycommon.RelayInfo, usage *dto.Usage, res
 		return
 	}
 
+	// OpenAI-compatible upstreams (incl. BasicRouter wrapping DeepSeek) often expose
+	// cache hits as prompt_cache_hit_tokens / prompt_tokens_details.cached_tokens.
+	// Normalize before channel-specific fallbacks so cache_ratio billing can apply.
+	normalizeOpenAICompatibleCachedTokens(usage, responseBody)
+
 	switch info.ChannelType {
-	case constant.ChannelTypeDeepSeek:
-		if usage.PromptTokensDetails.CachedTokens == 0 && usage.PromptCacheHitTokens != 0 {
-			usage.PromptTokensDetails.CachedTokens = usage.PromptCacheHitTokens
-		}
-	case constant.ChannelTypeZhipu_v4:
-		// 智普的cached_tokens在标准位置: usage.prompt_tokens_details.cached_tokens
-		if usage.PromptTokensDetails.CachedTokens == 0 {
-			if usage.InputTokensDetails != nil && usage.InputTokensDetails.CachedTokens > 0 {
-				usage.PromptTokensDetails.CachedTokens = usage.InputTokensDetails.CachedTokens
-			} else if cachedTokens, ok := extractCachedTokensFromBody(responseBody); ok {
-				usage.PromptTokensDetails.CachedTokens = cachedTokens
-			} else if usage.PromptCacheHitTokens > 0 {
-				usage.PromptTokensDetails.CachedTokens = usage.PromptCacheHitTokens
-			}
-		}
 	case constant.ChannelTypeMoonshot:
 		// Moonshot的cached_tokens在非标准位置: choices[].usage.cached_tokens
 		if usage.PromptTokensDetails.CachedTokens == 0 {
-			if usage.InputTokensDetails != nil && usage.InputTokensDetails.CachedTokens > 0 {
-				usage.PromptTokensDetails.CachedTokens = usage.InputTokensDetails.CachedTokens
-			} else if cachedTokens, ok := extractMoonshotCachedTokensFromBody(responseBody); ok {
+			if cachedTokens, ok := extractMoonshotCachedTokensFromBody(responseBody); ok {
 				usage.PromptTokensDetails.CachedTokens = cachedTokens
-			} else if cachedTokens, ok := extractCachedTokensFromBody(responseBody); ok {
-				usage.PromptTokensDetails.CachedTokens = cachedTokens
-			} else if usage.PromptCacheHitTokens > 0 {
-				usage.PromptTokensDetails.CachedTokens = usage.PromptCacheHitTokens
 			}
 		}
 	case constant.ChannelTypeOpenAI:
@@ -47,6 +31,25 @@ func applyUsagePostProcessing(info *relaycommon.RelayInfo, usage *dto.Usage, res
 				usage.PromptTokensDetails.CachedTokens = cachedTokens
 			}
 		}
+	}
+}
+
+// normalizeOpenAICompatibleCachedTokens fills PromptTokensDetails.CachedTokens from
+// common OpenAI / DeepSeek-shaped usage fields when still unset.
+func normalizeOpenAICompatibleCachedTokens(usage *dto.Usage, responseBody []byte) {
+	if usage.PromptTokensDetails.CachedTokens > 0 {
+		return
+	}
+	if usage.InputTokensDetails != nil && usage.InputTokensDetails.CachedTokens > 0 {
+		usage.PromptTokensDetails.CachedTokens = usage.InputTokensDetails.CachedTokens
+		return
+	}
+	if usage.PromptCacheHitTokens > 0 {
+		usage.PromptTokensDetails.CachedTokens = usage.PromptCacheHitTokens
+		return
+	}
+	if cachedTokens, ok := extractCachedTokensFromBody(responseBody); ok {
+		usage.PromptTokensDetails.CachedTokens = cachedTokens
 	}
 }
 

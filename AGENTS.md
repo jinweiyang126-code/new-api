@@ -54,6 +54,15 @@ web/           — Frontend (React 19, Rsbuild, Base UI, Tailwind)
 
 ## Rules
 
+### Frontend embed / Docker image (CRITICAL)
+
+`main.go` embeds `web/dist` via `//go:embed`. A bad `index.html` ships as the production homepage.
+
+- **NEVER** run `echo ok > web/dist/index.html` (or any unconditional overwrite) when the project is bind-mounted into a Docker container for `go test` / `go build`. That destroys the real SPA on the host and will be packaged into ACR images.
+- For Go tests that only need embed to compile: use `scripts/ensure-embed-dist.ps1` (creates a placeholder **only if missing**). Inside containers, use `mkdir -p web/dist` and create a placeholder **only when the file does not exist**.
+- Before any production binary or `Dockerfile.runtime` image: run `scripts/guard-web-dist.ps1` (fails on `ok` / tiny / placeholder HTML). Preferred full path: `powershell -File scripts/build-acr-image.ps1`.
+- If `web/dist/index.html` was corrupted, restore with `cd web && bun run build` (or `npm run build`) before rebuilding the image.
+
 ### Common Code Quality
 
 - New code should stay direct and readable. Prefer early returns, clear branches, and well-named local variables to deep nesting or layered control flow.

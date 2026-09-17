@@ -59,6 +59,7 @@ func TestResolveSelfLogAccessScopeCustomerAdminIsolation(t *testing.T) {
 	scope, err := ResolveSelfLogAccessScope(ownerA.Id, 0, 0)
 	require.NoError(t, err)
 	require.Equal(t, custA.Id, scope.CustomerId)
+	require.Equal(t, ownerA.Id, scope.AlsoUserId)
 	require.False(t, scope.Empty)
 
 	// Forged B customer id must not expand visibility
