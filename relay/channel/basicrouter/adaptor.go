@@ -57,6 +57,11 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
+	// BasicRouter is OpenAI-compatible; force include_usage on stream so DeepSeek-style
+	// prompt_cache_hit_tokens land in the final usage chunk for cache billing.
+	if info != nil && info.IsStream {
+		request.StreamOptions = &dto.StreamOptions{IncludeUsage: true}
+	}
 	return request, nil
 }
 

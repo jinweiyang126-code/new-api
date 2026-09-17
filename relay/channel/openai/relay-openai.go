@@ -119,6 +119,8 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	var usage = &dto.Usage{}
 	var lastStreamData string
 	var secondLastStreamData string // 存储倒数第二个stream data，用于音频模型
+	var usageWithCache *dto.Usage
+	var usageWithCacheData string
 	seenStreamToolCalls := make(map[string]struct{})
 	var streamFunctionCallNames []string
 
@@ -139,6 +141,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 			}
 
 			lastStreamData = data
+			maybeCaptureStreamUsageWithCache(data, &usageWithCache, &usageWithCacheData)
 			collectStreamFunctionCallNames(data, seenStreamToolCalls, &streamFunctionCallNames)
 			if err := processTokenData(info.RelayMode, data, &responseTextBuilder, &toolCount); err != nil {
 				logger.LogError(c, "error processing stream token data: "+err.Error())
@@ -181,9 +184,17 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	if !containStreamUsage {
 		usage = service.ResponseText2Usage(c, responseTextBuilder.String(), info.UpstreamModelName, info.GetEstimatePromptTokens())
 		usage.CompletionTokens += toolCount * 7
+	} else {
+		// Prefer a mid-stream usage chunk that carries cache hits when the last
+		// chunk only has prompt/completion totals (some OpenAI-compat proxies).
+		mergeStreamUsageCache(usage, usageWithCache)
 	}
 
-	applyUsagePostProcessing(info, usage, common.StringToByteSlice(lastStreamData))
+	postBody := common.StringToByteSlice(lastStreamData)
+	if usageWithCacheData != "" && usage.PromptTokensDetails.CachedTokens == 0 && usage.PromptCacheHitTokens == 0 {
+		postBody = common.StringToByteSlice(usageWithCacheData)
+	}
+	applyUsagePostProcessing(info, usage, postBody)
 
 	for _, name := range streamFunctionCallNames {
 		info.CountBillableToolCall(dto.BuildInCallFunctionCall, name)
@@ -192,6 +203,60 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	HandleFinalResponse(c, info, lastStreamData, responseId, createAt, model, systemFingerprint, usage, containStreamUsage)
 
 	return usage, nil
+}
+
+// maybeCaptureStreamUsageWithCache keeps the richest usage-bearing SSE chunk that
+// includes cache-hit counters (DeepSeek / BasicRouter prompt_cache_hit_tokens).
+func maybeCaptureStreamUsageWithCache(data string, best **dto.Usage, bestData *string) {
+	var streamResponse dto.ChatCompletionsStreamResponse
+	if err := common.UnmarshalJsonStr(data, &streamResponse); err != nil {
+		return
+	}
+	if !service.ValidUsage(streamResponse.Usage) {
+		return
+	}
+	u := streamResponse.Usage
+	hasCache := u.PromptCacheHitTokens > 0 || u.PromptTokensDetails.CachedTokens > 0 ||
+		(u.InputTokensDetails != nil && u.InputTokensDetails.CachedTokens > 0)
+	if !hasCache {
+		return
+	}
+	if *best == nil || streamCacheHitCount(u) >= streamCacheHitCount(*best) {
+		*best = u
+		*bestData = data
+	}
+}
+
+func streamCacheHitCount(u *dto.Usage) int {
+	if u == nil {
+		return 0
+	}
+	if u.PromptTokensDetails.CachedTokens > 0 {
+		return u.PromptTokensDetails.CachedTokens
+	}
+	if u.PromptCacheHitTokens > 0 {
+		return u.PromptCacheHitTokens
+	}
+	if u.InputTokensDetails != nil && u.InputTokensDetails.CachedTokens > 0 {
+		return u.InputTokensDetails.CachedTokens
+	}
+	return 0
+}
+
+func mergeStreamUsageCache(dst, src *dto.Usage) {
+	if dst == nil || src == nil {
+		return
+	}
+	if dst.PromptTokensDetails.CachedTokens == 0 && src.PromptTokensDetails.CachedTokens > 0 {
+		dst.PromptTokensDetails.CachedTokens = src.PromptTokensDetails.CachedTokens
+	}
+	if dst.PromptCacheHitTokens == 0 && src.PromptCacheHitTokens > 0 {
+		dst.PromptCacheHitTokens = src.PromptCacheHitTokens
+	}
+	if dst.InputTokensDetails == nil && src.InputTokensDetails != nil {
+		cp := *src.InputTokensDetails
+		dst.InputTokensDetails = &cp
+	}
 }
 
 func collectStreamFunctionCallNames(data string, seen map[string]struct{}, names *[]string) {

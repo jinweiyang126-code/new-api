@@ -61,10 +61,13 @@ func extractCachedTokensFromBody(body []byte) (int, bool) {
 	var payload struct {
 		Usage struct {
 			PromptTokensDetails struct {
-				CachedTokens *int `json:"cached_tokens"`
+				CachedTokens    *int `json:"cached_tokens"`
+				CacheReadTokens *int `json:"cache_read_tokens"`
 			} `json:"prompt_tokens_details"`
-			CachedTokens         *int `json:"cached_tokens"`
-			PromptCacheHitTokens *int `json:"prompt_cache_hit_tokens"`
+			CachedTokens           *int `json:"cached_tokens"`
+			PromptCacheHitTokens   *int `json:"prompt_cache_hit_tokens"`
+			CacheReadInputTokens   *int `json:"cache_read_input_tokens"`
+			CacheReadTokens        *int `json:"cache_read_tokens"`
 		} `json:"usage"`
 	}
 
@@ -75,11 +78,20 @@ func extractCachedTokensFromBody(body []byte) (int, bool) {
 	if payload.Usage.PromptTokensDetails.CachedTokens != nil {
 		return *payload.Usage.PromptTokensDetails.CachedTokens, true
 	}
+	if payload.Usage.PromptTokensDetails.CacheReadTokens != nil {
+		return *payload.Usage.PromptTokensDetails.CacheReadTokens, true
+	}
 	if payload.Usage.CachedTokens != nil {
 		return *payload.Usage.CachedTokens, true
 	}
 	if payload.Usage.PromptCacheHitTokens != nil {
 		return *payload.Usage.PromptCacheHitTokens, true
+	}
+	if payload.Usage.CacheReadInputTokens != nil {
+		return *payload.Usage.CacheReadInputTokens, true
+	}
+	if payload.Usage.CacheReadTokens != nil {
+		return *payload.Usage.CacheReadTokens, true
 	}
 	return 0, false
 }

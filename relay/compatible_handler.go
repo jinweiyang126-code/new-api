@@ -59,6 +59,7 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 			request.StreamOptions = &dto.StreamOptions{
 				IncludeUsage: true,
 			}
+			includeUsage = true
 		}
 	}
 
@@ -98,6 +99,23 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 		storage, err := common.GetBodyStorage(c)
 		if err != nil {
 			return types.NewErrorWithStatusCode(err, types.ErrorCodeReadRequestBodyFailed, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
+		}
+		// Pass-through skips ConvertOpenAIRequest; still inject include_usage so
+		// upstream cache-hit counters (DeepSeek / BasicRouter) reach billing.
+		if info.IsStream && (info.SupportStreamOptions || constant.ForceStreamOption) {
+			raw, bErr := storage.Bytes()
+			if bErr != nil {
+				return types.NewErrorWithStatusCode(bErr, types.ErrorCodeReadRequestBodyFailed, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
+			}
+			patched, pErr := relaycommon.EnsureStreamIncludeUsageJSON(raw)
+			if pErr != nil {
+				return types.NewError(pErr, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
+			}
+			storage, err = common.CreateBodyStorage(patched)
+			if err != nil {
+				return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
+			}
+			c.Set(common.KeyBodyStorage, storage)
 		}
 		if common.DebugEnabled {
 			if debugBytes, bErr := storage.Bytes(); bErr == nil {
